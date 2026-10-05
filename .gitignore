@@ -36,3 +36,6 @@ tmp/
 knowledge/raw/private/
 knowledge/vector_store/
 *.chroma/
+.env
+.env.*
+!.env.example
