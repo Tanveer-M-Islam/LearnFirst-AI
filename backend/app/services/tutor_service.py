@@ -41,6 +41,7 @@ class TutorService:
         db: Session,
         session_id: str,
         decision_input: TutorDecisionInput,
+        model_used: str | None = None,
     ) -> TutorDecisionResult:
 
         learning_session = (
@@ -132,6 +133,7 @@ class TutorService:
             db=db,
             result=result,
             decision_input=decision_input,
+            model_used=model_used,
         )
 
         return result
@@ -178,6 +180,7 @@ class TutorService:
         db: Session,
         result: TutorDecisionResult,
         decision_input: TutorDecisionInput,
+        model_used: str | None = None,
     ) -> None:
 
         decision = TutorDecision(
@@ -224,6 +227,7 @@ class TutorService:
             policy_bypass_detected=(
                 result.policy_bypass_detected
             ),
+            model_used=model_used,
         )
 
         TutorDecisionRepository.create(
