@@ -1,8 +1,17 @@
 from fastapi import APIRouter
 
-from app.api.v1.health import router as health_router
-from app.api.v1.sessions import router as sessions_router
-from app.api.v1.students import router as students_router
+from app.api.v1.health import (
+    router as health_router,
+)
+from app.api.v1.sessions import (
+    router as sessions_router,
+)
+from app.api.v1.students import (
+    router as students_router,
+)
+from app.api.v1.tutor import (
+    router as tutor_router,
+)
 
 
 api_router = APIRouter()
@@ -18,4 +27,8 @@ api_router.include_router(
 
 api_router.include_router(
     sessions_router
+)
+
+api_router.include_router(
+    tutor_router
 )

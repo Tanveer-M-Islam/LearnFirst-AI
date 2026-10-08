@@ -13,11 +13,15 @@ class LearningSessionRepository:
         learning_session: LearningSession,
     ) -> LearningSession:
 
-        db.add(learning_session)
+        db.add(
+            learning_session
+        )
 
         db.commit()
 
-        db.refresh(learning_session)
+        db.refresh(
+            learning_session
+        )
 
         return learning_session
 
@@ -28,9 +32,30 @@ class LearningSessionRepository:
     ) -> LearningSession | None:
 
         return (
-            db.query(LearningSession)
+            db.query(
+                LearningSession
+            )
             .filter(
-                LearningSession.id == session_id
+                LearningSession.id
+                == session_id
             )
             .first()
         )
+
+    @staticmethod
+    def save(
+        db: Session,
+        learning_session: LearningSession,
+    ) -> LearningSession:
+
+        db.add(
+            learning_session
+        )
+
+        db.commit()
+
+        db.refresh(
+            learning_session
+        )
+
+        return learning_session
