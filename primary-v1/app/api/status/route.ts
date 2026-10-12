@@ -1,0 +1,1 @@
+export async function GET(){return Response.json({configured:Boolean(process.env.OLLAMA_BASE_URL),provider:process.env.OLLAMA_BASE_URL?'Ollama configured · connection checked on use':'Built-in lesson tutor',storage:'browser-local',version:'primary-v1'},{headers:{'Cache-Control':'no-store'}});}

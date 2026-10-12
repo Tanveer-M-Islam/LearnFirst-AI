@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import ts from 'typescript';
+const source=fs.readFileSync(new URL('../app/api/tutor/route.ts',import.meta.url),'utf8').replace("'@/lib/learning'",JSON.stringify(new URL('../lib/learning.ts',import.meta.url).href));
+const js=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText;
+const {POST}=await import('data:text/javascript;base64,'+Buffer.from(js).toString('base64'));
+const body={subject:'math',questionId:'mp1',attempt:'2/7',level:0,age:10};
+const req=(data,origin='https://learnfirst.test')=>new Request('https://learnfirst.test/api/tutor',{method:'POST',headers:{'Content-Type':'application/json',Origin:origin},body:typeof data==='string'?data:JSON.stringify(data)});
+test('tutor returns a sourced built-in hint without a model',async()=>{const old=process.env.OLLAMA_BASE_URL;delete process.env.OLLAMA_BASE_URL;try{const r=await POST(req(body));assert.equal(r.status,200);const d=await r.json();assert.equal(d.engine,'built-in');assert.match(d.text,/adding both/);assert.ok(d.source);}finally{if(old)process.env.OLLAMA_BASE_URL=old;}});
+test('API rejects unsupported assessment IDs, invalid ages, malformed bodies, cross-origin and oversized requests',async()=>{for(const d of [{...body,questionId:'mc1'},{...body,age:4},{...body,level:12},{...body,subject:'unknown'},{...body,attempt:4},'bad json'])assert.equal((await POST(req(d))).status,400);assert.equal((await POST(req(body,'https://other.test'))).status,403);assert.equal((await POST(req('x'.repeat(5000)))).status,413);});
+test('model failure visibly falls back; a valid configured model produces a labeled AI hint',async()=>{const oldUrl=process.env.OLLAMA_BASE_URL,oldFetch=globalThis.fetch;process.env.OLLAMA_BASE_URL='https://model.test';try{globalThis.fetch=async()=>{throw new Error('offline');};const fallback=await (await POST(req(body))).json();assert.equal(fallback.engine,'built-in');assert.match(fallback.notice,/unavailable/);globalThis.fetch=async(url,init)=>{assert.equal(url,'https://model.test/api/chat');const payload=JSON.parse(init.body);assert.equal(payload.stream,false);return Response.json({message:{content:'Think about the sizes of the parts. How can you make them match?'}});};const live=await (await POST(req(body))).json();assert.equal(live.engine,'ollama');}finally{globalThis.fetch=oldFetch;if(oldUrl)process.env.OLLAMA_BASE_URL=oldUrl;else delete process.env.OLLAMA_BASE_URL;}});
