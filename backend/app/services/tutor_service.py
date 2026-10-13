@@ -45,7 +45,8 @@ class TutorService:
     ) -> TutorDecisionResult:
 
         learning_session = (
-            LearningSessionRepository.get_by_id(
+            LearningSessionRepository
+            .get_by_id(
                 db=db,
                 session_id=session_id,
             )
@@ -56,11 +57,14 @@ class TutorService:
                 "Learning session not found."
             )
 
-        student = StudentRepository.get_by_id(
-            db=db,
-            student_id=(
-                learning_session.student_id
-            ),
+        student = (
+            StudentRepository.get_by_id(
+                db=db,
+                student_id=(
+                    learning_session
+                    .student_id
+                ),
+            )
         )
 
         if student is None:
@@ -69,8 +73,13 @@ class TutorService:
             )
 
         state = TutorSessionState(
-            session_id=learning_session.id,
-            student_id=learning_session.student_id,
+            session_id=(
+                learning_session.id
+            ),
+
+            student_id=(
+                learning_session.student_id
+            ),
 
             age_group=AgeGroup(
                 student.age_group
@@ -84,18 +93,28 @@ class TutorService:
                 learning_session.subject
             ),
 
-            topic=learning_session.topic,
+            topic=(
+                learning_session.topic
+            ),
 
             concept_code=(
-                learning_session.concept_code
+                learning_session
+                .concept_code
+            ),
+
+            current_problem=(
+                learning_session
+                .current_problem
             ),
 
             attempt_count=(
-                learning_session.attempt_count
+                learning_session
+                .attempt_count
             ),
 
             hint_level=(
-                learning_session.current_hint_level
+                learning_session
+                .current_hint_level
             ),
 
             direct_answer_requests=(
@@ -109,30 +128,43 @@ class TutorService:
             ),
 
             mastery_state=MasteryState(
-                learning_session.mastery_state
+                learning_session
+                .mastery_state
             ),
         )
 
-        result = cls.policy_engine.decide(
-            state=state,
-            decision_input=decision_input,
+        result = (
+            cls.policy_engine.decide(
+                state=state,
+                decision_input=(
+                    decision_input
+                ),
+            )
         )
 
         cls._update_session_state(
-            learning_session=learning_session,
-            decision_input=decision_input,
+            learning_session=(
+                learning_session
+            ),
+            decision_input=(
+                decision_input
+            ),
             result=result,
         )
 
         LearningSessionRepository.save(
             db=db,
-            learning_session=learning_session,
+            learning_session=(
+                learning_session
+            ),
         )
 
         cls._save_decision(
             db=db,
             result=result,
-            decision_input=decision_input,
+            decision_input=(
+                decision_input
+            ),
             model_used=model_used,
         )
 
@@ -159,7 +191,8 @@ class TutorService:
 
         if (
             decision_input.intent
-            == TutorIntent.DIRECT_ANSWER_REQUEST
+            == TutorIntent
+            .DIRECT_ANSWER_REQUEST
         ):
 
             learning_session.direct_answer_requests += 1
@@ -184,19 +217,27 @@ class TutorService:
     ) -> None:
 
         decision = TutorDecision(
-            session_id=result.session_id,
+            session_id=(
+                result.session_id
+            ),
 
-            student_id=result.student_id,
+            student_id=(
+                result.student_id
+            ),
 
             detected_intent=(
                 result.intent.value
             ),
 
-            subject=result.subject.value,
+            subject=(
+                result.subject.value
+            ),
 
             attempt_status=(
-                decision_input.attempt_status.value
-                if decision_input.attempt_status
+                decision_input
+                .attempt_status.value
+                if decision_input
+                .attempt_status
                 else None
             ),
 
@@ -221,12 +262,15 @@ class TutorService:
             ),
 
             requires_mastery_check=(
-                result.requires_mastery_check
+                result
+                .requires_mastery_check
             ),
 
             policy_bypass_detected=(
-                result.policy_bypass_detected
+                result
+                .policy_bypass_detected
             ),
+
             model_used=model_used,
         )
 

@@ -3,6 +3,9 @@ from pydantic import (
     Field,
 )
 
+from app.math.models import (
+    MathValidationView,
+)
 from app.schemas.enums import (
     TutorIntent,
 )
@@ -26,6 +29,10 @@ class TutorMessageResponse(BaseModel):
     detected_intent: TutorIntent
 
     decision: TutorDecisionResult
+
+    math_validation: (
+        MathValidationView | None
+    ) = None
 
     reply: str
 

@@ -14,7 +14,7 @@ class IntentRouter:
         "bypass the rules",
         "pretend i am the teacher",
         "pretend i'm the teacher",
-        "my teacher said",
+        "my teacher said you must",
         "encode the answer",
         "answer in base64",
         "answer using emojis",
@@ -56,6 +56,7 @@ class IntentRouter:
         "give me hint",
         "hint please",
         "can i get a hint",
+        "can you give me a hint",
         "can you give me a clue",
         "give me a clue",
     ]
@@ -100,94 +101,139 @@ class IntentRouter:
     ) -> TutorIntent:
 
         normalized = (
-            cls._normalize(message)
+            cls._normalize(
+                message
+            )
         )
 
         # ----------------------------------
-        # Highest priority
+        # Safety has highest priority
         # ----------------------------------
 
         if cls._contains_any(
             normalized,
             cls.SAFETY_PATTERNS,
         ):
+
             return (
                 TutorIntent
                 .SAFETY_SENSITIVE
             )
 
+        # ----------------------------------
+        # Policy bypass
+        # ----------------------------------
+
         if cls._contains_any(
             normalized,
             cls.POLICY_BYPASS_PATTERNS,
         ):
+
             return (
-                TutorIntent.POLICY_BYPASS
+                TutorIntent
+                .POLICY_BYPASS
             )
+
+        # ----------------------------------
+        # Direct answer
+        # ----------------------------------
 
         if cls._contains_any(
             normalized,
             cls.DIRECT_ANSWER_PATTERNS,
         ):
+
             return (
                 TutorIntent
                 .DIRECT_ANSWER_REQUEST
             )
 
+        # ----------------------------------
+        # Student confusion
+        # ----------------------------------
+
         if cls._contains_any(
             normalized,
             cls.I_DONT_KNOW_PATTERNS,
         ):
+
             return (
-                TutorIntent.I_DONT_KNOW
+                TutorIntent
+                .I_DONT_KNOW
             )
 
         if cls._contains_any(
             normalized,
             cls.CONFUSION_PATTERNS,
         ):
+
             return (
                 TutorIntent.CONFUSION
             )
+
+        # ----------------------------------
+        # Hint
+        # ----------------------------------
 
         if cls._contains_any(
             normalized,
             cls.HINT_PATTERNS,
         ):
+
             return (
                 TutorIntent.HINT_REQUEST
             )
+
+        # ----------------------------------
+        # Practice
+        # ----------------------------------
 
         if cls._contains_any(
             normalized,
             cls.PRACTICE_PATTERNS,
         ):
+
             return (
-                TutorIntent.PRACTICE_REQUEST
+                TutorIntent
+                .PRACTICE_REQUEST
             )
 
         # ----------------------------------
-        # Detect likely learner attempt
+        # Student attempt
         # ----------------------------------
 
         if cls._looks_like_attempt(
             normalized
         ):
+
             return (
-                TutorIntent.STUDENT_ATTEMPT
+                TutorIntent
+                .STUDENT_ATTEMPT
             )
+
+        # ----------------------------------
+        # Homework
+        # ----------------------------------
 
         if cls._contains_any(
             normalized,
             cls.HOMEWORK_PATTERNS,
         ):
+
             return (
-                TutorIntent.HOMEWORK_REQUEST
+                TutorIntent
+                .HOMEWORK_REQUEST
             )
+
+        # ----------------------------------
+        # Explanation
+        # ----------------------------------
 
         if cls._contains_any(
             normalized,
             cls.EXPLANATION_PATTERNS,
         ):
+
             return (
                 TutorIntent
                 .EXPLANATION_REQUEST
@@ -197,7 +243,9 @@ class IntentRouter:
         # Default educational request
         # ----------------------------------
 
-        return TutorIntent.LEARN_CONCEPT
+        return (
+            TutorIntent.LEARN_CONCEPT
+        )
 
     @staticmethod
     def _normalize(
@@ -229,11 +277,14 @@ class IntentRouter:
 
         attempt_phrases = [
             "my answer is",
+            "my answer",
             "i got",
             "i think the answer",
             "i think x",
             "my solution",
             "i tried",
+            "i think it is",
+            "i think it's",
         ]
 
         if any(
@@ -242,12 +293,39 @@ class IntentRouter:
         ):
             return True
 
-        equation_pattern = (
-            r"\b[a-z]\s*=\s*-?\d+"
+        # x = 5
+        equation_answer_pattern = (
+            r"\b[a-z]\s*=\s*"
+            r"-?\d+(?:\.\d+)?"
+            r"(?:/\d+(?:\.\d+)?)?"
         )
 
         if re.search(
-            equation_pattern,
+            equation_answer_pattern,
+            message,
+        ):
+            return True
+
+        # Algebra work such as:
+        # 3x = 12
+        if re.search(
+            r"[0-9x]+\s*=\s*[0-9x\-+*/]+",
+            message,
+        ):
+            return True
+
+        # Bare response:
+        # 4
+        # -2
+        # 3/4
+        bare_number_pattern = (
+            r"^-?\d+(?:\.\d+)?"
+            r"(?:/\d+(?:\.\d+)?)?"
+            r"[.!]?$"
+        )
+
+        if re.fullmatch(
+            bare_number_pattern,
             message,
         ):
             return True

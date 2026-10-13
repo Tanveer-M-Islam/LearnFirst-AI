@@ -23,12 +23,16 @@ class TutorSessionState(BaseModel):
 
     concept_code: str | None = None
 
+    current_problem: str | None = None
+
     attempt_count: int = 0
 
     hint_level: int = 0
 
     direct_answer_requests: int = 0
 
-    current_misconception: str | None = None
+    current_misconception: (
+        str | None
+    ) = None
 
     mastery_state: MasteryState
