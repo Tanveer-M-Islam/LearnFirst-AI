@@ -2,7 +2,7 @@
 
 ## Before you record
 
-Open the deployed site in your owner account. Keep it at 100% zoom with a 1440×900 or wider window. Record at 1920×1080 if possible. Use the real application and your own narration; don't replace interactions with generated UI footage. Go to About → Clear this browser's learning data if you need a fresh recording. This deletes this browser's demo results; download your report first if needed.
+Open the deployed public site. Keep it at 100% zoom with a 1440×900 or wider window. Record at 1920×1080 if possible. Use the real application and your own narration; don't replace interactions with generated UI footage. Go to About → Clear this browser's learning data if you need a fresh recording. This deletes this browser's demo results; download your report first if needed.
 
 The interface labels the default mode **Built-in lesson tutor**. With no connected Ollama endpoint, never say the demo is using live LLM generation or full curriculum RAG. Explain that this build proves the learning workflow and the model integration is optional. The competition's screenshot was unavailable in this session; verify its current video length, submission and prototype requirements yourself before submission. This outline targets 175 seconds with five seconds of spare time.
 
@@ -41,4 +41,4 @@ Read aloud and trim to your actual speaking pace; timestamps are editorial targe
 
 ## Final live checklist
 
-Run a fresh fraction lesson, open and close the profile dialog, test the menu on a phone-width window, reload after completing a lesson, and export a report. The published site starts private; explicitly enable public access before submitting a judge-facing link, then verify access in a signed-out browser. If the competition requires a live generative-AI prototype, connect and test a model before presenting this build as satisfying that requirement.
+Run a fresh fraction lesson, open and close the profile dialog, test the menu on a phone-width window, reload after completing a lesson, and export a report. For a judge-facing Vercel deployment, verify that its production URL is accessible in a signed-out browser and does not require Vercel Authentication. If the competition requires a live generative-AI prototype, connect and test a model before presenting this build as satisfying that requirement.
