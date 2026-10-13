@@ -27,24 +27,25 @@ npm run build
 npm start
 ```
 
-## Working features
+## Teaching-first learning flow
 
-- Three subjects: fractions, subject–verb agreement, and the water cycle.
-- Three-question diagnostic; foundational or core practice selected from the result.
-- Two guided exercises; three progressive hints; retries and full explanations.
-- Three fresh independent questions with hints disabled.
-- Actual session scores, concept review, browser-local persistence, report export and reset.
-- Responsive UI and optional server-side Ollama hint rephrasing.
+1. Learn three short ideas with concrete examples, reflection prompts, and lesson-companion questions.
+2. Try three understanding checks. First attempts are preserved for practice selection and reporting even after a successful retry.
+3. A wrong answer starts progressively deeper support: notice a clue, connect a rule, study a different example, then follow a method with the final answer left to the learner.
+4. Complete two guided practice questions, selected from first-attempt results.
+5. Try three fresh independent questions without hints or teaching cards; review actual results afterward.
 
-## Model connection
+All three subjects (fractions, subject–verb agreement, water cycle) follow this flow. The lesson companion is a deterministic, browser-local conversation interface using prepared notes. It recognizes a limited set of lesson topics and help requests; it is not a live generative chatbot or an evaluator of open-ended reasoning. It clearly redirects unsupported questions. Its messages reset after refresh; lesson position and results persist in this browser.
 
-Without a configured model, the application honestly labels its authored, rule-based hints. To use Ollama, configure `OLLAMA_BASE_URL`, `OLLAMA_MODEL` (default `llama3.2`), and optionally `OLLAMA_API_KEY` as server environment variables in Vercel. The base URL must be reachable from Vercel; `localhost` refers to the server, not your computer. Keep provider credentials private. Model failures visibly fall back to authored hints.
+The UI does not call a model. The optional `/api/tutor` adapter remains available for integration experiments, with staged authored guidance and optional Ollama rephrasing, but is not presented as active chat functionality.
 
-Before attaching a resource-limited model to a public service, enforce distributed quotas/rate limits at its endpoint. No provider is required or called in the default built-in mode.
+## Verification
+
+Run `npm test` and `npm run build`. Tests cover equivalent-fraction grading, adaptation, all subject session transitions, help counters, API validation/fallback, theory content, first-attempt score preservation, and bounded companion replies.
 
 ## Scope and limitations
 
-This is a functional preliminary tutoring workflow. It does not claim live generative AI without a verified model connection, full curriculum RAG, official NCTB alignment, free-form homework reasoning evaluation, or validated educational efficacy. The nine learning cards are original notes. Age affects optional model phrasing; diagnostic answers select practice difficulty.
+This is a functional preliminary tutoring workflow. It does not claim live generative AI without a verified model connection, full curriculum RAG, official NCTB alignment, free-form homework reasoning evaluation, or validated educational efficacy. The nine learning cards are original notes. The current UI has a fixed introductory difficulty; the optional API can adjust phrasing; first attempts after teaching select practice difficulty.
 
 Results stay in this browser, with no shared learner database or parent account. The three-question score difference is a session observation, not a standardized assessment or proof of lasting mastery. Repeated lessons reuse the question banks.
 

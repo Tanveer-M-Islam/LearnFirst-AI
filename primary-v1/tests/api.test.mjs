@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import ts from 'typescript';
-const source=fs.readFileSync(new URL('../app/api/tutor/route.ts',import.meta.url),'utf8').replace("'@/lib/learning'",JSON.stringify(new URL('../lib/learning.ts',import.meta.url).href));
+const source=fs.readFileSync(new URL('../app/api/tutor/route.ts',import.meta.url),'utf8').replace("'@/lib/learning'",JSON.stringify(new URL('../lib/learning.ts',import.meta.url).href)).replace("'@/lib/pedagogy'",JSON.stringify(new URL('../lib/pedagogy.ts',import.meta.url).href));
 const js=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText;
 const {POST}=await import('data:text/javascript;base64,'+Buffer.from(js).toString('base64'));
 const body={subject:'math',questionId:'mp1',attempt:'2/7',level:0,age:10};

@@ -1,0 +1,8 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {newSession,advance,lessons} from '../lib/learning.ts';
+import {teaching,support,lessonReply} from '../lib/pedagogy.ts';
+test('new lessons start with theory and every concept has a teaching explanation and example',()=>{for(const l of lessons){assert.equal(newSession(l.id).learned,false);assert.equal(teaching[l.id].length,l.cards.length);for(const c of teaching[l.id]){assert.ok(c.goal&&c.example&&c.simple&&c.reflect);assert.ok(c.steps.length>=3);}}});
+test('guided retries preserve the first understanding-check response for adaptation',()=>{let s=newSession('math');s={...s,firstAnswer:'2/10',attempts:1,hintLevel:2};s=advance(s,'3/5');assert.equal(s.diagnostic[0].correct,false);assert.equal(s.diagnostic[0].answer,'2/10');assert.equal(s.diagnostic[0].hints,2);assert.equal(s.firstAnswer,undefined);assert.equal(s.hintLevel,0);});
+test('methods scaffold every supported question without copying its full explanation',()=>{for(const l of lessons)for(const q of [...l.diagnostic,...l.practice,...l.foundation]){for(let i=0;i<4;i++){const text=support(q,'',i);assert.ok(text.length>30);assert.notEqual(text,q.explanation);}assert.match(support(q,'',3),/Your method/);if(q.visual)assert.ok(!support(q,'',3).includes('= '+q.answer));}});
+test('lesson companion keeps unsupported questions scoped and refuses answer requests',()=>{for(const l of lessons){assert.match(lessonReply(l,'give me the answer',0),/final answer is your part/);assert.match(lessonReply(l,'who won the world cup',0),/cannot reliably answer/);assert.equal(lessonReply(l,'Explain more simply',0),teaching[l.id][0].simple+' '+teaching[l.id][0].reflect);}});
