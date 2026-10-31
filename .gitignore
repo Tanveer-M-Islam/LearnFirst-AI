@@ -2,10 +2,14 @@ venv/
 .venv/
 __pycache__/
 *.pyc
+
 .env
 .env.*
+!.env.example
+
 .vscode/
 .idea/
+
 .DS_Store
 Thumbs.db
 
@@ -24,18 +28,16 @@ logs/
 
 # Model / cache files
 .cache/
-models/
+# Only ignore a root-level ML model directory.
+# Do NOT ignore backend/app/database/models/.
+/models/
 checkpoints/
 
 # Temporary files
 temp/
 tmp/
 
-# OS/editor files
-
+# Knowledge / vector data
 knowledge/raw/private/
 knowledge/vector_store/
 *.chroma/
-.env
-.env.*
-!.env.example

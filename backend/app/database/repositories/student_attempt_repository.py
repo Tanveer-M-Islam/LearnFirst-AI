@@ -13,15 +13,11 @@ class StudentAttemptRepository:
         attempt: StudentAttempt,
     ) -> StudentAttempt:
 
-        db.add(
-            attempt
-        )
+        db.add(attempt)
 
         db.commit()
 
-        db.refresh(
-            attempt
-        )
+        db.refresh(attempt)
 
         return attempt
 
@@ -32,9 +28,7 @@ class StudentAttemptRepository:
     ) -> list[StudentAttempt]:
 
         return (
-            db.query(
-                StudentAttempt
-            )
+            db.query(StudentAttempt)
             .filter(
                 StudentAttempt.session_id
                 == session_id
@@ -42,6 +36,24 @@ class StudentAttemptRepository:
             .order_by(
                 StudentAttempt
                 .attempt_number
+            )
+            .all()
+        )
+
+    @staticmethod
+    def list_by_student(
+        db: Session,
+        student_id: str,
+    ) -> list[StudentAttempt]:
+
+        return (
+            db.query(StudentAttempt)
+            .filter(
+                StudentAttempt.student_id
+                == student_id
+            )
+            .order_by(
+                StudentAttempt.created_at
             )
             .all()
         )

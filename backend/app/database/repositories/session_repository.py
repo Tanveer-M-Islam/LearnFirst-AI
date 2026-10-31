@@ -43,6 +43,26 @@ class LearningSessionRepository:
         )
 
     @staticmethod
+    def list_by_student(
+        db: Session,
+        student_id: str,
+    ) -> list[LearningSession]:
+
+        return (
+            db.query(
+                LearningSession
+            )
+            .filter(
+                LearningSession.student_id
+                == student_id
+            )
+            .order_by(
+                LearningSession.started_at
+            )
+            .all()
+        )
+
+    @staticmethod
     def save(
         db: Session,
         learning_session: LearningSession,
