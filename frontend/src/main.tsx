@@ -17,6 +17,7 @@ import "./styles/global.css";
 import "./styles/layout.css";
 import "./styles/tutor.css";
 import "./styles/assessment.css";
+import "./styles/progress.css";
 
 
 createRoot(

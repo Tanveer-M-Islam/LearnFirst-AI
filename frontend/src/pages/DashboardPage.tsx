@@ -10,12 +10,29 @@ import {
 } from "lucide-react";
 
 import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
   useNavigate,
 } from "react-router";
 
 import {
+  getConceptProgress,
+} from "../api/assessments";
+
+import type {
+  ConceptProgress,
+} from "../types/assessment";
+
+import {
   getStoredStudent,
 } from "../utils/studentStorage";
+
+
+const CONCEPT_CODE =
+  "MATH_ALG_LINEAR_01";
 
 
 export default function DashboardPage() {
@@ -25,9 +42,71 @@ export default function DashboardPage() {
   const student =
     getStoredStudent();
 
+  const studentId =
+    student?.id;
+
+  const [
+    progress,
+    setProgress,
+  ] = useState<
+    ConceptProgress | null
+  >(null);
+
+  const [
+    progressLoading,
+    setProgressLoading,
+  ] = useState(true);
+
+
+  useEffect(() => {
+    if (!studentId) {
+      setProgressLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadProgress =
+      async () => {
+        try {
+          const data =
+            await getConceptProgress(
+              studentId,
+              CONCEPT_CODE,
+            );
+
+          if (!cancelled) {
+            setProgress(data);
+          }
+        } catch {
+          /*
+           * Progress is optional on
+           * the dashboard. If loading
+           * fails, the learner should
+           * still be able to use the
+           * rest of the application.
+           */
+        } finally {
+          if (!cancelled) {
+            setProgressLoading(
+              false,
+            );
+          }
+        }
+      };
+
+    void loadProgress();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [studentId]);
+
+
   const name =
     student?.display_name
     ?? "Learner";
+
 
   const ageGroupLabel =
     student?.age_group
@@ -36,12 +115,45 @@ export default function DashboardPage() {
 
       : student?.age_group
         === "INDEPENDENT"
-        ? (
-          "Independent "
-          + "Learner"
-        )
+        ? "Independent Learner"
 
         : "Developing Learner";
+
+
+  const totalAttempts =
+    progress
+      ?.learning_metrics
+      .total_attempts
+    ?? 0;
+
+
+  const hasMathActivity =
+    Boolean(
+      progress?.diagnostic
+      || progress?.mastery
+      || totalAttempts > 0,
+    );
+
+
+  const topicsPracticed =
+    hasMathActivity
+      ? 1
+      : 0;
+
+
+  const independentTries =
+    progress
+      ?.learning_metrics
+      .independent_attempts
+    ?? 0;
+
+
+  const masteredTopics =
+    progress
+      ?.current_mastery_state
+      === "STRONG"
+      ? 1
+      : 0;
 
 
   return (
@@ -90,7 +202,11 @@ export default function DashboardPage() {
 
         <div className="subject-grid">
           <article
-            className="subject-card subject-math clickable-subject-card"
+            className={
+              "subject-card "
+              + "subject-math "
+              + "clickable-subject-card"
+            }
             onClick={() =>
               navigate(
                 "/learn/math",
@@ -168,7 +284,10 @@ export default function DashboardPage() {
 
             <button
               type="button"
-              className="subject-action subject-action-disabled"
+              className={
+                "subject-action "
+                + "subject-action-disabled"
+              }
               disabled
             >
               Coming next
@@ -201,7 +320,10 @@ export default function DashboardPage() {
 
             <button
               type="button"
-              className="subject-action subject-action-disabled"
+              className={
+                "subject-action "
+                + "subject-action-disabled"
+              }
               disabled
             >
               Coming next
@@ -232,7 +354,9 @@ export default function DashboardPage() {
           <div className="progress-stats">
             <div>
               <strong>
-                —
+                {progressLoading
+                  ? "…"
+                  : topicsPracticed}
               </strong>
 
               <span>
@@ -242,7 +366,9 @@ export default function DashboardPage() {
 
             <div>
               <strong>
-                —
+                {progressLoading
+                  ? "…"
+                  : independentTries}
               </strong>
 
               <span>
@@ -252,7 +378,9 @@ export default function DashboardPage() {
 
             <div>
               <strong>
-                —
+                {progressLoading
+                  ? "…"
+                  : masteredTopics}
               </strong>
 
               <span>
@@ -261,11 +389,29 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <p className="progress-placeholder">
-            Your learning progress
-            will appear here as
-            you begin practicing.
-          </p>
+          {hasMathActivity ? (
+            <button
+              type="button"
+              className="dashboard-progress-link"
+              onClick={() =>
+                navigate(
+                  "/progress",
+                )
+              }
+            >
+              View my progress
+
+              <ArrowRight
+                size={17}
+              />
+            </button>
+          ) : (
+            <p className="progress-placeholder">
+              Complete a diagnostic
+              or start practicing to
+              build your progress.
+            </p>
+          )}
         </div>
 
         <div className="surface-card habit-card">

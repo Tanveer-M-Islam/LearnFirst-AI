@@ -9,6 +9,7 @@ import AppShell from "./components/layout/AppShell";
 import AssessmentPage from "./pages/AssessmentPage";
 import DashboardPage from "./pages/DashboardPage";
 import MathStartPage from "./pages/MathStartPage";
+import ProgressPage from "./pages/ProgressPage";
 import StudentSetupPage from "./pages/StudentSetupPage";
 import TutorPage from "./pages/TutorPage";
 import WelcomePage from "./pages/WelcomePage";
@@ -25,11 +26,13 @@ function ComingSoon({
         ✨
       </div>
 
-      <h1>{title}</h1>
+      <h1>
+        {title}
+      </h1>
 
       <p>
-        We're building this learning
-        experience next.
+        We're building this
+        learning experience next.
       </p>
     </div>
   );
@@ -108,9 +111,7 @@ export default function App() {
         <Route
           path="/progress"
           element={
-            <ComingSoon
-              title="Progress"
-            />
+            <ProgressPage />
           }
         />
       </Route>

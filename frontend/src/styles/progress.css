@@ -1,0 +1,1203 @@
+/* =========================
+   Page
+========================= */
+
+.progress-page {
+  max-width:
+    1320px;
+
+  margin:
+    0 auto;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    28px;
+}
+
+
+.progress-page-header {
+  display:
+    flex;
+
+  align-items:
+    flex-end;
+
+  justify-content:
+    space-between;
+
+  gap:
+    24px;
+}
+
+
+.progress-kicker {
+  width:
+    fit-content;
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    7px;
+
+  padding:
+    7px 11px;
+
+  border-radius:
+    999px;
+
+  color:
+    var(--color-primary);
+
+  background:
+    var(--color-primary-soft);
+
+  font-size:
+    0.78rem;
+
+  font-weight:
+    750;
+}
+
+
+.progress-page-header h1 {
+  margin:
+    12px 0 6px;
+
+  font-size:
+    clamp(
+      2rem,
+      4vw,
+      3.15rem
+    );
+
+  letter-spacing:
+    -0.045em;
+}
+
+
+.progress-page-header p {
+  max-width:
+    650px;
+
+  margin:
+    0;
+
+  color:
+    var(--color-text-muted);
+
+  line-height:
+    1.65;
+}
+
+
+/* =========================
+   Loading / Error
+========================= */
+
+.progress-loading {
+  min-height:
+    500px;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  gap:
+    15px;
+
+  color:
+    var(--color-text-muted);
+}
+
+
+.progress-loading-icon {
+  width:
+    68px;
+
+  height:
+    68px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  border-radius:
+    22px;
+
+  color:
+    var(--color-primary);
+
+  background:
+    var(--color-primary-soft);
+}
+
+
+.progress-error {
+  max-width:
+    540px;
+
+  margin:
+    70px auto;
+
+  padding:
+    35px;
+
+  text-align:
+    center;
+}
+
+
+.progress-error
+> svg {
+  color:
+    var(--color-primary);
+}
+
+
+.progress-error p {
+  color:
+    var(--color-text-muted);
+}
+
+
+/* =========================
+   Empty
+========================= */
+
+.empty-progress {
+  max-width:
+    650px;
+
+  margin:
+    25px auto;
+
+  padding:
+    50px 35px;
+
+  text-align:
+    center;
+}
+
+
+.empty-progress-icon {
+  width:
+    70px;
+
+  height:
+    70px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  margin:
+    0 auto 20px;
+
+  border-radius:
+    22px;
+
+  color:
+    var(--color-primary);
+
+  background:
+    var(--color-primary-soft);
+}
+
+
+.empty-progress h2 {
+  margin:
+    0 0 10px;
+
+  font-size:
+    1.7rem;
+
+  letter-spacing:
+    -0.03em;
+}
+
+
+.empty-progress p {
+  max-width:
+    470px;
+
+  margin:
+    0 auto 25px;
+
+  color:
+    var(--color-text-muted);
+
+  line-height:
+    1.6;
+}
+
+
+/* =========================
+   Summary
+========================= */
+
+.progress-summary-grid {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      4,
+      minmax(
+        0,
+        1fr
+      )
+    );
+
+  gap:
+    14px;
+}
+
+
+.progress-summary-card {
+  padding:
+    21px;
+
+  border:
+    1px solid
+    var(--color-border);
+
+  border-radius:
+    20px;
+
+  background:
+    white;
+
+  box-shadow:
+    var(--shadow-card);
+}
+
+
+.summary-card-icon {
+  width:
+    43px;
+
+  height:
+    43px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  margin-bottom:
+    20px;
+
+  border-radius:
+    13px;
+}
+
+
+.diagnostic-summary
+.summary-card-icon {
+  color:
+    var(--color-blue);
+
+  background:
+    var(--color-blue-soft);
+}
+
+
+.mastery-summary
+.summary-card-icon {
+  color:
+    var(--color-orange);
+
+  background:
+    var(--color-orange-soft);
+}
+
+
+.gain-summary
+.summary-card-icon {
+  color:
+    var(--color-green);
+
+  background:
+    var(--color-green-soft);
+}
+
+
+.level-summary
+.summary-card-icon {
+  color:
+    var(--color-purple);
+
+  background:
+    var(--color-purple-soft);
+}
+
+
+.progress-summary-card
+> span {
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    0.76rem;
+
+  font-weight:
+    700;
+}
+
+
+.progress-summary-card
+> strong {
+  display:
+    block;
+
+  margin:
+    6px 0;
+
+  font-size:
+    2rem;
+
+  letter-spacing:
+    -0.04em;
+}
+
+
+.progress-summary-card
+.level-summary
+strong,
+.level-text {
+  font-size:
+    1.35rem
+    !important;
+}
+
+
+.progress-summary-card p {
+  margin:
+    0;
+
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    0.73rem;
+}
+
+
+/* =========================
+   Two-column sections
+========================= */
+
+.progress-content-grid {
+  display:
+    grid;
+
+  grid-template-columns:
+    1.55fr 0.8fr;
+
+  gap:
+    17px;
+}
+
+
+.score-journey-card,
+.mastery-overview-card,
+.support-usage-card,
+.answer-independence-card {
+  padding:
+    25px;
+}
+
+
+.progress-card-title {
+  display:
+    flex;
+
+  align-items:
+    flex-start;
+
+  justify-content:
+    space-between;
+
+  gap:
+    15px;
+}
+
+
+.progress-card-title
+> svg {
+  color:
+    var(--color-primary);
+}
+
+
+.progress-card-title h2 {
+  margin:
+    5px 0 0;
+
+  letter-spacing:
+    -0.03em;
+}
+
+
+/* =========================
+   Score journey
+========================= */
+
+.score-journey {
+  display:
+    grid;
+
+  grid-template-columns:
+    1fr auto 1fr;
+
+  align-items:
+    center;
+
+  gap:
+    18px;
+
+  margin-top:
+    30px;
+}
+
+
+.score-stage {
+  padding:
+    18px;
+
+  border:
+    1px solid
+    var(--color-border);
+
+  border-radius:
+    16px;
+
+  background:
+    #fafbfe;
+}
+
+
+.score-stage-heading {
+  display:
+    flex;
+
+  justify-content:
+    space-between;
+
+  gap:
+    12px;
+
+  margin-bottom:
+    13px;
+}
+
+
+.score-stage-heading
+span {
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    0.78rem;
+
+  font-weight:
+    700;
+}
+
+
+.score-stage-heading
+strong {
+  font-size:
+    1rem;
+}
+
+
+.score-track {
+  height:
+    8px;
+
+  overflow:
+    hidden;
+
+  border-radius:
+    999px;
+
+  background:
+    #e5e8ef;
+}
+
+
+.score-track div {
+  height:
+    100%;
+
+  border-radius:
+    inherit;
+
+  background:
+    var(--color-blue);
+}
+
+
+.mastery-track div {
+  background:
+    linear-gradient(
+      90deg,
+      var(--color-primary),
+      var(--color-green)
+    );
+}
+
+
+.journey-arrow {
+  color:
+    var(--color-text-muted);
+}
+
+
+.progress-gain-message {
+  margin-top:
+    20px;
+
+  padding:
+    13px 15px;
+
+  display:
+    flex;
+
+  align-items:
+    flex-start;
+
+  gap:
+    9px;
+
+  border-radius:
+    14px;
+
+  color:
+    var(--color-text-muted);
+
+  background:
+    #f5f6fa;
+}
+
+
+.progress-gain-message
+strong {
+  display:
+    block;
+}
+
+
+.progress-gain-message
+span {
+  display:
+    block;
+
+  margin-top:
+    3px;
+
+  font-size:
+    0.75rem;
+}
+
+
+.progress-gain-message
+.positive {
+  color:
+    var(--color-green);
+}
+
+
+.progress-gain-message.positive {
+  color:
+    var(--color-green);
+
+  background:
+    var(--color-green-soft);
+}
+
+
+.score-disclaimer {
+  margin:
+    18px 0 0;
+
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    0.7rem;
+
+  line-height:
+    1.5;
+}
+
+
+/* =========================
+   Mastery overview
+========================= */
+
+.mastery-overview-icon {
+  width:
+    52px;
+
+  height:
+    52px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  margin-bottom:
+    22px;
+
+  border-radius:
+    16px;
+
+  color:
+    var(--color-purple);
+
+  background:
+    var(--color-purple-soft);
+}
+
+
+.mastery-overview-card h2 {
+  margin:
+    6px 0 9px;
+
+  font-size:
+    1.7rem;
+
+  letter-spacing:
+    -0.035em;
+}
+
+
+.mastery-overview-card
+> p {
+  margin:
+    0;
+
+  color:
+    var(--color-text-muted);
+
+  line-height:
+    1.6;
+
+  font-size:
+    0.87rem;
+}
+
+
+.difficulty-box {
+  margin-top:
+    22px;
+
+  padding:
+    14px;
+
+  border:
+    1px solid
+    var(--color-border);
+
+  border-radius:
+    14px;
+
+  background:
+    #fafbfe;
+}
+
+
+.difficulty-box
+> div {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    7px;
+
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    0.73rem;
+}
+
+
+.difficulty-box
+> div svg {
+  color:
+    var(--color-primary);
+}
+
+
+.difficulty-box
+> strong {
+  display:
+    block;
+
+  margin-top:
+    7px;
+
+  font-size:
+    1rem;
+}
+
+
+.mastery-practice-button {
+  width:
+    100%;
+
+  margin-top:
+    18px;
+}
+
+
+/* =========================
+   Metrics
+========================= */
+
+.progress-section-heading {
+  margin-top:
+    8px;
+}
+
+
+.progress-section-heading h2 {
+  margin:
+    5px 0 5px;
+
+  letter-spacing:
+    -0.03em;
+}
+
+
+.progress-section-heading p {
+  margin:
+    0;
+
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    0.85rem;
+}
+
+
+.learning-metrics-grid {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      4,
+      minmax(
+        0,
+        1fr
+      )
+    );
+
+  gap:
+    14px;
+}
+
+
+.learning-metric-card {
+  padding:
+    20px;
+}
+
+
+.metric-icon {
+  width:
+    43px;
+
+  height:
+    43px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  margin-bottom:
+    17px;
+
+  border-radius:
+    13px;
+}
+
+
+.purple-metric {
+  color:
+    var(--color-purple);
+
+  background:
+    var(--color-purple-soft);
+}
+
+
+.blue-metric {
+  color:
+    var(--color-blue);
+
+  background:
+    var(--color-blue-soft);
+}
+
+
+.green-metric {
+  color:
+    var(--color-green);
+
+  background:
+    var(--color-green-soft);
+}
+
+
+.orange-metric {
+  color:
+    var(--color-orange);
+
+  background:
+    var(--color-orange-soft);
+}
+
+
+.learning-metric-card
+> strong {
+  display:
+    block;
+
+  font-size:
+    1.65rem;
+
+  letter-spacing:
+    -0.035em;
+}
+
+
+.learning-metric-card
+> span {
+  display:
+    block;
+
+  margin-top:
+    3px;
+
+  font-weight:
+    750;
+
+  font-size:
+    0.83rem;
+}
+
+
+.learning-metric-card p {
+  margin:
+    8px 0 0;
+
+  color:
+    var(--color-text-muted);
+
+  line-height:
+    1.45;
+
+  font-size:
+    0.73rem;
+}
+
+
+/* =========================
+   Support Usage
+========================= */
+
+.lower-progress-grid {
+  margin-top:
+    0;
+}
+
+
+.support-stat-row {
+  margin-top:
+    22px;
+}
+
+
+.support-stat-row
+> div:first-child {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    12px;
+}
+
+
+.support-stat-row
+span {
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    0.79rem;
+}
+
+
+.support-stat-row
+strong {
+  font-size:
+    0.88rem;
+}
+
+
+.mini-metric-track {
+  height:
+    7px;
+
+  margin-top:
+    9px;
+
+  overflow:
+    hidden;
+
+  border-radius:
+    999px;
+
+  background:
+    #e8eaf1;
+}
+
+
+.mini-metric-track
+div {
+  height:
+    100%;
+
+  border-radius:
+    inherit;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--color-primary),
+      var(--color-blue)
+    );
+}
+
+
+.hint-metric-track
+div {
+  background:
+    linear-gradient(
+      90deg,
+      var(--color-green),
+      var(--color-orange)
+    );
+}
+
+
+/* =========================
+   Think-first
+========================= */
+
+.answer-independence-card {
+  background:
+    linear-gradient(
+      145deg,
+      #fffdf9,
+      #fff7e9
+    );
+}
+
+
+.answer-independence-icon {
+  width:
+    50px;
+
+  height:
+    50px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  margin-bottom:
+    19px;
+
+  border-radius:
+    15px;
+
+  color:
+    var(--color-orange);
+
+  background:
+    var(--color-orange-soft);
+}
+
+
+.answer-independence-card h2 {
+  margin:
+    6px 0 10px;
+
+  letter-spacing:
+    -0.03em;
+}
+
+
+.answer-independence-card
+> p {
+  margin:
+    0;
+
+  color:
+    var(--color-text-muted);
+
+  line-height:
+    1.6;
+
+  font-size:
+    0.85rem;
+}
+
+
+.think-first-note {
+  margin-top:
+    18px;
+
+  padding:
+    13px;
+
+  border-radius:
+    13px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.78
+    );
+
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    0.76rem;
+
+  line-height:
+    1.5;
+}
+
+
+/* =========================
+   Responsive
+========================= */
+
+@media (
+  max-width: 1050px
+) {
+  .progress-summary-grid,
+  .learning-metrics-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        1fr
+      );
+  }
+
+
+  .progress-content-grid {
+    grid-template-columns:
+      1fr;
+  }
+}
+
+
+@media (
+  max-width: 700px
+) {
+  .progress-page-header {
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+  }
+
+
+  .score-journey {
+    grid-template-columns:
+      1fr;
+  }
+
+
+  .journey-arrow {
+    display:
+      flex;
+
+    justify-content:
+      center;
+
+    transform:
+      rotate(90deg);
+  }
+}
+
+
+@media (
+  max-width: 520px
+) {
+  .progress-summary-grid,
+  .learning-metrics-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+
+  .progress-summary-card,
+  .score-journey-card,
+  .mastery-overview-card,
+  .support-usage-card,
+  .answer-independence-card {
+    padding:
+      18px;
+  }
+}

@@ -2114,3 +2114,41 @@
       none;
   }
 }
+
+.dashboard-progress-link {
+  margin-top:
+    17px;
+
+  padding:
+    0;
+
+  border:
+    none;
+
+  background:
+    transparent;
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    6px;
+
+  color:
+    var(--color-primary);
+
+  font-weight:
+    750;
+
+  font-size:
+    0.82rem;
+}
+
+
+.dashboard-progress-link:hover {
+  color:
+    var(--color-primary-dark);
+}
