@@ -1,3 +1,10 @@
+from app.rag.models import (
+    RAGContext,
+)
+from app.rag.service import (
+    RAGService,
+)
+
 from sqlalchemy.orm import Session
 
 from app.database.repositories.session_repository import (
@@ -18,6 +25,12 @@ from app.math.attempt_service import (
 from app.math.models import (
     MathValidationResult,
     create_public_validation,
+)
+from app.rag.models import (
+    RAGContext,
+)
+from app.rag.service import (
+    RAGService,
 )
 from app.schemas.chat import (
     TutorMessageResponse,
@@ -55,31 +68,32 @@ class TutorChatService:
         student_message: str,
     ) -> TutorMessageResponse:
 
-        # ----------------------------------
-        # 1. Load Learning Session
-        # ----------------------------------
-
         learning_session = (
             LearningSessionRepository
             .get_by_id(
                 db=db,
-                session_id=session_id,
+                session_id=(
+                    session_id
+                ),
             )
         )
 
-        if learning_session is None:
+        if (
+            learning_session
+            is None
+        ):
 
             raise ValueError(
-                "Learning session not found."
+                "Learning session "
+                "not found."
             )
 
-        # ----------------------------------
-        # 2. Load Student
-        # ----------------------------------
 
         student = (
-            StudentRepository.get_by_id(
+            StudentRepository
+            .get_by_id(
                 db=db,
+
                 student_id=(
                     learning_session
                     .student_id
@@ -93,20 +107,22 @@ class TutorChatService:
                 "Student not found."
             )
 
-        # ----------------------------------
-        # 3. Detect learner intent
-        # ----------------------------------
 
-        intent = IntentRouter.classify(
-            student_message
+        intent = (
+            IntentRouter.classify(
+                student_message
+            )
         )
 
+
         math_validation: (
-            MathValidationResult | None
+            MathValidationResult
+            | None
         ) = None
 
         attempt_status: (
-            AttemptStatus | None
+            AttemptStatus
+            | None
         ) = None
 
         hint_level_before = (
@@ -114,18 +130,18 @@ class TutorChatService:
             .current_hint_level
         )
 
-        # ----------------------------------
-        # 4. Deterministic Math validation
-        # ----------------------------------
 
         if (
             intent
-            == TutorIntent.STUDENT_ATTEMPT
+            == TutorIntent
+            .STUDENT_ATTEMPT
         ):
 
             if (
-                learning_session.subject
+                learning_session
+                .subject
                 == Subject.MATH.value
+
                 and learning_session
                 .current_problem
             ):
@@ -137,6 +153,7 @@ class TutorChatService:
                             learning_session
                             .current_problem
                         ),
+
                         student_message=(
                             student_message
                         ),
@@ -144,80 +161,82 @@ class TutorChatService:
                 )
 
                 attempt_status = (
-                    math_validation.status
+                    math_validation
+                    .status
                 )
 
             else:
 
                 attempt_status = (
-                    AttemptStatus.UNCLEAR
+                    AttemptStatus
+                    .UNCLEAR
                 )
 
-        # ----------------------------------
-        # 5. Construct Tutor Decision Input
-        # ----------------------------------
 
         decision_input = (
             TutorDecisionInput(
                 intent=intent,
+
                 attempt_status=(
                     attempt_status
                 ),
             )
         )
 
-        # ----------------------------------
-        # 6. Load configured LLM provider
-        # ----------------------------------
 
-        gateway = LLMGateway()
+        gateway = (
+            LLMGateway()
+        )
 
-        # ----------------------------------
-        # 7. Run Tutor Policy
-        # ----------------------------------
 
         decision = (
-            TutorService.make_decision(
+            TutorService
+            .make_decision(
                 db=db,
-                session_id=session_id,
+
+                session_id=(
+                    session_id
+                ),
+
                 decision_input=(
                     decision_input
                 ),
+
                 model_used=(
-                    gateway.model_name
+                    gateway
+                    .model_name
                 ),
             )
         )
 
-        # TutorService may update:
-        #
-        # attempt_count
-        # hint_level
-        # direct_answer_requests
-        # last_tutor_action
-        #
-        # Reload it.
 
         refreshed_session = (
             LearningSessionRepository
             .get_by_id(
                 db=db,
-                session_id=session_id,
+
+                session_id=(
+                    session_id
+                ),
             )
         )
 
-        if refreshed_session is None:
+        if (
+            refreshed_session
+            is None
+        ):
 
             raise ValueError(
-                "Learning session could not "
-                "be reloaded."
+                "Learning session "
+                "could not be "
+                "reloaded."
             )
 
-        # ----------------------------------
-        # 8. Save Math attempt
-        # ----------------------------------
 
-        if math_validation is not None:
+        if (
+            math_validation
+            is not None
+        ):
 
             MathAttemptService.record(
                 db=db,
@@ -239,86 +258,106 @@ class TutorChatService:
                 ),
             )
 
-            # Reload because recording can
-            # update current_misconception.
-
             refreshed_session = (
                 LearningSessionRepository
                 .get_by_id(
                     db=db,
-                    session_id=session_id,
+
+                    session_id=(
+                        session_id
+                    ),
                 )
             )
 
-        # ----------------------------------
-        # 9. Build current Tutor State
-        # ----------------------------------
-
-        state = TutorSessionState(
-            session_id=(
-                refreshed_session.id
-            ),
-
-            student_id=(
+            if (
                 refreshed_session
-                .student_id
-            ),
+                is None
+            ):
 
-            age_group=AgeGroup(
-                student.age_group
-            ),
+                raise ValueError(
+                    "Learning session "
+                    "could not be "
+                    "reloaded."
+                )
 
-            mode=LearningMode(
-                refreshed_session.mode
-            ),
 
-            subject=Subject(
-                refreshed_session.subject
-            ),
+        state = (
+            TutorSessionState(
+                session_id=(
+                    refreshed_session
+                    .id
+                ),
 
-            topic=(
-                refreshed_session.topic
-            ),
+                student_id=(
+                    refreshed_session
+                    .student_id
+                ),
 
-            concept_code=(
-                refreshed_session
-                .concept_code
-            ),
+                age_group=(
+                    AgeGroup(
+                        student
+                        .age_group
+                    )
+                ),
 
-            current_problem=(
-                refreshed_session
-                .current_problem
-            ),
+                mode=(
+                    LearningMode(
+                        refreshed_session
+                        .mode
+                    )
+                ),
 
-            attempt_count=(
-                refreshed_session
-                .attempt_count
-            ),
+                subject=(
+                    Subject(
+                        refreshed_session
+                        .subject
+                    )
+                ),
 
-            hint_level=(
-                refreshed_session
-                .current_hint_level
-            ),
+                topic=(
+                    refreshed_session
+                    .topic
+                ),
 
-            direct_answer_requests=(
-                refreshed_session
-                .direct_answer_requests
-            ),
+                concept_code=(
+                    refreshed_session
+                    .concept_code
+                ),
 
-            current_misconception=(
-                refreshed_session
-                .current_misconception
-            ),
+                current_problem=(
+                    refreshed_session
+                    .current_problem
+                ),
 
-            mastery_state=MasteryState(
-                refreshed_session
-                .mastery_state
-            ),
+                attempt_count=(
+                    refreshed_session
+                    .attempt_count
+                ),
+
+                hint_level=(
+                    refreshed_session
+                    .current_hint_level
+                ),
+
+                direct_answer_requests=(
+                    refreshed_session
+                    .direct_answer_requests
+                ),
+
+                current_misconception=(
+                    refreshed_session
+                    .current_misconception
+                ),
+
+                mastery_state=(
+                    MasteryState(
+                        refreshed_session
+                        .mastery_state
+                    )
+                ),
+            )
         )
 
-        # ----------------------------------
-        # 10. Create safe public validation
-        # ----------------------------------
 
         public_validation = (
             create_public_validation(
@@ -329,10 +368,6 @@ class TutorChatService:
             else None
         )
 
-        # ----------------------------------
-        # 11. High-control deterministic
-        #     responses
-        # ----------------------------------
 
         deterministic_reply = (
             cls._deterministic_response(
@@ -366,20 +401,106 @@ class TutorChatService:
                     public_validation
                 ),
 
+                rag_used=False,
+
+                rag_sources=[],
+
                 reply=(
                     deterministic_reply
                 ),
 
                 provider="system",
 
-                model="deterministic",
+                model=(
+                    "deterministic"
+                ),
 
                 latency_ms=0.0,
             )
 
-        # ----------------------------------
-        # 12. Build controlled LLM prompt
-        # ----------------------------------
+
+        rag_context: (
+            RAGContext
+            | None
+        ) = None
+
+
+        if (
+            decision
+            .requires_rag
+        ):
+
+            rag_service = (
+                RAGService()
+            )
+
+            rag_context = (
+                rag_service.retrieve(
+                    query=(
+                        student_message
+                    ),
+
+                    subject=(
+                        state.subject.value
+                    ),
+
+                    concept_code=(
+                        state.concept_code
+                    ),
+                )
+            )
+
+
+            if (
+                not rag_context
+                .has_context
+            ):
+
+                return TutorMessageResponse(
+                    session_id=(
+                        session_id
+                    ),
+
+                    student_message=(
+                        student_message
+                    ),
+
+                    detected_intent=(
+                        intent
+                    ),
+
+                    decision=(
+                        decision
+                    ),
+
+                    math_validation=(
+                        public_validation
+                    ),
+
+                    rag_used=False,
+
+                    rag_sources=[],
+
+                    reply=(
+                        "I don't have enough "
+                        "verified curriculum "
+                        "material for this "
+                        "question yet. Let's "
+                        "choose another topic "
+                        "or ask a trusted "
+                        "teacher or learning "
+                        "resource."
+                    ),
+
+                    provider="system",
+
+                    model=(
+                        "rag-grounding-guard"
+                    ),
+
+                    latency_ms=0.0,
+                )
+
 
         request = (
             TutorPromptBuilder.build(
@@ -394,23 +515,25 @@ class TutorChatService:
                 math_validation=(
                     math_validation
                 ),
+
+                rag_context=(
+                    rag_context
+                ),
             )
         )
 
-        # ----------------------------------
-        # 13. Generate natural response
-        # ----------------------------------
 
-        result = gateway.generate(
-            request
+        result = (
+            gateway.generate(
+                request
+            )
         )
 
-        # ----------------------------------
-        # 14. Return API response
-        # ----------------------------------
 
         return TutorMessageResponse(
-            session_id=session_id,
+            session_id=(
+                session_id
+            ),
 
             student_message=(
                 student_message
@@ -428,25 +551,42 @@ class TutorChatService:
                 public_validation
             ),
 
-            reply=result.content,
+            rag_used=bool(
+                rag_context
+                and rag_context
+                .has_context
+            ),
 
-            provider=result.provider,
+            rag_sources=(
+                rag_context
+                .public_sources()
+                if rag_context
+                is not None
+                else []
+            ),
 
-            model=result.model,
+            reply=(
+                result.content
+            ),
+
+            provider=(
+                result.provider
+            ),
+
+            model=(
+                result.model
+            ),
 
             latency_ms=(
                 result.latency_ms
             ),
         )
 
+
     @staticmethod
     def _deterministic_response(
         action: TutorAction,
     ) -> str | None:
-        """
-        High-control actions should not rely
-        on the generative model.
-        """
 
         if (
             action
@@ -455,10 +595,11 @@ class TutorChatService:
         ):
 
             return (
-                "I can help you work through "
-                "the problem, but I won't skip "
-                "the learning steps just to "
-                "reveal the answer."
+                "I can help you work "
+                "through the problem, "
+                "but I won't skip the "
+                "learning steps just "
+                "to reveal the answer."
             )
 
         if (
@@ -468,8 +609,9 @@ class TutorChatService:
         ):
 
             return (
-                "This is Mock Test Mode, so "
-                "I can't give hints or solutions "
+                "This is Mock Test "
+                "Mode, so I can't give "
+                "hints or solutions "
                 "during the test."
             )
 
@@ -480,10 +622,11 @@ class TutorChatService:
         ):
 
             return (
-                "I can't handle this as a "
-                "normal learning question. "
-                "Please involve a trusted adult "
-                "who can help."
+                "I can't handle this "
+                "as a normal learning "
+                "question. Please "
+                "involve a trusted "
+                "adult who can help."
             )
 
         return None

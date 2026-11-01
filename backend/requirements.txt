@@ -8,3 +8,5 @@ pytest
 sqlalchemy
 alembic
 sympy
+chromadb
+sentence-transformers

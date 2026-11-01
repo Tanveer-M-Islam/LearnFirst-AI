@@ -6,6 +6,9 @@ from pydantic import (
 from app.math.models import (
     MathValidationView,
 )
+from app.rag.models import (
+    RAGSourceView,
+)
 from app.schemas.enums import (
     TutorIntent,
 )
@@ -14,25 +17,41 @@ from app.tutor.decision_models import (
 )
 
 
-class TutorMessageRequest(BaseModel):
+class TutorMessageRequest(
+    BaseModel
+):
     message: str = Field(
         min_length=1,
         max_length=4000,
     )
 
 
-class TutorMessageResponse(BaseModel):
+class TutorMessageResponse(
+    BaseModel
+):
     session_id: str
 
     student_message: str
 
-    detected_intent: TutorIntent
+    detected_intent: (
+        TutorIntent
+    )
 
-    decision: TutorDecisionResult
+    decision: (
+        TutorDecisionResult
+    )
 
     math_validation: (
         MathValidationView | None
     ) = None
+
+    rag_used: bool = False
+
+    rag_sources: list[
+        RAGSourceView
+    ] = Field(
+        default_factory=list
+    )
 
     reply: str
 
