@@ -41,3 +41,10 @@ tmp/
 knowledge/raw/private/
 knowledge/vector_store/
 *.chroma/
+
+
+frontend/.env
+backend/.env
+node_modules/
+dist/
+*.db
