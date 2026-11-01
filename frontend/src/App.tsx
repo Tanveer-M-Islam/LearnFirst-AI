@@ -6,6 +6,7 @@ import {
 
 import AppShell from "./components/layout/AppShell";
 
+import AssessmentPage from "./pages/AssessmentPage";
 import DashboardPage from "./pages/DashboardPage";
 import MathStartPage from "./pages/MathStartPage";
 import StudentSetupPage from "./pages/StudentSetupPage";
@@ -24,13 +25,11 @@ function ComingSoon({
         ✨
       </div>
 
-      <h1>
-        {title}
-      </h1>
+      <h1>{title}</h1>
 
       <p>
-        We're building this
-        learning experience next.
+        We're building this learning
+        experience next.
       </p>
     </div>
   );
@@ -84,12 +83,16 @@ export default function App() {
         />
 
         <Route
-          path={
-            "/learn/math/"
-            + "session/:sessionId"
-          }
+          path="/learn/math/session/:sessionId"
           element={
             <TutorPage />
+          }
+        />
+
+        <Route
+          path="/assessments/math/:assessmentType"
+          element={
+            <AssessmentPage />
           }
         />
 

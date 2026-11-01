@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  ArrowRight,
   BrainCircuit,
   CheckCircle2,
   CircleHelp,
@@ -241,9 +242,7 @@ export default function TutorPage() {
           updated,
         );
       } catch {
-        // Chat response is still valid.
-        // Do not break the conversation
-        // if the optional refresh fails.
+        // Optional refresh only.
       }
     };
 
@@ -712,13 +711,46 @@ export default function TutorPage() {
       {latestValidation
         ?.status
         === "CORRECT" && (
-        <div className="correct-celebration">
-          <Sparkles
-            size={20}
-          />
+        <div className="mastery-cta">
+          <div>
+            <Sparkles
+              size={20}
+            />
 
-          You solved this step
-          correctly. Keep going!
+            <div>
+              <strong>
+                Nice work!
+              </strong>
+
+              <span>
+                Ready to check
+                whether you can
+                solve fresh
+                problems
+                independently?
+              </span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() =>
+              navigate(
+                (
+                  "/assessments/"
+                  + "math/mastery"
+                  + `?sessionId=${session.id}`
+                ),
+              )
+            }
+          >
+            Take mastery check
+
+            <ArrowRight
+              size={18}
+            />
+          </button>
         </div>
       )}
     </div>

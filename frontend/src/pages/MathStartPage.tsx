@@ -3,6 +3,7 @@ import {
   ArrowRight,
   BookOpenCheck,
   Calculator,
+  ClipboardCheck,
   Lightbulb,
   PencilLine,
 } from "lucide-react";
@@ -39,8 +40,7 @@ const modes: {
   value: LearningMode;
   title: string;
   description: string;
-  icon:
-    typeof PencilLine;
+  icon: typeof PencilLine;
 }[] = [
   {
     value:
@@ -231,6 +231,43 @@ export default function MathStartPage() {
             you when you need help.
           </p>
         </div>
+      </section>
+
+      <section className="diagnostic-banner surface-card">
+        <div className="diagnostic-banner-icon">
+          <ClipboardCheck
+            size={24}
+          />
+        </div>
+
+        <div>
+          <strong>
+            Not sure where to start?
+          </strong>
+
+          <p>
+            Take a quick 5-question
+            diagnostic so LearnFirst
+            can understand your
+            starting level.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={() =>
+            navigate(
+              "/assessments/math/diagnostic",
+            )
+          }
+        >
+          Check my level
+
+          <ArrowRight
+            size={17}
+          />
+        </button>
       </section>
 
       <section className="math-start-section">
