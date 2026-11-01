@@ -22,15 +22,33 @@ class IntentRouter:
     ]
 
     DIRECT_ANSWER_PATTERNS = [
-        "just give me the answer",
-        "give me the answer",
-        "tell me the answer",
-        "only give me the answer",
-        "what is the final answer",
-        "tell me the final answer",
-        "just tell me",
-        "only the answer",
-        "final answer only",
+    "just give me the answer",
+    "give me the answer",
+    "tell me the answer",
+    "only give me the answer",
+    "what is the final answer",
+    "tell me the final answer",
+    "just tell me",
+    "only the answer",
+    "final answer only",
+
+    # Common natural variations
+    "give answer",
+    "give the answer",
+    "tell the answer",
+    "what is the answer",
+    "what's the answer",
+    "answer this question",
+    "answer the question",
+    "answer of this question",
+    "answer this",
+    "give me solution",
+    "give me the solution",
+    "tell me the solution",
+    "show me the answer",
+    "show the answer",
+    "give correct answer",
+    "give me correct answer",
     ]
 
     I_DONT_KNOW_PATTERNS = [

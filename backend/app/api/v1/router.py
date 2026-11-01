@@ -6,6 +6,9 @@ from app.api.v1.assessments import (
 from app.api.v1.chat import (
     router as chat_router,
 )
+from app.api.v1.curriculum import (
+    router as curriculum_router,
+)
 from app.api.v1.health import (
     router as health_router,
 )
@@ -45,4 +48,8 @@ api_router.include_router(
 
 api_router.include_router(
     assessments_router
+)
+
+api_router.include_router(
+    curriculum_router
 )

@@ -10,6 +10,8 @@ import AssessmentPage from "./pages/AssessmentPage";
 import DashboardPage from "./pages/DashboardPage";
 import MathStartPage from "./pages/MathStartPage";
 import ProgressPage from "./pages/ProgressPage";
+import ScienceStartPage from "./pages/ScienceStartPage";
+import ScienceTutorPage from "./pages/ScienceTutorPage";
 import StudentSetupPage from "./pages/StudentSetupPage";
 import TutorPage from "./pages/TutorPage";
 import WelcomePage from "./pages/WelcomePage";
@@ -89,6 +91,20 @@ export default function App() {
           path="/learn/math/session/:sessionId"
           element={
             <TutorPage />
+          }
+        />
+
+        <Route
+          path="/learn/science"
+          element={
+            <ScienceStartPage />
+          }
+        />
+
+        <Route
+          path="/learn/science/session/:sessionId"
+          element={
+            <ScienceTutorPage />
           }
         />
 

@@ -24,7 +24,9 @@ class Settings(BaseSettings):
         "LearnFirst AI"
     )
 
-    app_version: str = "0.1.0"
+    app_version: str = (
+        "0.1.0"
+    )
 
     app_env: str = (
         "development"
@@ -36,7 +38,9 @@ class Settings(BaseSettings):
         "/api/v1"
     )
 
-    log_level: str = "INFO"
+    log_level: str = (
+        "INFO"
+    )
 
     database_url: str = (
         "sqlite:///./learnfirst.db"
@@ -46,7 +50,9 @@ class Settings(BaseSettings):
     # LLM
     # ----------------------------------
 
-    llm_provider: str = "mock"
+    llm_provider: str = (
+        "mock"
+    )
 
     ollama_base_url: str = (
         "http://localhost:11434"
@@ -60,9 +66,13 @@ class Settings(BaseSettings):
         float
     ) = 60.0
 
-    llm_temperature: float = 0.2
+    llm_temperature: float = (
+        0.2
+    )
 
-    llm_max_tokens: int = 300
+    llm_max_tokens: int = (
+        300
+    )
 
     # ----------------------------------
     # RAG
@@ -81,7 +91,14 @@ class Settings(BaseSettings):
 
     rag_top_k: int = 5
 
+    # Minimum number of relevant
+    # chunks required before we
+    # trust retrieval.
     rag_min_results: int = 1
+
+    # Cosine similarity threshold.
+    # Below this = unrelated query.
+    rag_min_score: float = 0.35
 
     rag_knowledge_dir: str = str(
         PROJECT_ROOT
@@ -100,10 +117,13 @@ class Settings(BaseSettings):
                 BASE_DIR
                 / ".env"
             ),
+
             env_file_encoding=(
                 "utf-8"
             ),
+
             case_sensitive=False,
+
             extra="ignore",
         )
     )

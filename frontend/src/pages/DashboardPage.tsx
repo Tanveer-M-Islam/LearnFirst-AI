@@ -81,10 +81,10 @@ export default function DashboardPage() {
         } catch {
           /*
            * Progress is optional on
-           * the dashboard. If loading
-           * fails, the learner should
-           * still be able to use the
-           * rest of the application.
+           * the dashboard.
+           * The learner should still
+           * be able to use the app
+           * if progress loading fails.
            */
         } finally {
           if (!cancelled) {
@@ -185,6 +185,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
+
       <section className="dashboard-section">
         <div className="section-heading">
           <div>
@@ -200,7 +201,13 @@ export default function DashboardPage() {
           </div>
         </div>
 
+
         <div className="subject-grid">
+
+          {/* =====================
+              MATH
+          ====================== */}
+
           <article
             className={
               "subject-card "
@@ -257,7 +264,23 @@ export default function DashboardPage() {
             </button>
           </article>
 
-          <article className="subject-card subject-science">
+
+          {/* =====================
+              SCIENCE
+          ====================== */}
+
+          <article
+            className={
+              "subject-card "
+              + "subject-science "
+              + "clickable-subject-card"
+            }
+            onClick={() =>
+              navigate(
+                "/learn/science",
+              )
+            }
+          >
             <div className="subject-icon">
               <FlaskConical
                 size={28}
@@ -276,25 +299,44 @@ export default function DashboardPage() {
 
               <p>
                 Learn through
-                questions,
-                explanations and
-                curiosity.
+                trusted curriculum,
+                questions and
+                explanations.
               </p>
             </div>
 
             <button
               type="button"
-              className={
-                "subject-action "
-                + "subject-action-disabled"
-              }
-              disabled
+              className="subject-action"
+              onClick={(
+                event,
+              ) => {
+                event.stopPropagation();
+
+                navigate(
+                  "/learn/science",
+                );
+              }}
             >
-              Coming next
+              Start Science
+
+              <ArrowRight
+                size={18}
+              />
             </button>
           </article>
 
-          <article className="subject-card subject-english">
+
+          {/* =====================
+              ENGLISH
+          ====================== */}
+
+          <article
+            className={
+              "subject-card "
+              + "subject-english"
+            }
+          >
             <div className="subject-icon">
               <BookOpen
                 size={28}
@@ -329,10 +371,17 @@ export default function DashboardPage() {
               Coming next
             </button>
           </article>
+
         </div>
       </section>
 
+
       <section className="dashboard-bottom-grid">
+
+        {/* =====================
+            PROGRESS
+        ====================== */}
+
         <div className="surface-card progress-card">
           <div className="progress-card-heading">
             <div>
@@ -351,7 +400,9 @@ export default function DashboardPage() {
             />
           </div>
 
+
           <div className="progress-stats">
+
             <div>
               <strong>
                 {progressLoading
@@ -363,6 +414,7 @@ export default function DashboardPage() {
                 Topics practiced
               </span>
             </div>
+
 
             <div>
               <strong>
@@ -376,6 +428,7 @@ export default function DashboardPage() {
               </span>
             </div>
 
+
             <div>
               <strong>
                 {progressLoading
@@ -387,7 +440,9 @@ export default function DashboardPage() {
                 Mastered
               </span>
             </div>
+
           </div>
+
 
           {hasMathActivity ? (
             <button
@@ -413,6 +468,11 @@ export default function DashboardPage() {
             </p>
           )}
         </div>
+
+
+        {/* =====================
+            LEARNING HABIT
+        ====================== */}
 
         <div className="surface-card habit-card">
           <div className="habit-icon">
@@ -442,6 +502,7 @@ export default function DashboardPage() {
             to teach next.
           </div>
         </div>
+
       </section>
     </div>
   );

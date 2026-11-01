@@ -55,14 +55,17 @@ class CurriculumVectorStore:
                 embedding_function=None,
 
                 metadata={
+                    "hnsw:space":
+                        "cosine",
+
                     "description": (
-                        "LearnFirst "
-                        "trusted curriculum "
-                        "knowledge"
-                    )
+                        "LearnFirst trusted "
+                        "curriculum knowledge"
+                    ),
                 },
             )
         )
+
 
     def count(
         self,
@@ -73,11 +76,13 @@ class CurriculumVectorStore:
             .count()
         )
 
+
     def reset(
         self,
     ) -> None:
 
         try:
+
             self.client.delete_collection(
                 name=(
                     self
@@ -99,14 +104,17 @@ class CurriculumVectorStore:
                 embedding_function=None,
 
                 metadata={
+                    "hnsw:space":
+                        "cosine",
+
                     "description": (
-                        "LearnFirst "
-                        "trusted curriculum "
-                        "knowledge"
-                    )
+                        "LearnFirst trusted "
+                        "curriculum knowledge"
+                    ),
                 },
             )
         )
+
 
     def add_chunks(
         self,
@@ -119,7 +127,6 @@ class CurriculumVectorStore:
     ) -> None:
 
         if not chunks:
-
             return
 
         if (
@@ -139,7 +146,9 @@ class CurriculumVectorStore:
                 in chunks
             ],
 
-            embeddings=embeddings,
+            embeddings=(
+                embeddings
+            ),
 
             documents=[
                 chunk.text
@@ -150,15 +159,18 @@ class CurriculumVectorStore:
             metadatas=[
                 {
                     "source_id": (
-                        chunk.source_id
+                        chunk
+                        .source_id
                     ),
 
                     "title": (
-                        chunk.title
+                        chunk
+                        .title
                     ),
 
                     "subject": (
-                        chunk.subject
+                        chunk
+                        .subject
                     ),
 
                     "concept_code": (
@@ -167,11 +179,13 @@ class CurriculumVectorStore:
                     ),
 
                     "grade_band": (
-                        chunk.grade_band
+                        chunk
+                        .grade_band
                     ),
 
                     "source_type": (
-                        chunk.source_type
+                        chunk
+                        .source_type
                     ),
 
                     "curriculum_profile": (
@@ -184,28 +198,42 @@ class CurriculumVectorStore:
                         .chunk_index
                     ),
                 }
+
                 for chunk
                 in chunks
             ],
         )
+
 
     def query(
         self,
         query_embedding: (
             list[float]
         ),
-        subject: str | None,
-        concept_code: str | None,
+        subject: (
+            str | None
+        ),
+        concept_code: (
+            str | None
+        ),
         top_k: int,
     ) -> list[
         RetrievedChunk
     ]:
 
-        if self.count() == 0:
+        collection_count = (
+            self.count()
+        )
 
+        if (
+            collection_count
+            == 0
+        ):
             return []
 
+
         where = None
+
 
         if (
             subject
@@ -218,12 +246,14 @@ class CurriculumVectorStore:
                         "subject":
                             subject
                     },
+
                     {
                         "concept_code":
                             concept_code
                     },
                 ]
             }
+
 
         elif subject:
 
@@ -232,13 +262,23 @@ class CurriculumVectorStore:
                     subject
             }
 
+
+        result_count = min(
+            top_k,
+            collection_count,
+        )
+
+
         results = (
-            self.collection.query(
+            self.collection
+            .query(
                 query_embeddings=[
                     query_embedding
                 ],
 
-                n_results=top_k,
+                n_results=(
+                    result_count
+                ),
 
                 where=where,
 
@@ -249,6 +289,7 @@ class CurriculumVectorStore:
                 ],
             )
         )
+
 
         ids_group = (
             results.get(
@@ -278,6 +319,7 @@ class CurriculumVectorStore:
             or [[]]
         )
 
+
         ids = (
             ids_group[0]
             if ids_group
@@ -302,9 +344,11 @@ class CurriculumVectorStore:
             else []
         )
 
+
         retrieved: list[
             RetrievedChunk
         ] = []
+
 
         for (
             chunk_id,
@@ -320,33 +364,43 @@ class CurriculumVectorStore:
 
             if (
                 document is None
-                or metadata
-                is None
+                or metadata is None
             ):
-
                 continue
 
-            numeric_distance = (
-                float(
-                    distance
-                    or 0.0
-                )
+
+            numeric_distance = float(
+                distance
+                if distance
+                is not None
+                else 1.0
             )
+
+            # Chroma cosine distance:
+            #
+            # distance = 1 - cosine_similarity
+            #
+            # therefore:
+            #
+            # similarity = 1 - distance
 
             score = (
                 1.0
-                / (
-                    1.0
-                    + max(
-                        numeric_distance,
-                        0.0,
-                    )
-                )
+                - numeric_distance
             )
+
+            score = max(
+                0.0,
+                min(
+                    1.0,
+                    score,
+                ),
+            )
+
 
             retrieved.append(
                 RetrievedChunk(
-                    chunk_id=(
+                    chunk_id=str(
                         chunk_id
                     ),
 
@@ -374,10 +428,15 @@ class CurriculumVectorStore:
                         ]
                     ),
 
-                    text=document,
+                    text=str(
+                        document
+                    ),
 
-                    score=score,
+                    score=(
+                        score
+                    ),
                 )
             )
+
 
         return retrieved

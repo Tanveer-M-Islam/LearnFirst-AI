@@ -63,13 +63,17 @@ export type TutorAction =
 
 export interface TutorDecision {
   session_id: string;
+
   student_id: string;
 
   subject: Subject;
+
   mode: LearningMode;
+
   age_group: AgeGroup;
 
   intent: TutorIntent;
+
   next_action: TutorAction;
 
   hint_level: number;
@@ -77,7 +81,9 @@ export interface TutorDecision {
   allow_final_answer: boolean;
 
   requires_rag: boolean;
+
   requires_validation: boolean;
+
   requires_mastery_check: boolean;
 
   policy_bypass_detected: boolean;
@@ -110,6 +116,19 @@ export interface MathValidation {
 }
 
 
+export interface RAGSource {
+  source_id: string;
+
+  title: string;
+
+  subject: string;
+
+  concept_code: string;
+
+  score: number;
+}
+
+
 export interface TutorMessageResponse {
   session_id: string;
 
@@ -118,14 +137,21 @@ export interface TutorMessageResponse {
   detected_intent:
     TutorIntent;
 
-  decision: TutorDecision;
+  decision:
+    TutorDecision;
 
   math_validation:
     MathValidation | null;
 
+  rag_used: boolean;
+
+  rag_sources:
+    RAGSource[];
+
   reply: string;
 
   provider: string;
+
   model: string;
 
   latency_ms: number;
@@ -149,6 +175,11 @@ export interface ChatMessage {
 
   decision?:
     TutorDecision | null;
+
+  ragUsed?: boolean;
+
+  ragSources?:
+    RAGSource[];
 
   createdAt: number;
 }

@@ -6,6 +6,7 @@ from app.rag.embedder import (
 )
 from app.rag.models import (
     RAGContext,
+    RetrievedChunk,
 )
 from app.rag.vector_store import (
     CurriculumVectorStore,
@@ -32,18 +33,25 @@ class RAGService:
             | None
         ) = None
 
+
     @property
     def embedder(
         self,
     ) -> EmbeddingService:
 
-        if self._embedder is None:
+        if (
+            self._embedder
+            is None
+        ):
 
             self._embedder = (
                 EmbeddingService()
             )
 
-        return self._embedder
+        return (
+            self._embedder
+        )
+
 
     @property
     def vector_store(
@@ -63,14 +71,21 @@ class RAGService:
             self._vector_store
         )
 
+
     def retrieve(
         self,
         query: str,
-        subject: str | None = None,
+        subject: (
+            str | None
+        ) = None,
         concept_code: (
             str | None
         ) = None,
     ) -> RAGContext:
+
+        # ----------------------------------
+        # 1. RAG disabled
+        # ----------------------------------
 
         if (
             not self.settings
@@ -81,6 +96,11 @@ class RAGService:
                 query=query,
                 chunks=[],
             )
+
+
+        # ----------------------------------
+        # 2. Empty vector database
+        # ----------------------------------
 
         if (
             self.vector_store
@@ -93,6 +113,11 @@ class RAGService:
                 chunks=[],
             )
 
+
+        # ----------------------------------
+        # 3. Embed learner query
+        # ----------------------------------
+
         query_embedding = (
             self.embedder
             .embed_query(
@@ -100,7 +125,16 @@ class RAGService:
             )
         )
 
-        chunks = (
+
+        # ----------------------------------
+        # 4. Retrieve
+        #
+        # When a concept is selected,
+        # remain STRICTLY inside that
+        # concept.
+        # ----------------------------------
+
+        raw_chunks = (
             self.vector_store
             .query(
                 query_embedding=(
@@ -122,38 +156,72 @@ class RAGService:
             )
         )
 
-        # If the concept-specific
-        # search found nothing,
-        # broaden to subject-level
-        # retrieval.
+
+        # ----------------------------------
+        # 5. Relevance filtering
+        # ----------------------------------
+
+        relevant_chunks: list[
+            RetrievedChunk
+        ] = [
+            chunk
+            for chunk in raw_chunks
+            if (
+                chunk.score
+                >= self.settings
+                .rag_min_score
+            )
+        ]
+
+
+        # Best result first.
+
+        relevant_chunks.sort(
+            key=lambda chunk:
+                chunk.score,
+
+            reverse=True,
+        )
+
+
+        # ----------------------------------
+        # 6. Minimum result guard
+        # ----------------------------------
 
         if (
-            not chunks
-            and subject
-            and concept_code
+            len(
+                relevant_chunks
+            )
+            < self.settings
+            .rag_min_results
         ):
 
-            chunks = (
-                self.vector_store
-                .query(
-                    query_embedding=(
-                        query_embedding
-                    ),
-
-                    subject=(
-                        subject
-                    ),
-
-                    concept_code=None,
-
-                    top_k=(
-                        self.settings
-                        .rag_top_k
-                    ),
-                )
+            return RAGContext(
+                query=query,
+                chunks=[],
             )
+
+
+        # ----------------------------------
+        # IMPORTANT
+        #
+        # Do NOT broaden from:
+        #
+        # Photosynthesis
+        #       ↓
+        # all Science
+        #
+        # when a session already has
+        # a concept_code.
+        #
+        # That would allow unrelated
+        # material to enter a grounded
+        # response.
+        # ----------------------------------
 
         return RAGContext(
             query=query,
-            chunks=chunks,
+            chunks=(
+                relevant_chunks
+            ),
         )

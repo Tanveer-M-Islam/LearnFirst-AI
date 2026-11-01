@@ -47,3 +47,4 @@ backend/.env
 node_modules/
 dist/
 *.db
+knowledge/vector_store/
