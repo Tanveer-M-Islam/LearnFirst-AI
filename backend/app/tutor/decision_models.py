@@ -1,8 +1,13 @@
 from pydantic import BaseModel
 
+from app.schemas.adaptive import (
+    AdaptiveSupport,
+    ExplanationDepth,
+)
 from app.schemas.enums import (
     AgeGroup,
     AttemptStatus,
+    DifficultyLevel,
     LearningMode,
     Subject,
     TutorAction,
@@ -13,7 +18,9 @@ from app.schemas.enums import (
 class TutorDecisionInput(BaseModel):
     intent: TutorIntent
 
-    attempt_status: AttemptStatus | None = None
+    attempt_status: (
+        AttemptStatus | None
+    ) = None
 
     repeated_confusion: bool = False
 
@@ -50,3 +57,15 @@ class TutorDecisionResult(BaseModel):
     policy_bypass_detected: bool
 
     reason: str
+
+    adaptive_difficulty: (
+        DifficultyLevel | None
+    ) = None
+
+    adaptive_support: (
+        AdaptiveSupport | None
+    ) = None
+
+    explanation_depth: (
+        ExplanationDepth | None
+    ) = None

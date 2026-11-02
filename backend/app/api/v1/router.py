@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+from fastapi import (
+    APIRouter,
+)
 
 from app.api.v1.adaptive import (
     router as adaptive_router,
@@ -21,12 +23,17 @@ from app.api.v1.sessions import (
 from app.api.v1.students import (
     router as students_router,
 )
+from app.api.v1.telemetry import (
+    router as telemetry_router,
+)
 from app.api.v1.tutor import (
     router as tutor_router,
 )
 
 
-api_router = APIRouter()
+api_router = (
+    APIRouter()
+)
 
 
 api_router.include_router(
@@ -59,4 +66,8 @@ api_router.include_router(
 
 api_router.include_router(
     adaptive_router
+)
+
+api_router.include_router(
+    telemetry_router
 )

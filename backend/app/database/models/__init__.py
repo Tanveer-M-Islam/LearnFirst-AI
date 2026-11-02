@@ -5,6 +5,9 @@ from app.database.models.assessment import (
 from app.database.models.attempt import (
     StudentAttempt,
 )
+from app.database.models.learning_event import (
+    LearningEvent,
+)
 from app.database.models.learning_session import (
     LearningSession,
 )
@@ -26,6 +29,7 @@ __all__ = [
     "AssessmentAnswer",
     "AssessmentRun",
     "StudentAttempt",
+    "LearningEvent",
     "LearningSession",
     "MasteryRecord",
     "ParentAccount",

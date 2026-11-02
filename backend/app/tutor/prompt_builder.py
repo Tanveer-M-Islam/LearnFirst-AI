@@ -11,6 +11,10 @@ from app.math.models import (
 from app.rag.models import (
     RAGContext,
 )
+from app.schemas.adaptive import (
+    AdaptiveSupport,
+    ExplanationDepth,
+)
 from app.schemas.enums import (
     AgeGroup,
     TutorAction,
@@ -45,6 +49,58 @@ class TutorPromptBuilder:
             "explanations. Expect more "
             "independent reasoning and "
             "avoid unnecessary hints."
+        ),
+    }
+
+
+    SUPPORT_STYLE = {
+
+        AdaptiveSupport.GENTLE: (
+            "Use minimal assistance. "
+            "Prefer a small clue or "
+            "question before giving "
+            "more explicit guidance."
+        ),
+
+        AdaptiveSupport.GUIDED: (
+            "Use moderate scaffolding. "
+            "Guide the learner toward "
+            "the next step without "
+            "doing the reasoning for "
+            "them."
+        ),
+
+        AdaptiveSupport.STRONG: (
+            "Use stronger scaffolding. "
+            "Break ideas into smaller "
+            "pieces and use examples "
+            "when useful, while still "
+            "requiring learner thinking."
+        ),
+    }
+
+
+    EXPLANATION_STYLE = {
+
+        ExplanationDepth.SIMPLE: (
+            "Keep explanations short "
+            "and concrete. Use simple "
+            "words, short sentences, "
+            "and one idea at a time."
+        ),
+
+        ExplanationDepth.BALANCED: (
+            "Use a balanced explanation "
+            "with enough reasoning to "
+            "understand the concept "
+            "without unnecessary detail."
+        ),
+
+        ExplanationDepth.DEEP: (
+            "Allow deeper conceptual "
+            "reasoning and connections, "
+            "but remain concise and "
+            "age-appropriate."
         ),
     }
 
@@ -198,16 +254,108 @@ class TutorPromptBuilder:
             get_settings()
         )
 
+
+        # ----------------------------------
+        # Age style
+        # ----------------------------------
+
         age_instruction = (
             cls.AGE_STYLE[
                 state.age_group
             ]
         )
 
+
+        # ----------------------------------
+        # Adaptive support
+        # ----------------------------------
+
+        adaptive_support = (
+            decision
+            .adaptive_support
+        )
+
+
+        support_instruction = (
+            cls.SUPPORT_STYLE.get(
+                adaptive_support,
+
+                (
+                    "Use normal progressive "
+                    "guided tutoring."
+                ),
+            )
+        )
+
+
+        # ----------------------------------
+        # Adaptive explanation depth
+        # ----------------------------------
+
+        explanation_depth = (
+            decision
+            .explanation_depth
+        )
+
+
+        explanation_instruction = (
+            cls.EXPLANATION_STYLE.get(
+                explanation_depth,
+
+                (
+                    "Use a clear, concise "
+                    "school-level explanation."
+                ),
+            )
+        )
+
+
+        # ----------------------------------
+        # Adaptive values as text
+        # ----------------------------------
+
+        difficulty_text = (
+            decision
+            .adaptive_difficulty
+            .value
+
+            if decision
+            .adaptive_difficulty
+            is not None
+
+            else "NOT_SET"
+        )
+
+
+        support_text = (
+            adaptive_support.value
+
+            if adaptive_support
+            is not None
+
+            else "DEFAULT"
+        )
+
+
+        depth_text = (
+            explanation_depth.value
+
+            if explanation_depth
+            is not None
+
+            else "DEFAULT"
+        )
+
+
+        # ----------------------------------
+        # Tutor action
+        # ----------------------------------
+
         action_instruction = (
             cls.ACTION_INSTRUCTIONS
             .get(
                 decision.next_action,
+
                 (
                     "Respond as a "
                     "patient guided "
@@ -215,6 +363,11 @@ class TutorPromptBuilder:
                 ),
             )
         )
+
+
+        # ----------------------------------
+        # Final answer policy
+        # ----------------------------------
 
         if (
             decision
@@ -239,22 +392,35 @@ class TutorPromptBuilder:
                 "problem."
             )
 
+
+        # ----------------------------------
+        # Math context
+        # ----------------------------------
+
         math_context = (
             cls._build_math_context(
                 math_validation
             )
         )
 
+
+        # ----------------------------------
+        # RAG context
+        # ----------------------------------
+
         rag_text = (
             rag_context
             .as_prompt_text()
+
             if rag_context
             is not None
+
             else (
                 "No curriculum RAG "
                 "context was required."
             )
         )
+
 
         if (
             decision.requires_rag
@@ -284,6 +450,10 @@ class TutorPromptBuilder:
             )
 
 
+        # ----------------------------------
+        # System prompt
+        # ----------------------------------
+
         system_message = f"""
 You are LearnFirst AI, an age-adaptive guided tutor.
 
@@ -295,6 +465,21 @@ AGE GROUP:
 
 AGE STYLE:
 {age_instruction}
+
+ADAPTIVE DIFFICULTY:
+{difficulty_text}
+
+ADAPTIVE SUPPORT:
+{support_text}
+
+SUPPORT STYLE:
+{support_instruction}
+
+EXPLANATION DEPTH:
+{depth_text}
+
+EXPLANATION STYLE:
+{explanation_instruction}
 
 SUBJECT:
 {state.subject.value}
@@ -357,7 +542,29 @@ IMPORTANT RULES:
 - Do not shame the learner for mistakes.
 - Avoid excessive praise.
 - Prefer guidance over answer disclosure.
+
+ADAPTIVE LEARNING RULES:
+- Adaptive support never overrides the final-answer
+  policy or required Tutor Action.
+- Strong support means more scaffolding, not
+  immediate answer disclosure.
+- Guided support means provide moderate help while
+  keeping the learner responsible for the next step.
+- Gentle support means the learner should do more of
+  the reasoning independently.
+- Explanation depth controls how detailed the
+  explanation should be, but never changes whether
+  the final answer is allowed.
+- Difficulty describes the level of the learning
+  activity. Do not simplify the actual problem unless
+  the required Tutor Action specifically calls for a
+  prerequisite or similar example.
 """.strip()
+
+
+        # ----------------------------------
+        # Learner message
+        # ----------------------------------
 
         user_message = f"""
 Learner message:
@@ -365,10 +572,16 @@ Learner message:
 {student_message}
 """.strip()
 
+
+        # ----------------------------------
+        # LLM request
+        # ----------------------------------
+
         return LLMRequest(
             messages=[
                 LLMMessage(
                     role="system",
+
                     content=(
                         system_message
                     ),
@@ -376,6 +589,7 @@ Learner message:
 
                 LLMMessage(
                     role="user",
+
                     content=(
                         user_message
                     ),
@@ -429,8 +643,10 @@ Learner message:
                 "misconception_code": (
                     math_validation
                     .misconception_code
+
                     if math_validation
                     is not None
+
                     else None
                 ),
 
@@ -440,6 +656,18 @@ Learner message:
                         and rag_context
                         .has_context
                     )
+                ),
+
+                "adaptive_difficulty": (
+                    difficulty_text
+                ),
+
+                "adaptive_support": (
+                    support_text
+                ),
+
+                "explanation_depth": (
+                    depth_text
                 ),
             },
         )
@@ -461,6 +689,7 @@ Learner message:
                 "was required."
             )
 
+
         lines = [
             (
                 "Attempt status: "
@@ -472,6 +701,7 @@ Learner message:
                 f"{validation.supported}"
             ),
         ]
+
 
         if (
             validation
@@ -486,6 +716,7 @@ Learner message:
                     .student_answer
                 )
             )
+
 
         if (
             validation
@@ -503,6 +734,7 @@ Learner message:
                 )
             )
 
+
         if (
             validation
             .first_error_step
@@ -516,6 +748,7 @@ Learner message:
                     .first_error_step
                 )
             )
+
 
         if (
             validation
@@ -531,6 +764,7 @@ Learner message:
                 )
             )
 
+
         lines.append(
             (
                 "Validator note: "
@@ -538,6 +772,7 @@ Learner message:
                 .feedback_summary
             )
         )
+
 
         return "\n".join(
             lines

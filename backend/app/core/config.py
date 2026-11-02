@@ -64,14 +64,14 @@ class Settings(BaseSettings):
 
     ollama_timeout_seconds: (
         float
-    ) = 60.0
+    ) = 120.0
 
     llm_temperature: float = (
         0.2
     )
 
     llm_max_tokens: int = (
-        300
+        180
     )
 
     # ----------------------------------

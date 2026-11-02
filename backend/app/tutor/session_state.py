@@ -1,7 +1,12 @@
 from pydantic import BaseModel
 
+from app.schemas.adaptive import (
+    AdaptiveSupport,
+    ExplanationDepth,
+)
 from app.schemas.enums import (
     AgeGroup,
+    DifficultyLevel,
     LearningMode,
     MasteryState,
     Subject,
@@ -36,3 +41,15 @@ class TutorSessionState(BaseModel):
     ) = None
 
     mastery_state: MasteryState
+
+    adaptive_difficulty: (
+        DifficultyLevel | None
+    ) = None
+
+    adaptive_support: (
+        AdaptiveSupport | None
+    ) = None
+
+    explanation_depth: (
+        ExplanationDepth | None
+    ) = None

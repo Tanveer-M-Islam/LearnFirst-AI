@@ -49,6 +49,7 @@ class OllamaProvider(LLMProvider):
         payload = {
             "model": self.model,
             "stream": False,
+            "keep_alive": "30m",
             "messages": [
                 {
                     "role": message.role,
@@ -91,6 +92,12 @@ class OllamaProvider(LLMProvider):
             raise RuntimeError(
                 "Could not connect to Ollama. "
                 "Make sure Ollama is running."
+            ) from exc
+        
+        except httpx.TimeoutException as exc:
+            raise RuntimeError(
+                "Ollama took too long to respond. "
+                "Please try again."
             ) from exc
 
         except httpx.HTTPStatusError as exc:

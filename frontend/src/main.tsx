@@ -19,6 +19,8 @@ import "./styles/tutor.css";
 import "./styles/assessment.css";
 import "./styles/progress.css";
 import "./styles/science.css";
+import "./styles/adaptive.css";
+
 
 createRoot(
   document.getElementById(

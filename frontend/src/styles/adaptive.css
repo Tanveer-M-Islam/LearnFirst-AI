@@ -1,0 +1,731 @@
+/* =========================
+   Adaptive Recommendation
+========================= */
+
+.adaptive-section {
+  margin-bottom:
+    26px;
+}
+
+
+.adaptive-section-heading {
+  display:
+    flex;
+
+  align-items:
+    flex-end;
+
+  justify-content:
+    space-between;
+
+  gap:
+    20px;
+
+  margin-bottom:
+    14px;
+}
+
+
+.adaptive-section-heading h2 {
+  margin:
+    6px 0 0;
+
+  font-size:
+    1.25rem;
+
+  letter-spacing:
+    -0.03em;
+}
+
+
+.adaptive-eyebrow {
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    6px;
+
+  color:
+    var(--color-primary);
+
+  font-size:
+    0.75rem;
+
+  font-weight:
+    800;
+
+  text-transform:
+    uppercase;
+
+  letter-spacing:
+    0.07em;
+}
+
+
+.adaptive-refresh-button {
+  padding:
+    7px 9px;
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    6px;
+
+  border:
+    none;
+
+  background:
+    transparent;
+
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    0.75rem;
+
+  font-weight:
+    700;
+}
+
+
+.adaptive-refresh-button:hover:not(:disabled) {
+  color:
+    var(--color-primary);
+}
+
+
+/* =========================
+   Loading
+========================= */
+
+.adaptive-loading-card {
+  padding:
+    22px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    14px;
+}
+
+
+.adaptive-loading-icon {
+  width:
+    47px;
+
+  height:
+    47px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  flex:
+    0 0 auto;
+
+  border-radius:
+    15px;
+
+  color:
+    var(--color-primary);
+
+  background:
+    var(--color-primary-soft);
+}
+
+
+.adaptive-loading-card strong {
+  display:
+    block;
+}
+
+
+.adaptive-loading-card span {
+  display:
+    block;
+
+  margin-top:
+    4px;
+
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    0.78rem;
+}
+
+
+/* =========================
+   Main Plan Card
+========================= */
+
+.adaptive-plan-card {
+  overflow:
+    hidden;
+
+  border:
+    1px solid
+    #dcd8fa;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f8f7ff
+    );
+}
+
+
+.adaptive-plan-main {
+  padding:
+    24px;
+
+  display:
+    flex;
+
+  align-items:
+    flex-start;
+
+  gap:
+    16px;
+}
+
+
+.adaptive-plan-icon {
+  width:
+    55px;
+
+  height:
+    55px;
+
+  flex:
+    0 0 auto;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  border-radius:
+    17px;
+
+  color:
+    white;
+
+  background:
+    linear-gradient(
+      145deg,
+      var(--color-primary),
+      var(--color-blue)
+    );
+
+  box-shadow:
+    0 9px 22px
+    rgba(
+      98,
+      87,
+      231,
+      0.2
+    );
+}
+
+
+.adaptive-plan-copy
+> span {
+  display:
+    block;
+
+  color:
+    var(--color-primary);
+
+  font-size:
+    0.7rem;
+
+  font-weight:
+    800;
+
+  text-transform:
+    uppercase;
+
+  letter-spacing:
+    0.07em;
+}
+
+
+.adaptive-plan-copy h3 {
+  margin:
+    5px 0 7px;
+
+  font-size:
+    1.35rem;
+
+  letter-spacing:
+    -0.035em;
+}
+
+
+.adaptive-plan-copy p {
+  max-width:
+    650px;
+
+  margin:
+    0;
+
+  color:
+    var(--color-text-muted);
+
+  line-height:
+    1.55;
+
+  font-size:
+    0.84rem;
+}
+
+
+/* =========================
+   Adaptive Profile
+========================= */
+
+.adaptive-profile-grid {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      1fr
+    );
+
+  border-top:
+    1px solid
+    var(--color-border);
+
+  border-bottom:
+    1px solid
+    var(--color-border);
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.7
+    );
+}
+
+
+.adaptive-profile-grid
+> div {
+  padding:
+    17px 20px;
+
+  display:
+    grid;
+
+  grid-template-columns:
+    auto 1fr;
+
+  align-items:
+    center;
+
+  column-gap:
+    8px;
+
+  border-right:
+    1px solid
+    var(--color-border);
+}
+
+
+.adaptive-profile-grid
+> div:last-child {
+  border-right:
+    none;
+}
+
+
+.adaptive-profile-grid svg {
+  grid-row:
+    span 2;
+
+  color:
+    var(--color-primary);
+}
+
+
+.adaptive-profile-grid span {
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    0.68rem;
+
+  font-weight:
+    700;
+}
+
+
+.adaptive-profile-grid strong {
+  margin-top:
+    2px;
+
+  font-size:
+    0.85rem;
+}
+
+
+/* =========================
+   Score
+========================= */
+
+.adaptive-score-note {
+  margin:
+    18px 24px 0;
+
+  padding:
+    10px 12px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  border-radius:
+    11px;
+
+  background:
+    #f6f7fb;
+}
+
+
+.adaptive-score-note span {
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    0.75rem;
+}
+
+
+.adaptive-score-note strong {
+  color:
+    var(--color-primary);
+}
+
+
+/* =========================
+   Next Problem
+========================= */
+
+.adaptive-next-problem {
+  margin:
+    16px 24px 0;
+
+  padding:
+    18px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    15px;
+
+  border:
+    1px solid
+    #dedbf7;
+
+  border-radius:
+    16px;
+
+  background:
+    white;
+}
+
+
+.adaptive-next-problem span {
+  display:
+    block;
+
+  margin-bottom:
+    5px;
+
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    0.7rem;
+
+  text-transform:
+    uppercase;
+
+  letter-spacing:
+    0.06em;
+
+  font-weight:
+    750;
+}
+
+
+.adaptive-next-problem strong {
+  font-size:
+    1.35rem;
+
+  letter-spacing:
+    0.01em;
+}
+
+
+.adaptive-problem-level {
+  flex:
+    0 0 auto;
+
+  padding:
+    7px 10px;
+
+  border-radius:
+    999px;
+
+  color:
+    var(--color-primary);
+
+  background:
+    var(--color-primary-soft);
+
+  font-size:
+    0.72rem;
+
+  font-weight:
+    750;
+}
+
+
+/* =========================
+   Footer
+========================= */
+
+.adaptive-plan-footer {
+  padding:
+    20px 24px 24px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    20px;
+}
+
+
+.adaptive-plan-footer p {
+  max-width:
+    570px;
+
+  margin:
+    0;
+
+  color:
+    var(--color-text-muted);
+
+  line-height:
+    1.5;
+
+  font-size:
+    0.78rem;
+}
+
+
+.adaptive-start-button {
+  flex:
+    0 0 auto;
+}
+
+
+/* =========================
+   Errors
+========================= */
+
+.adaptive-error {
+  margin-top:
+    10px;
+
+  padding:
+    11px 13px;
+
+  border-radius:
+    11px;
+
+  color:
+    var(--color-danger);
+
+  background:
+    var(--color-danger-soft);
+
+  font-size:
+    0.78rem;
+}
+
+
+/* =========================
+   Manual Divider
+========================= */
+
+.manual-learning-divider {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    13px;
+
+  margin:
+    38px 0;
+}
+
+
+.manual-learning-divider::before,
+.manual-learning-divider::after {
+  content:
+    "";
+
+  height:
+    1px;
+
+  flex:
+    1;
+
+  background:
+    var(--color-border);
+}
+
+
+.manual-learning-divider span {
+  color:
+    var(--color-text-muted);
+
+  font-size:
+    0.75rem;
+
+  font-weight:
+    700;
+}
+
+
+/* =========================
+   Responsive
+========================= */
+
+@media (
+  max-width: 760px
+) {
+  .adaptive-profile-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+
+  .adaptive-profile-grid
+  > div {
+    border-right:
+      none;
+
+    border-bottom:
+      1px solid
+      var(--color-border);
+  }
+
+
+  .adaptive-profile-grid
+  > div:last-child {
+    border-bottom:
+      none;
+  }
+
+
+  .adaptive-plan-footer {
+    align-items:
+      stretch;
+
+    flex-direction:
+      column;
+  }
+
+
+  .adaptive-start-button {
+    width:
+      100%;
+  }
+}
+
+
+@media (
+  max-width: 560px
+) {
+  .adaptive-section-heading {
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+  }
+
+
+  .adaptive-plan-main {
+    padding:
+      19px;
+  }
+
+
+  .adaptive-next-problem {
+    margin:
+      15px 18px 0;
+
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+  }
+
+
+  .adaptive-score-note {
+    margin:
+      15px 18px 0;
+  }
+
+
+  .adaptive-plan-footer {
+    padding:
+      18px;
+  }
+}
