@@ -63,6 +63,21 @@ class ExplanationDepth(
     DEEP = "DEEP"
 
 
+class ResponsePace(
+    str,
+    Enum,
+):
+    INSUFFICIENT_DATA = (
+        "INSUFFICIENT_DATA"
+    )
+
+    FAST = "FAST"
+
+    TYPICAL = "TYPICAL"
+
+    SLOW = "SLOW"
+
+
 class AdaptiveProblemView(
     BaseModel
 ):
@@ -117,6 +132,21 @@ class AdaptivePlanResponse(
     direct_answer_requests: int
 
     retry_success_count: int
+
+    # ----------------------------------
+    # Phase 13 telemetry
+    # ----------------------------------
+
+    measured_response_count: int = 0
+
+    average_response_latency_ms: (
+        float | None
+    ) = None
+
+    response_pace: ResponsePace = (
+        ResponsePace
+        .INSUFFICIENT_DATA
+    )
 
     reason_codes: list[str] = (
         Field(

@@ -1,4 +1,6 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import (
+    Session,
+)
 
 from app.adaptive.engine import (
     AdaptiveLearningEngine,
@@ -21,6 +23,9 @@ from app.schemas.enums import (
 from app.services.assessment_service import (
     AssessmentService,
 )
+from app.services.telemetry_service import (
+    TelemetryService,
+)
 
 
 class AdaptiveLearningService:
@@ -33,22 +38,36 @@ class AdaptiveLearningService:
         concept_code: str,
     ) -> AdaptivePlanResponse:
 
+        # ----------------------------------
+        # Student
+        # ----------------------------------
+
         student = (
             StudentRepository
             .get_by_id(
                 db=db,
+
                 student_id=(
                     student_id
                 ),
             )
         )
 
-        if student is None:
+
+        if (
+            student
+            is None
+        ):
 
             raise LookupError(
                 "Student not found."
             )
 
+
+        # ----------------------------------
+        # Assessment / independence
+        # progress
+        # ----------------------------------
 
         progress = (
             AssessmentService
@@ -95,6 +114,30 @@ class AdaptiveLearningService:
             .learning_metrics
         )
 
+
+        # ----------------------------------
+        # Phase 12 telemetry
+        # ----------------------------------
+
+        telemetry = (
+            TelemetryService
+            .get_summary(
+                db=db,
+
+                student_id=(
+                    student_id
+                ),
+
+                concept_code=(
+                    concept_code
+                ),
+            )
+        )
+
+
+        # ----------------------------------
+        # Build adaptive signals
+        # ----------------------------------
 
         signals = AdaptiveSignals(
             age_group=(
@@ -155,8 +198,22 @@ class AdaptiveLearningService:
                 metrics
                 .retry_success_count
             ),
+
+            measured_response_count=(
+                telemetry
+                .measured_student_responses
+            ),
+
+            average_response_latency_ms=(
+                telemetry
+                .average_response_latency_ms
+            ),
         )
 
+
+        # ----------------------------------
+        # Adaptive decision
+        # ----------------------------------
 
         decision = (
             AdaptiveLearningEngine
@@ -168,11 +225,17 @@ class AdaptiveLearningService:
 
         latest_score = (
             mastery_score
+
             if mastery_score
             is not None
+
             else diagnostic_score
         )
 
+
+        # ----------------------------------
+        # Select next problem
+        # ----------------------------------
 
         next_problem = None
 
@@ -212,6 +275,7 @@ class AdaptiveLearningService:
                 )
             )
 
+
             if (
                 problem
                 is not None
@@ -236,6 +300,10 @@ class AdaptiveLearningService:
                     )
                 )
 
+
+        # ----------------------------------
+        # API response
+        # ----------------------------------
 
         return AdaptivePlanResponse(
             student_id=(
@@ -304,6 +372,21 @@ class AdaptiveLearningService:
             retry_success_count=(
                 metrics
                 .retry_success_count
+            ),
+
+            measured_response_count=(
+                telemetry
+                .measured_student_responses
+            ),
+
+            average_response_latency_ms=(
+                telemetry
+                .average_response_latency_ms
+            ),
+
+            response_pace=(
+                decision
+                .response_pace
             ),
 
             reason_codes=list(

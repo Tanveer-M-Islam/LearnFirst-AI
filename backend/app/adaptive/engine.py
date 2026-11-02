@@ -1,9 +1,12 @@
-from dataclasses import dataclass
+from dataclasses import (
+    dataclass,
+)
 
 from app.schemas.adaptive import (
     AdaptiveActivity,
     AdaptiveSupport,
     ExplanationDepth,
+    ResponsePace,
 )
 from app.schemas.enums import (
     AgeGroup,
@@ -49,6 +52,12 @@ class AdaptiveSignals:
 
     retry_success_count: int
 
+    measured_response_count: int = 0
+
+    average_response_latency_ms: (
+        float | None
+    ) = None
+
 
 @dataclass(
     frozen=True
@@ -71,6 +80,10 @@ class AdaptiveDecision:
         AdaptiveActivity
     )
 
+    response_pace: (
+        ResponsePace
+    )
+
     reason_codes: tuple[
         str,
         ...,
@@ -80,6 +93,9 @@ class AdaptiveDecision:
 
 
 class AdaptiveLearningEngine:
+
+    MIN_LATENCY_SAMPLES = 3
+
 
     @classmethod
     def decide(
@@ -91,7 +107,7 @@ class AdaptiveLearningEngine:
 
 
         # ----------------------------------
-        # 1. Explanation depth from age
+        # 1. Explanation depth
         # ----------------------------------
 
         explanation_depth = (
@@ -102,7 +118,38 @@ class AdaptiveLearningEngine:
 
 
         # ----------------------------------
-        # 2. No diagnostic yet
+        # 2. Response pace
+        # ----------------------------------
+
+        response_pace = (
+            cls._response_pace(
+                signals
+            )
+        )
+
+
+        if (
+            response_pace
+            == ResponsePace.FAST
+        ):
+
+            reasons.append(
+                "FAST_RESPONSE_PATTERN"
+            )
+
+
+        elif (
+            response_pace
+            == ResponsePace.SLOW
+        ):
+
+            reasons.append(
+                "SLOW_RESPONSE_PATTERN"
+            )
+
+
+        # ----------------------------------
+        # 3. No diagnostic
         # ----------------------------------
 
         if (
@@ -114,6 +161,7 @@ class AdaptiveLearningEngine:
             reasons.append(
                 "NO_DIAGNOSTIC"
             )
+
 
             return AdaptiveDecision(
                 difficulty=(
@@ -133,6 +181,10 @@ class AdaptiveLearningEngine:
                     .TAKE_DIAGNOSTIC
                 ),
 
+                response_pace=(
+                    response_pace
+                ),
+
                 reason_codes=tuple(
                     reasons
                 ),
@@ -147,8 +199,7 @@ class AdaptiveLearningEngine:
 
 
         # ----------------------------------
-        # 3. Start from assessment
-        #    recommendation
+        # 4. Starting difficulty
         # ----------------------------------
 
         difficulty = (
@@ -158,7 +209,7 @@ class AdaptiveLearningEngine:
 
 
         # ----------------------------------
-        # 4. Detect struggling learner
+        # 5. Core struggle signals
         # ----------------------------------
 
         low_independent_success = (
@@ -171,8 +222,10 @@ class AdaptiveLearningEngine:
             < 50.0
         )
 
+
         high_hint_usage = (
-            signals.total_attempts
+            signals
+            .total_attempts
             >= 2
 
             and signals
@@ -180,15 +233,11 @@ class AdaptiveLearningEngine:
             >= 4.0
         )
 
+
         answer_dependence = (
             signals
             .direct_answer_requests
             >= 2
-        )
-
-        struggling = (
-            low_independent_success
-            or high_hint_usage
         )
 
 
@@ -198,11 +247,13 @@ class AdaptiveLearningEngine:
                 "LOW_INDEPENDENT_SUCCESS"
             )
 
+
         if high_hint_usage:
 
             reasons.append(
                 "HIGH_HINT_USAGE"
             )
+
 
         if answer_dependence:
 
@@ -212,11 +263,52 @@ class AdaptiveLearningEngine:
 
 
         # ----------------------------------
-        # 5. Detect strong independence
+        # 6. Latency-supported struggle
+        # ----------------------------------
+
+        latency_supported_struggle = (
+            response_pace
+            == ResponsePace.SLOW
+
+            and signals
+            .total_attempts
+            >= 3
+
+            and (
+                signals
+                .independent_success_rate
+                < 70.0
+
+                or signals
+                .average_hint_level
+                >= 3.0
+            )
+        )
+
+
+        if latency_supported_struggle:
+
+            reasons.append(
+                "SLOW_RESPONSE_WITH_STRUGGLE"
+            )
+
+
+        struggling = (
+            low_independent_success
+
+            or high_hint_usage
+
+            or latency_supported_struggle
+        )
+
+
+        # ----------------------------------
+        # 7. Strong independence
         # ----------------------------------
 
         strong_independence = (
-            signals.total_attempts
+            signals
+            .total_attempts
             >= 3
 
             and signals
@@ -232,6 +324,7 @@ class AdaptiveLearningEngine:
             <= 2.0
         )
 
+
         if strong_independence:
 
             reasons.append(
@@ -240,7 +333,47 @@ class AdaptiveLearningEngine:
 
 
         # ----------------------------------
-        # 6. Adjust difficulty
+        # 8. Latency-supported progress
+        # ----------------------------------
+
+        latency_supported_progress = (
+            response_pace
+            == ResponsePace.FAST
+
+            and signals
+            .total_attempts
+            >= 3
+
+            and signals
+            .independent_attempt_rate
+            >= 60.0
+
+            and signals
+            .independent_success_rate
+            >= 70.0
+
+            and signals
+            .average_hint_level
+            <= 2.0
+        )
+
+
+        if latency_supported_progress:
+
+            reasons.append(
+                "FAST_RESPONSE_WITH_STRONG_PERFORMANCE"
+            )
+
+
+        ready_to_advance = (
+            strong_independence
+
+            or latency_supported_progress
+        )
+
+
+        # ----------------------------------
+        # 9. Difficulty adaptation
         # ----------------------------------
 
         if struggling:
@@ -255,7 +388,8 @@ class AdaptiveLearningEngine:
                 "DIFFICULTY_REDUCED"
             )
 
-        elif strong_independence:
+
+        elif ready_to_advance:
 
             difficulty = (
                 cls._raise_difficulty(
@@ -268,30 +402,50 @@ class AdaptiveLearningEngine:
             )
 
 
-        # Strong mastery should permit
-        # challenging work.
+        # ----------------------------------
+        # 10. Strong mastery
+        #
+        # IMPORTANT FIX:
+        # Strong mastery permits challenge
+        # only when current behavior does
+        # not show struggle.
+        # ----------------------------------
 
         if (
             signals.mastery_state
             == MasteryState.STRONG
         ):
 
-            difficulty = (
-                DifficultyLevel
-                .CHALLENGING
-            )
-
             reasons.append(
                 "STRONG_MASTERY"
             )
 
 
+            if (
+                not struggling
+            ):
+
+                difficulty = (
+                    DifficultyLevel
+                    .CHALLENGING
+                )
+
+            else:
+
+                reasons.append(
+                    "MASTERY_HELD_BY_CURRENT_STRUGGLE"
+                )
+
+
         # ----------------------------------
-        # 7. Support level
+        # 11. Support level
         # ----------------------------------
 
         if (
             high_hint_usage
+
+            or latency_supported_struggle
+
             or (
                 low_independent_success
                 and answer_dependence
@@ -301,6 +455,7 @@ class AdaptiveLearningEngine:
             support_level = (
                 AdaptiveSupport.STRONG
             )
+
 
         elif (
             signals
@@ -318,6 +473,7 @@ class AdaptiveLearningEngine:
                 AdaptiveSupport.GUIDED
             )
 
+
         else:
 
             support_level = (
@@ -326,10 +482,22 @@ class AdaptiveLearningEngine:
 
 
         # ----------------------------------
-        # 8. Choose next activity
+        # 12. Next activity
+        #
+        # IMPORTANT FIX:
+        # Current struggle has higher
+        # priority than old mastery.
         # ----------------------------------
 
-        if (
+        if struggling:
+
+            activity = (
+                AdaptiveActivity
+                .REVIEW_FOUNDATION
+            )
+
+
+        elif (
             signals.mastery_score
             is not None
 
@@ -341,14 +509,6 @@ class AdaptiveLearningEngine:
             activity = (
                 AdaptiveActivity
                 .CHALLENGE_PRACTICE
-            )
-
-
-        elif struggling:
-
-            activity = (
-                AdaptiveActivity
-                .REVIEW_FOUNDATION
             )
 
 
@@ -379,7 +539,7 @@ class AdaptiveLearningEngine:
             )
 
 
-        elif strong_independence:
+        elif ready_to_advance:
 
             activity = (
                 AdaptiveActivity
@@ -396,13 +556,19 @@ class AdaptiveLearningEngine:
 
 
         # ----------------------------------
-        # 9. Human-readable summary
+        # 13. Summary
         # ----------------------------------
 
         summary = (
             cls._summary(
-                activity=activity,
-                difficulty=difficulty,
+                activity=(
+                    activity
+                ),
+
+                difficulty=(
+                    difficulty
+                ),
+
                 support=(
                     support_level
                 ),
@@ -411,7 +577,9 @@ class AdaptiveLearningEngine:
 
 
         return AdaptiveDecision(
-            difficulty=difficulty,
+            difficulty=(
+                difficulty
+            ),
 
             support_level=(
                 support_level
@@ -425,13 +593,126 @@ class AdaptiveLearningEngine:
                 activity
             ),
 
+            response_pace=(
+                response_pace
+            ),
+
             reason_codes=tuple(
                 reasons
             ),
 
-            summary=summary,
+            summary=(
+                summary
+            ),
         )
 
+
+    # ======================================================
+    # Response pace
+    # ======================================================
+
+    @classmethod
+    def _response_pace(
+        cls,
+        signals: AdaptiveSignals,
+    ) -> ResponsePace:
+
+        if (
+            signals
+            .measured_response_count
+            < cls.MIN_LATENCY_SAMPLES
+
+            or signals
+            .average_response_latency_ms
+            is None
+        ):
+
+            return (
+                ResponsePace
+                .INSUFFICIENT_DATA
+            )
+
+
+        latency = (
+            signals
+            .average_response_latency_ms
+        )
+
+
+        (
+            fast_threshold,
+            slow_threshold,
+        ) = (
+            cls._latency_thresholds(
+                signals.age_group
+            )
+        )
+
+
+        if (
+            latency
+            <= fast_threshold
+        ):
+
+            return (
+                ResponsePace.FAST
+            )
+
+
+        if (
+            latency
+            >= slow_threshold
+        ):
+
+            return (
+                ResponsePace.SLOW
+            )
+
+
+        return (
+            ResponsePace.TYPICAL
+        )
+
+
+    @staticmethod
+    def _latency_thresholds(
+        age_group: AgeGroup,
+    ) -> tuple[
+        float,
+        float,
+    ]:
+
+        if (
+            age_group
+            == AgeGroup.FOUNDATION
+        ):
+
+            return (
+                20_000.0,
+                60_000.0,
+            )
+
+
+        if (
+            age_group
+            == AgeGroup.INDEPENDENT
+        ):
+
+            return (
+                12_000.0,
+                35_000.0,
+            )
+
+
+        return (
+            15_000.0,
+            45_000.0,
+        )
+
+
+    # ======================================================
+    # Explanation depth
+    # ======================================================
 
     @staticmethod
     def _explanation_depth(
@@ -444,9 +725,9 @@ class AdaptiveLearningEngine:
         ):
 
             return (
-                ExplanationDepth
-                .SIMPLE
+                ExplanationDepth.SIMPLE
             )
+
 
         if (
             age_group
@@ -454,15 +735,18 @@ class AdaptiveLearningEngine:
         ):
 
             return (
-                ExplanationDepth
-                .DEEP
+                ExplanationDepth.DEEP
             )
 
+
         return (
-            ExplanationDepth
-            .BALANCED
+            ExplanationDepth.BALANCED
         )
 
+
+    # ======================================================
+    # Difficulty helpers
+    # ======================================================
 
     @staticmethod
     def _lower_difficulty(
@@ -476,19 +760,19 @@ class AdaptiveLearningEngine:
         ):
 
             return (
-                DifficultyLevel
-                .MODERATE
+                DifficultyLevel.MODERATE
             )
+
 
         if (
             difficulty
-            == DifficultyLevel
-            .MODERATE
+            == DifficultyLevel.MODERATE
         ):
 
             return (
                 DifficultyLevel.EASY
             )
+
 
         return (
             DifficultyLevel.EASY
@@ -506,14 +790,13 @@ class AdaptiveLearningEngine:
         ):
 
             return (
-                DifficultyLevel
-                .MODERATE
+                DifficultyLevel.MODERATE
             )
+
 
         if (
             difficulty
-            == DifficultyLevel
-            .MODERATE
+            == DifficultyLevel.MODERATE
         ):
 
             return (
@@ -521,11 +804,16 @@ class AdaptiveLearningEngine:
                 .CHALLENGING
             )
 
+
         return (
             DifficultyLevel
-            .CHALLENGING
+                .CHALLENGING
         )
 
+
+    # ======================================================
+    # Summary
+    # ======================================================
 
     @staticmethod
     def _summary(
@@ -535,45 +823,44 @@ class AdaptiveLearningEngine:
     ) -> str:
 
         activity_labels = {
-            AdaptiveActivity
-            .TAKE_DIAGNOSTIC:
-                (
-                    "take a diagnostic "
-                    "assessment"
-                ),
 
             AdaptiveActivity
-            .GUIDED_PRACTICE:
-                "continue guided practice",
+            .TAKE_DIAGNOSTIC: (
+                "take a diagnostic "
+                "assessment"
+            ),
 
             AdaptiveActivity
-            .INDEPENDENT_PRACTICE:
-                (
-                    "practice more "
-                    "independently"
-                ),
+            .GUIDED_PRACTICE: (
+                "continue guided "
+                "practice"
+            ),
 
             AdaptiveActivity
-            .REVIEW_FOUNDATION:
-                (
-                    "review the foundation "
-                    "with additional support"
-                ),
+            .INDEPENDENT_PRACTICE: (
+                "practice more "
+                "independently"
+            ),
 
             AdaptiveActivity
-            .TAKE_MASTERY_CHECK:
-                (
-                    "take an independent "
-                    "mastery check"
-                ),
+            .REVIEW_FOUNDATION: (
+                "review the foundation "
+                "with additional support"
+            ),
 
             AdaptiveActivity
-            .CHALLENGE_PRACTICE:
-                (
-                    "move to challenge "
-                    "practice"
-                ),
+            .TAKE_MASTERY_CHECK: (
+                "take an independent "
+                "mastery check"
+            ),
+
+            AdaptiveActivity
+            .CHALLENGE_PRACTICE: (
+                "move to challenge "
+                "practice"
+            ),
         }
+
 
         return (
             "Recommend "
@@ -581,8 +868,12 @@ class AdaptiveLearningEngine:
                 activity
             ]
             + " at "
-            + difficulty.value.lower()
+            + difficulty
+            .value
+            .lower()
             + " difficulty with "
-            + support.value.lower()
+            + support
+            .value
+            .lower()
             + " tutor support."
         )
