@@ -9,6 +9,9 @@ from app.adaptive.engine import (
 from app.adaptive.problem_bank import (
     get_adaptive_problem,
 )
+from app.adaptive.profile import (
+    LearningProfileAnalyzer,
+)
 from app.database.repositories.student_repository import (
     StudentRepository,
 )
@@ -38,10 +41,6 @@ class AdaptiveLearningService:
         concept_code: str,
     ) -> AdaptivePlanResponse:
 
-        # ----------------------------------
-        # Student
-        # ----------------------------------
-
         student = (
             StudentRepository
             .get_by_id(
@@ -63,11 +62,6 @@ class AdaptiveLearningService:
                 "Student not found."
             )
 
-
-        # ----------------------------------
-        # Assessment / independence
-        # progress
-        # ----------------------------------
 
         progress = (
             AssessmentService
@@ -115,10 +109,6 @@ class AdaptiveLearningService:
         )
 
 
-        # ----------------------------------
-        # Phase 12 telemetry
-        # ----------------------------------
-
         telemetry = (
             TelemetryService
             .get_summary(
@@ -136,8 +126,32 @@ class AdaptiveLearningService:
 
 
         # ----------------------------------
-        # Build adaptive signals
+        # Phase 14 personal baseline
         # ----------------------------------
+
+        response_latencies = (
+            TelemetryService
+            .get_response_latencies(
+                db=db,
+
+                student_id=(
+                    student_id
+                ),
+
+                concept_code=(
+                    concept_code
+                ),
+            )
+        )
+
+
+        personal_profile = (
+            LearningProfileAnalyzer
+            .analyze(
+                response_latencies
+            )
+        )
+
 
         signals = AdaptiveSignals(
             age_group=(
@@ -208,12 +222,18 @@ class AdaptiveLearningService:
                 telemetry
                 .average_response_latency_ms
             ),
+
+            baseline_ready=(
+                personal_profile
+                .baseline_ready
+            ),
+
+            personalized_response_pace=(
+                personal_profile
+                .personalized_response_pace
+            ),
         )
 
-
-        # ----------------------------------
-        # Adaptive decision
-        # ----------------------------------
 
         decision = (
             AdaptiveLearningEngine
@@ -232,10 +252,6 @@ class AdaptiveLearningService:
             else diagnostic_score
         )
 
-
-        # ----------------------------------
-        # Select next problem
-        # ----------------------------------
 
         next_problem = None
 
@@ -301,104 +317,138 @@ class AdaptiveLearningService:
                 )
 
 
-        # ----------------------------------
-        # API response
-        # ----------------------------------
+        return (
+            AdaptivePlanResponse(
+                student_id=(
+                    student_id
+                ),
 
-        return AdaptivePlanResponse(
-            student_id=(
-                student_id
-            ),
+                concept_code=(
+                    concept_code
+                ),
 
-            concept_code=(
-                concept_code
-            ),
+                age_group=(
+                    AgeGroup(
+                        student
+                        .age_group
+                    )
+                ),
 
-            age_group=(
-                AgeGroup(
-                    student.age_group
-                )
-            ),
+                mastery_state=(
+                    progress
+                    .current_mastery_state
+                ),
 
-            mastery_state=(
-                progress
-                .current_mastery_state
-            ),
+                difficulty=(
+                    decision
+                    .difficulty
+                ),
 
-            difficulty=(
-                decision
-                .difficulty
-            ),
+                support_level=(
+                    decision
+                    .support_level
+                ),
 
-            support_level=(
-                decision
-                .support_level
-            ),
+                explanation_depth=(
+                    decision
+                    .explanation_depth
+                ),
 
-            explanation_depth=(
-                decision
-                .explanation_depth
-            ),
+                next_activity=(
+                    decision
+                    .next_activity
+                ),
 
-            next_activity=(
-                decision
-                .next_activity
-            ),
+                latest_score_percent=(
+                    latest_score
+                ),
 
-            latest_score_percent=(
-                latest_score
-            ),
+                independent_attempt_rate=(
+                    metrics
+                    .independent_attempt_rate
+                ),
 
-            independent_attempt_rate=(
-                metrics
-                .independent_attempt_rate
-            ),
+                independent_success_rate=(
+                    metrics
+                    .independent_success_rate
+                ),
 
-            independent_success_rate=(
-                metrics
-                .independent_success_rate
-            ),
+                average_hint_level=(
+                    metrics
+                    .average_hint_level
+                ),
 
-            average_hint_level=(
-                metrics
-                .average_hint_level
-            ),
+                direct_answer_requests=(
+                    metrics
+                    .direct_answer_requests
+                ),
 
-            direct_answer_requests=(
-                metrics
-                .direct_answer_requests
-            ),
+                retry_success_count=(
+                    metrics
+                    .retry_success_count
+                ),
 
-            retry_success_count=(
-                metrics
-                .retry_success_count
-            ),
+                measured_response_count=(
+                    telemetry
+                    .measured_student_responses
+                ),
 
-            measured_response_count=(
-                telemetry
-                .measured_student_responses
-            ),
+                average_response_latency_ms=(
+                    telemetry
+                    .average_response_latency_ms
+                ),
 
-            average_response_latency_ms=(
-                telemetry
-                .average_response_latency_ms
-            ),
+                response_pace=(
+                    decision
+                    .response_pace
+                ),
 
-            response_pace=(
-                decision
-                .response_pace
-            ),
+                baseline_ready=(
+                    personal_profile
+                    .baseline_ready
+                ),
 
-            reason_codes=list(
-                decision
-                .reason_codes
-            ),
+                baseline_sample_count=(
+                    personal_profile
+                    .baseline_sample_count
+                ),
 
-            summary=(
-                decision.summary
-            ),
+                recent_sample_count=(
+                    personal_profile
+                    .recent_sample_count
+                ),
 
-            next_problem=(
-                next_problem
-            ),
+                baseline_response_latency_ms=(
+                    personal_profile
+                    .baseline_response_latency_ms
+                ),
+
+                recent_response_latency_ms=(
+                    personal_profile
+                    .recent_response_latency_ms
+                ),
+
+                latency_change_percent=(
+                    personal_profile
+                    .latency_change_percent
+                ),
+
+                response_pace_source=(
+                    decision
+                    .response_pace_source
+                ),
+
+                reason_codes=list(
+                    decision
+                    .reason_codes
+                ),
+
+                summary=(
+                    decision.summary
+                ),
+
+                next_problem=(
+                    next_problem
+                ),
+            )
         )

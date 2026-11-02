@@ -55,6 +55,7 @@ class TelemetryService:
             )
         )
 
+
         if (
             learning_session
             is None
@@ -93,9 +94,11 @@ class TelemetryService:
                 )
             )
 
+
             now = datetime.now(
                 timezone.utc
             )
+
 
             elapsed_ms = int(
                 (
@@ -106,10 +109,6 @@ class TelemetryService:
                 * 1000
             )
 
-
-            # Ignore clearly invalid or
-            # extremely long inactive
-            # periods.
 
             if (
                 0
@@ -167,7 +166,10 @@ class TelemetryService:
             LearningEventRepository
             .create(
                 db=db,
-                event=event,
+
+                event=(
+                    event
+                ),
             )
         )
 
@@ -206,12 +208,14 @@ class TelemetryService:
             .value
         )
 
+
         student_event.selected_action = (
             response
             .decision
             .next_action
             .value
         )
+
 
         student_event.hint_level = (
             response
@@ -321,6 +325,86 @@ class TelemetryService:
         )
 
 
+    # ======================================================
+    # Phase 14
+    # Raw ordered response latency history
+    # ======================================================
+
+    @classmethod
+    def get_response_latencies(
+        cls,
+        db: Session,
+        student_id: str,
+        concept_code: str,
+    ) -> list[int]:
+
+        events = (
+            LearningEventRepository
+            .list_by_student_concept(
+                db=db,
+
+                student_id=(
+                    student_id
+                ),
+
+                concept_code=(
+                    concept_code
+                ),
+            )
+        )
+
+
+        latencies: list[int] = []
+
+
+        for event in events:
+
+            if (
+                event.event_type
+                != (
+                    LearningEventType
+                    .STUDENT_MESSAGE
+                    .value
+                )
+            ):
+
+                continue
+
+
+            latency = (
+                event
+                .response_latency_ms
+            )
+
+
+            if (
+                latency is None
+            ):
+
+                continue
+
+
+            if (
+                latency <= 0
+
+                or latency
+                > cls
+                .MAX_RESPONSE_LATENCY_MS
+            ):
+
+                continue
+
+
+            latencies.append(
+                int(
+                    latency
+                )
+            )
+
+
+        return latencies
+
+
     @classmethod
     def get_summary(
         cls,
@@ -347,6 +431,7 @@ class TelemetryService:
 
         student_events = [
             event
+
             for event
             in events
 
@@ -361,6 +446,7 @@ class TelemetryService:
 
         tutor_events = [
             event
+
             for event
             in events
 
@@ -408,6 +494,7 @@ class TelemetryService:
 
         hint_requests = sum(
             1
+
             for event
             in student_events
 
@@ -418,6 +505,7 @@ class TelemetryService:
 
         direct_answer_requests = sum(
             1
+
             for event
             in student_events
 
@@ -428,6 +516,7 @@ class TelemetryService:
 
         rag_grounded = sum(
             1
+
             for event
             in tutor_events
 
@@ -483,56 +572,58 @@ class TelemetryService:
         )
 
 
-        return TelemetrySummaryResponse(
-            student_id=(
-                student_id
-            ),
+        return (
+            TelemetrySummaryResponse(
+                student_id=(
+                    student_id
+                ),
 
-            concept_code=(
-                concept_code
-            ),
+                concept_code=(
+                    concept_code
+                ),
 
-            student_messages=(
-                len(
-                    student_events
-                )
-            ),
+                student_messages=(
+                    len(
+                        student_events
+                    )
+                ),
 
-            tutor_responses=(
-                len(
-                    tutor_events
-                )
-            ),
+                tutor_responses=(
+                    len(
+                        tutor_events
+                    )
+                ),
 
-            measured_student_responses=(
-                len(
-                    response_latencies
-                )
-            ),
+                measured_student_responses=(
+                    len(
+                        response_latencies
+                    )
+                ),
 
-            average_response_latency_ms=(
-                average_response
-            ),
+                average_response_latency_ms=(
+                    average_response
+                ),
 
-            median_response_latency_ms=(
-                median_response
-            ),
+                median_response_latency_ms=(
+                    median_response
+                ),
 
-            average_tutor_latency_ms=(
-                average_tutor
-            ),
+                average_tutor_latency_ms=(
+                    average_tutor
+                ),
 
-            hint_requests=(
-                hint_requests
-            ),
+                hint_requests=(
+                    hint_requests
+                ),
 
-            direct_answer_requests=(
-                direct_answer_requests
-            ),
+                direct_answer_requests=(
+                    direct_answer_requests
+                ),
 
-            rag_grounded_responses=(
-                rag_grounded
-            ),
+                rag_grounded_responses=(
+                    rag_grounded
+                ),
+            )
         )
 
 
@@ -551,5 +642,6 @@ class TelemetryService:
                     timezone.utc
                 )
             )
+
 
         return value

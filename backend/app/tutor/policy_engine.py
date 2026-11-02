@@ -26,9 +26,7 @@ class TutorPolicyEngine:
     def decide(
         self,
         state: TutorSessionState,
-        decision_input: (
-            TutorDecisionInput
-        ),
+        decision_input: TutorDecisionInput,
     ) -> TutorDecisionResult:
 
         intent = (
@@ -36,9 +34,9 @@ class TutorPolicyEngine:
         )
 
 
-        # ----------------------------------
+        # ==================================
         # 1. Safety
-        # ----------------------------------
+        # ==================================
 
         if (
             intent
@@ -65,15 +63,14 @@ class TutorPolicyEngine:
                 reason=(
                     "Safety-sensitive "
                     "input overrides "
-                    "normal tutoring "
-                    "behavior."
+                    "normal tutoring."
                 ),
             )
 
 
-        # ----------------------------------
+        # ==================================
         # 2. Mock Test
-        # ----------------------------------
+        # ==================================
 
         if (
             state.mode
@@ -91,9 +88,9 @@ class TutorPolicyEngine:
             )
 
 
-        # ----------------------------------
+        # ==================================
         # 3. Policy bypass
-        # ----------------------------------
+        # ==================================
 
         if (
             intent
@@ -120,16 +117,16 @@ class TutorPolicyEngine:
                 policy_bypass_detected=True,
 
                 reason=(
-                    "The request attempts "
+                    "The learner attempted "
                     "to bypass the Tutor "
                     "Policy."
                 ),
             )
 
 
-        # ----------------------------------
+        # ==================================
         # 4. New problem
-        # ----------------------------------
+        # ==================================
 
         if (
             decision_input
@@ -152,14 +149,15 @@ class TutorPolicyEngine:
 
                 reason=(
                     "A new problem resets "
-                    "the hint ladder."
+                    "the progressive "
+                    "support ladder."
                 ),
             )
 
 
-        # ----------------------------------
-        # 5. Prerequisite gap
-        # ----------------------------------
+        # ==================================
+        # 5. Prerequisite
+        # ==================================
 
         if (
             decision_input
@@ -190,12 +188,12 @@ class TutorPolicyEngine:
             )
 
 
-        # ----------------------------------
-        # 6. Direct answer
+        # ==================================
+        # 6. Direct-answer protection
         #
-        # Adaptive support NEVER
-        # overrides answer resistance.
-        # ----------------------------------
+        # This happens before mode logic.
+        # No learning mode can bypass it.
+        # ==================================
 
         if (
             intent
@@ -207,89 +205,25 @@ class TutorPolicyEngine:
                 self
                 ._handle_direct_answer_request(
                     state=state,
+
                     intent=intent,
                 )
             )
 
 
-        # ----------------------------------
-        # 7. Homework
-        # ----------------------------------
+        # ==================================
+        # 7. Mode-specific policy
+        # ==================================
 
         if (
-            intent
-            == TutorIntent
-            .HOMEWORK_REQUEST
+            state.mode
+            == LearningMode
+            .HOMEWORK_HELP
         ):
 
-            if (
-                state.attempt_count
-                == 0
-            ):
-
-                return self._result(
-                    state=state,
-
-                    intent=intent,
-
-                    action=(
-                        TutorAction
-                        .ASK_ATTEMPT
-                    ),
-
-                    hint_level=(
-                        state.hint_level
-                    ),
-
-                    allow_final_answer=False,
-
-                    reason=(
-                        "Homework Help "
-                        "requires an initial "
-                        "learner attempt."
-                    ),
-                )
-
-
-            return self._result(
-                state=state,
-
-                intent=intent,
-
-                action=(
-                    TutorAction
-                    .ASK_GUIDING_QUESTION
-                ),
-
-                hint_level=max(
-                    state.hint_level,
-                    2,
-                ),
-
-                allow_final_answer=False,
-
-                reason=(
-                    "The learner has "
-                    "already attempted "
-                    "the problem, so "
-                    "guided help is "
-                    "appropriate."
-                ),
-            )
-
-
-        # ----------------------------------
-        # 8. Help request
-        # ----------------------------------
-
-        if intent in {
-            TutorIntent.HINT_REQUEST,
-            TutorIntent.CONFUSION,
-            TutorIntent.I_DONT_KNOW,
-        }:
-
             return (
-                self._handle_help_request(
+                self
+                ._handle_homework_mode(
                     state=state,
 
                     decision_input=(
@@ -299,18 +233,14 @@ class TutorPolicyEngine:
             )
 
 
-        # ----------------------------------
-        # 9. Student attempt
-        # ----------------------------------
-
         if (
-            intent
-            == TutorIntent
-            .STUDENT_ATTEMPT
+            state.mode
+            == LearningMode.PRACTICE
         ):
 
             return (
-                self._handle_attempt(
+                self
+                ._handle_practice_mode(
                     state=state,
 
                     decision_input=(
@@ -320,167 +250,26 @@ class TutorPolicyEngine:
             )
 
 
-        # ----------------------------------
-        # 10. Learn Concept
-        # ----------------------------------
-
         if (
-            intent
-            == TutorIntent
-            .LEARN_CONCEPT
+            state.mode
+            == LearningMode.LEARN
         ):
 
-            return self._result(
-                state=state,
-
-                intent=intent,
-
-                action=(
-                    TutorAction
-                    .ASK_PRIOR_KNOWLEDGE
-                ),
-
-                hint_level=0,
-
-                allow_final_answer=False,
-
-                reason=(
-                    "Learn Mode begins "
-                    "by checking the "
-                    "learner's prior "
-                    "knowledge."
-                ),
-            )
-
-
-        # ----------------------------------
-        # 11. Explanation
-        # ----------------------------------
-
-        if (
-            intent
-            == TutorIntent
-            .EXPLANATION_REQUEST
-        ):
-
-            if (
-                state.mode
-                == LearningMode.LEARN
-            ):
-
-                return self._result(
+            return (
+                self
+                ._handle_learn_mode(
                     state=state,
 
-                    intent=intent,
-
-                    action=(
-                        TutorAction
-                        .GIVE_FULL_TEACHING_EXPLANATION
-                    ),
-
-                    hint_level=7,
-
-                    allow_final_answer=True,
-
-                    reason=(
-                        "A complete concept "
-                        "explanation is "
-                        "appropriate in "
-                        "Learn Mode."
+                    decision_input=(
+                        decision_input
                     ),
                 )
-
-
-            return self._result(
-                state=state,
-
-                intent=intent,
-
-                action=(
-                    TutorAction
-                    .ASK_GUIDING_QUESTION
-                ),
-
-                hint_level=max(
-                    state.hint_level,
-                    2,
-                ),
-
-                allow_final_answer=False,
-
-                reason=(
-                    "Problem-solving modes "
-                    "should provide guidance "
-                    "before a full solution."
-                ),
             )
 
 
-        # ----------------------------------
-        # 12. Practice request
-        # ----------------------------------
-
-        if (
-            intent
-            == TutorIntent
-            .PRACTICE_REQUEST
-        ):
-
-            return self._result(
-                state=state,
-
-                intent=intent,
-
-                action=(
-                    TutorAction
-                    .GENERATE_PRACTICE_QUESTION
-                ),
-
-                hint_level=0,
-
-                allow_final_answer=False,
-
-                reason=(
-                    "Practice Mode should "
-                    "generate a new question "
-                    "without revealing the "
-                    "answer."
-                ),
-            )
-
-
-        # ----------------------------------
-        # 13. Off topic
-        # ----------------------------------
-
-        if (
-            intent
-            == TutorIntent.OFF_TOPIC
-        ):
-
-            return self._result(
-                state=state,
-
-                intent=intent,
-
-                action=(
-                    TutorAction
-                    .REDIRECT_TO_LEARNING
-                ),
-
-                hint_level=(
-                    state.hint_level
-                ),
-
-                allow_final_answer=False,
-
-                reason=(
-                    "The conversation "
-                    "should gently return "
-                    "to learning."
-                ),
-            )
-
+        # ==================================
+        # 8. Fallback
+        # ==================================
 
         return self._result(
             state=state,
@@ -506,6 +295,596 @@ class TutorPolicyEngine:
 
 
     # ======================================================
+    # HOMEWORK HELP MODE
+    # ======================================================
+
+    def _handle_homework_mode(
+        self,
+        state: TutorSessionState,
+        decision_input: TutorDecisionInput,
+    ) -> TutorDecisionResult:
+
+        intent = (
+            decision_input.intent
+        )
+
+
+        if (
+            intent
+            == TutorIntent
+            .STUDENT_ATTEMPT
+        ):
+
+            return (
+                self._handle_attempt(
+                    state=state,
+
+                    decision_input=(
+                        decision_input
+                    ),
+                )
+            )
+
+
+        if intent in {
+            TutorIntent.HINT_REQUEST,
+            TutorIntent.CONFUSION,
+            TutorIntent.I_DONT_KNOW,
+        }:
+
+            return (
+                self
+                ._handle_help_request(
+                    state=state,
+
+                    decision_input=(
+                        decision_input
+                    ),
+                )
+            )
+
+
+        if intent in {
+            TutorIntent.HOMEWORK_REQUEST,
+            TutorIntent.LEARN_CONCEPT,
+            TutorIntent.EXPLANATION_REQUEST,
+        }:
+
+            if (
+                state.attempt_count
+                == 0
+            ):
+
+                return self._result(
+                    state=state,
+
+                    intent=intent,
+
+                    action=(
+                        TutorAction
+                        .ASK_ATTEMPT
+                    ),
+
+                    hint_level=(
+                        state.hint_level
+                    ),
+
+                    allow_final_answer=False,
+
+                    reason=(
+                        "Homework Help "
+                        "requires the learner "
+                        "to attempt the problem "
+                        "before receiving "
+                        "detailed guidance."
+                    ),
+                )
+
+
+            return self._result(
+                state=state,
+
+                intent=intent,
+
+                action=(
+                    TutorAction
+                    .ASK_GUIDING_QUESTION
+                ),
+
+                hint_level=max(
+                    state.hint_level,
+                    2,
+                ),
+
+                allow_final_answer=False,
+
+                reason=(
+                    "The learner already "
+                    "attempted the homework "
+                    "problem, so guided "
+                    "support is appropriate."
+                ),
+            )
+
+
+        if (
+            intent
+            == TutorIntent
+            .PRACTICE_REQUEST
+        ):
+
+            return self._result(
+                state=state,
+
+                intent=intent,
+
+                action=(
+                    TutorAction
+                    .REDIRECT_TO_LEARNING
+                ),
+
+                hint_level=(
+                    state.hint_level
+                ),
+
+                allow_final_answer=False,
+
+                reason=(
+                    "Homework Help stays "
+                    "focused on the learner's "
+                    "current homework problem."
+                ),
+            )
+
+
+        if (
+            intent
+            == TutorIntent.OFF_TOPIC
+        ):
+
+            return (
+                self._redirect(
+                    state=state,
+
+                    intent=intent,
+                )
+            )
+
+
+        return self._result(
+            state=state,
+
+            intent=intent,
+
+            action=(
+                TutorAction
+                .ASK_ATTEMPT
+            ),
+
+            hint_level=(
+                state.hint_level
+            ),
+
+            allow_final_answer=False,
+
+            reason=(
+                "Homework Help keeps "
+                "the learner focused "
+                "on attempting their "
+                "own problem."
+            ),
+        )
+
+
+    # ======================================================
+    # PRACTICE MODE
+    # ======================================================
+
+    def _handle_practice_mode(
+        self,
+        state: TutorSessionState,
+        decision_input: TutorDecisionInput,
+    ) -> TutorDecisionResult:
+
+        intent = (
+            decision_input.intent
+        )
+
+
+        if (
+            intent
+            == TutorIntent
+            .PRACTICE_REQUEST
+        ):
+
+            return self._result(
+                state=state,
+
+                intent=intent,
+
+                action=(
+                    TutorAction
+                    .GENERATE_PRACTICE_QUESTION
+                ),
+
+                hint_level=0,
+
+                allow_final_answer=False,
+
+                reason=(
+                    "Practice Mode assigns "
+                    "a fresh problem at "
+                    "the learner's current "
+                    "adaptive difficulty."
+                ),
+            )
+
+
+        if (
+            intent
+            == TutorIntent
+            .STUDENT_ATTEMPT
+        ):
+
+            return (
+                self._handle_attempt(
+                    state=state,
+
+                    decision_input=(
+                        decision_input
+                    ),
+                )
+            )
+
+
+        if intent in {
+            TutorIntent.HINT_REQUEST,
+            TutorIntent.CONFUSION,
+            TutorIntent.I_DONT_KNOW,
+        }:
+
+            return (
+                self
+                ._handle_help_request(
+                    state=state,
+
+                    decision_input=(
+                        decision_input
+                    ),
+                )
+            )
+
+
+        if (
+            intent
+            == TutorIntent
+            .EXPLANATION_REQUEST
+        ):
+
+            if (
+                state.attempt_count
+                == 0
+            ):
+
+                return self._result(
+                    state=state,
+
+                    intent=intent,
+
+                    action=(
+                        TutorAction
+                        .ASK_ATTEMPT
+                    ),
+
+                    hint_level=(
+                        state.hint_level
+                    ),
+
+                    allow_final_answer=False,
+
+                    reason=(
+                        "Practice Mode asks "
+                        "the learner to try "
+                        "the problem before "
+                        "receiving an "
+                        "explanation."
+                    ),
+                )
+
+
+            return self._result(
+                state=state,
+
+                intent=intent,
+
+                action=(
+                    TutorAction
+                    .ASK_GUIDING_QUESTION
+                ),
+
+                hint_level=max(
+                    state.hint_level,
+                    2,
+                ),
+
+                allow_final_answer=False,
+
+                reason=(
+                    "Practice Mode provides "
+                    "guided reasoning rather "
+                    "than solving the "
+                    "problem directly."
+                ),
+            )
+
+
+        if intent in {
+            TutorIntent.LEARN_CONCEPT,
+            TutorIntent.HOMEWORK_REQUEST,
+        }:
+
+            return self._result(
+                state=state,
+
+                intent=intent,
+
+                action=(
+                    TutorAction
+                    .ASK_ATTEMPT
+                ),
+
+                hint_level=(
+                    state.hint_level
+                ),
+
+                allow_final_answer=False,
+
+                reason=(
+                    "Practice Mode keeps "
+                    "the learner focused "
+                    "on solving the current "
+                    "practice problem."
+                ),
+            )
+
+
+        if (
+            intent
+            == TutorIntent.OFF_TOPIC
+        ):
+
+            return (
+                self._redirect(
+                    state=state,
+
+                    intent=intent,
+                )
+            )
+
+
+        return self._result(
+            state=state,
+
+            intent=intent,
+
+            action=(
+                TutorAction
+                .ASK_ATTEMPT
+            ),
+
+            hint_level=(
+                state.hint_level
+            ),
+
+            allow_final_answer=False,
+
+            reason=(
+                "Practice Mode expects "
+                "the learner to attempt "
+                "the current problem."
+            ),
+        )
+
+
+    # ======================================================
+    # LEARN MODE
+    # ======================================================
+
+    def _handle_learn_mode(
+        self,
+        state: TutorSessionState,
+        decision_input: TutorDecisionInput,
+    ) -> TutorDecisionResult:
+
+        intent = (
+            decision_input.intent
+        )
+
+
+        # ----------------------------------
+        # Learner is ready to practice
+        # ----------------------------------
+
+        if (
+            intent
+            == TutorIntent
+            .PRACTICE_REQUEST
+        ):
+
+            return self._result(
+                state=state,
+
+                intent=intent,
+
+                action=(
+                    TutorAction
+                    .GENERATE_PRACTICE_QUESTION
+                ),
+
+                hint_level=0,
+
+                allow_final_answer=False,
+
+                reason=(
+                    "After concept learning, "
+                    "Learn Mode can move "
+                    "into independent "
+                    "practice."
+                ),
+            )
+
+
+        # ----------------------------------
+        # A practice problem has already
+        # been assigned inside Learn Mode.
+        # ----------------------------------
+
+        if (
+            state.current_problem
+            is not None
+        ):
+
+            if (
+                intent
+                == TutorIntent
+                .STUDENT_ATTEMPT
+            ):
+
+                return (
+                    self._handle_attempt(
+                        state=state,
+
+                        decision_input=(
+                            decision_input
+                        ),
+                    )
+                )
+
+
+            if intent in {
+                TutorIntent.HINT_REQUEST,
+                TutorIntent.CONFUSION,
+                TutorIntent.I_DONT_KNOW,
+                TutorIntent.EXPLANATION_REQUEST,
+            }:
+
+                return (
+                    self
+                    ._handle_help_request(
+                        state=state,
+
+                        decision_input=(
+                            decision_input
+                        ),
+                    )
+                )
+
+
+        # ----------------------------------
+        # Concept-teaching stage
+        # ----------------------------------
+
+        if intent in {
+            TutorIntent.LEARN_CONCEPT,
+            TutorIntent.EXPLANATION_REQUEST,
+            TutorIntent.I_DONT_KNOW,
+            TutorIntent.CONFUSION,
+            TutorIntent.HINT_REQUEST,
+        }:
+
+            return self._result(
+                state=state,
+
+                intent=intent,
+
+                action=(
+                    TutorAction
+                    .GIVE_FULL_TEACHING_EXPLANATION
+                ),
+
+                hint_level=7,
+
+                allow_final_answer=True,
+
+                reason=(
+                    "Learn Mode teaches "
+                    "the concept before "
+                    "moving the learner "
+                    "into independent "
+                    "problem solving."
+                ),
+            )
+
+
+        if (
+            intent
+            == TutorIntent
+            .HOMEWORK_REQUEST
+        ):
+
+            return self._result(
+                state=state,
+
+                intent=intent,
+
+                action=(
+                    TutorAction
+                    .REDIRECT_TO_LEARNING
+                ),
+
+                hint_level=(
+                    state.hint_level
+                ),
+
+                allow_final_answer=False,
+
+                reason=(
+                    "Learn Mode focuses "
+                    "on understanding the "
+                    "concept rather than "
+                    "solving a homework "
+                    "problem directly."
+                ),
+            )
+
+
+        if (
+            intent
+            == TutorIntent.OFF_TOPIC
+        ):
+
+            return (
+                self._redirect(
+                    state=state,
+
+                    intent=intent,
+                )
+            )
+
+
+        return self._result(
+            state=state,
+
+            intent=intent,
+
+            action=(
+                TutorAction
+                .ASK_PRIOR_KNOWLEDGE
+            ),
+
+            hint_level=0,
+
+            allow_final_answer=False,
+
+            reason=(
+                "Learn Mode begins "
+                "with the learner's "
+                "existing understanding."
+            ),
+        )
+
+
+    # ======================================================
     # Adaptive support
     # ======================================================
 
@@ -519,9 +898,6 @@ class TutorPolicyEngine:
             == AdaptiveSupport.STRONG
         ):
 
-            # Start closer to a useful
-            # example / scaffold.
-
             return 3
 
 
@@ -530,13 +906,8 @@ class TutorPolicyEngine:
             == AdaptiveSupport.GUIDED
         ):
 
-            # Start around recall /
-            # guiding-question support.
-
             return 1
 
-
-        # Gentle or unavailable.
 
         return 0
 
@@ -552,6 +923,24 @@ class TutorPolicyEngine:
     ) -> TutorDecisionResult:
 
         if (
+            state.current_problem
+            is None
+        ):
+
+            action = (
+                TutorAction
+                .ASK_PRIOR_KNOWLEDGE
+            )
+
+            reason = (
+                "There is no active "
+                "problem to answer. "
+                "The learner should "
+                "engage with the concept."
+            )
+
+
+        elif (
             state.attempt_count
             == 0
         ):
@@ -567,6 +956,7 @@ class TutorPolicyEngine:
                 "attempting the problem."
             )
 
+
         else:
 
             action = (
@@ -575,10 +965,9 @@ class TutorPolicyEngine:
             )
 
             reason = (
-                "The learner has "
-                "attempted the problem, "
-                "but guided help should "
-                "be provided before "
+                "The learner has attempted "
+                "the problem, but guided "
+                "help should come before "
                 "answer disclosure."
             )
 
@@ -607,9 +996,7 @@ class TutorPolicyEngine:
     def _handle_help_request(
         self,
         state: TutorSessionState,
-        decision_input: (
-            TutorDecisionInput
-        ),
+        decision_input: TutorDecisionInput,
     ) -> TutorDecisionResult:
 
         adaptive_floor = (
@@ -656,8 +1043,7 @@ class TutorPolicyEngine:
 
 
         support_name = (
-            state.adaptive_support
-            .value
+            state.adaptive_support.value
 
             if state.adaptive_support
             is not None
@@ -685,24 +1071,22 @@ class TutorPolicyEngine:
 
             reason=(
                 "Assistance was increased "
-                "using the progressive "
+                "through the progressive "
                 "hint ladder with "
-                f"{support_name} adaptive "
-                "support."
+                f"{support_name} "
+                "adaptive support."
             ),
         )
 
 
     # ======================================================
-    # Student attempt
+    # Attempt
     # ======================================================
 
     def _handle_attempt(
         self,
         state: TutorSessionState,
-        decision_input: (
-            TutorDecisionInput
-        ),
+        decision_input: TutorDecisionInput,
     ) -> TutorDecisionResult:
 
         attempt_status = (
@@ -737,10 +1121,11 @@ class TutorPolicyEngine:
                 requires_mastery_check=True,
 
                 reason=(
-                    "The learner's attempt "
-                    "is correct. An "
-                    "independent mastery "
-                    "check should follow."
+                    "The learner solved "
+                    "the current problem "
+                    "correctly. A fresh "
+                    "independent problem "
+                    "should follow."
                 ),
             )
 
@@ -771,8 +1156,8 @@ class TutorPolicyEngine:
                 allow_final_answer=False,
 
                 reason=(
-                    "Partially correct work "
-                    "should receive targeted "
+                    "Partially correct "
+                    "work receives targeted "
                     "guidance."
                 ),
             )
@@ -840,7 +1225,7 @@ class TutorPolicyEngine:
                 reason=(
                     "The incorrect attempt "
                     "requires scaffolding "
-                    "adjusted by the "
+                    "adjusted to the "
                     "learner's adaptive "
                     "support profile."
                 ),
@@ -872,9 +1257,10 @@ class TutorPolicyEngine:
                 allow_final_answer=False,
 
                 reason=(
-                    "The attempt is "
-                    "incomplete and needs "
-                    "a next-step question."
+                    "The learner's work "
+                    "is incomplete and "
+                    "needs a next-step "
+                    "question."
                 ),
             )
 
@@ -898,9 +1284,43 @@ class TutorPolicyEngine:
             allow_final_answer=False,
 
             reason=(
-                "The learner's attempt "
-                "could not be clearly "
+                "The attempt could "
+                "not be clearly "
                 "classified."
+            ),
+        )
+
+
+    # ======================================================
+    # Off-topic redirect
+    # ======================================================
+
+    def _redirect(
+        self,
+        state: TutorSessionState,
+        intent: TutorIntent,
+    ) -> TutorDecisionResult:
+
+        return self._result(
+            state=state,
+
+            intent=intent,
+
+            action=(
+                TutorAction
+                .REDIRECT_TO_LEARNING
+            ),
+
+            hint_level=(
+                state.hint_level
+            ),
+
+            allow_final_answer=False,
+
+            reason=(
+                "The conversation "
+                "should return to "
+                "the learning task."
             ),
         )
 
@@ -912,9 +1332,7 @@ class TutorPolicyEngine:
     def _handle_mock_test(
         self,
         state: TutorSessionState,
-        decision_input: (
-            TutorDecisionInput
-        ),
+        decision_input: TutorDecisionInput,
     ) -> TutorDecisionResult:
 
         if (
@@ -935,9 +1353,9 @@ class TutorPolicyEngine:
 
             reason = (
                 "Mock Test Mode records "
-                "learner answers without "
-                "providing hints."
+                "answers without hints."
             )
+
 
         else:
 

@@ -7,6 +7,7 @@ from app.schemas.adaptive import (
     AdaptiveSupport,
     ExplanationDepth,
     ResponsePace,
+    ResponsePaceSource,
 )
 from app.schemas.enums import (
     AgeGroup,
@@ -59,6 +60,20 @@ class AdaptiveSignals:
     ) = None
 
 
+    # ----------------------------------
+    # Phase 14
+    # ----------------------------------
+
+    baseline_ready: bool = False
+
+    personalized_response_pace: (
+        ResponsePace
+    ) = (
+        ResponsePace
+        .INSUFFICIENT_DATA
+    )
+
+
 @dataclass(
     frozen=True
 )
@@ -84,6 +99,10 @@ class AdaptiveDecision:
         ResponsePace
     )
 
+    response_pace_source: (
+        ResponsePaceSource
+    )
+
     reason_codes: tuple[
         str,
         ...,
@@ -106,10 +125,6 @@ class AdaptiveLearningEngine:
         reasons: list[str] = []
 
 
-        # ----------------------------------
-        # 1. Explanation depth
-        # ----------------------------------
-
         explanation_depth = (
             cls._explanation_depth(
                 signals.age_group
@@ -118,14 +133,47 @@ class AdaptiveLearningEngine:
 
 
         # ----------------------------------
-        # 2. Response pace
+        # Response pace
+        #
+        # Personal baseline has priority.
+        # Fixed age thresholds are only
+        # fallback behavior.
         # ----------------------------------
 
-        response_pace = (
+        (
+            response_pace,
+            response_pace_source,
+        ) = (
             cls._response_pace(
                 signals
             )
         )
+
+
+        if (
+            response_pace_source
+            == (
+                ResponsePaceSource
+                .PERSONAL_BASELINE
+            )
+        ):
+
+            reasons.append(
+                "PERSONAL_BASELINE_USED"
+            )
+
+
+        elif (
+            response_pace_source
+            == (
+                ResponsePaceSource
+                .AGE_GROUP_FALLBACK
+            )
+        ):
+
+            reasons.append(
+                "AGE_GROUP_PACE_FALLBACK"
+            )
 
 
         if (
@@ -149,7 +197,7 @@ class AdaptiveLearningEngine:
 
 
         # ----------------------------------
-        # 3. No diagnostic
+        # No diagnostic
         # ----------------------------------
 
         if (
@@ -185,6 +233,10 @@ class AdaptiveLearningEngine:
                     response_pace
                 ),
 
+                response_pace_source=(
+                    response_pace_source
+                ),
+
                 reason_codes=tuple(
                     reasons
                 ),
@@ -198,10 +250,6 @@ class AdaptiveLearningEngine:
             )
 
 
-        # ----------------------------------
-        # 4. Starting difficulty
-        # ----------------------------------
-
         difficulty = (
             signals
             .recommended_difficulty
@@ -209,7 +257,7 @@ class AdaptiveLearningEngine:
 
 
         # ----------------------------------
-        # 5. Core struggle signals
+        # Core struggle
         # ----------------------------------
 
         low_independent_success = (
@@ -224,8 +272,7 @@ class AdaptiveLearningEngine:
 
 
         high_hint_usage = (
-            signals
-            .total_attempts
+            signals.total_attempts
             >= 2
 
             and signals
@@ -263,7 +310,9 @@ class AdaptiveLearningEngine:
 
 
         # ----------------------------------
-        # 6. Latency-supported struggle
+        # Slow pace becomes meaningful only
+        # when another struggle signal
+        # supports it.
         # ----------------------------------
 
         latency_supported_struggle = (
@@ -303,12 +352,11 @@ class AdaptiveLearningEngine:
 
 
         # ----------------------------------
-        # 7. Strong independence
+        # Independence
         # ----------------------------------
 
         strong_independence = (
-            signals
-            .total_attempts
+            signals.total_attempts
             >= 3
 
             and signals
@@ -333,7 +381,9 @@ class AdaptiveLearningEngine:
 
 
         # ----------------------------------
-        # 8. Latency-supported progress
+        # Fast responses only support
+        # advancement if performance
+        # also supports it.
         # ----------------------------------
 
         latency_supported_progress = (
@@ -373,7 +423,7 @@ class AdaptiveLearningEngine:
 
 
         # ----------------------------------
-        # 9. Difficulty adaptation
+        # Difficulty
         # ----------------------------------
 
         if struggling:
@@ -403,12 +453,7 @@ class AdaptiveLearningEngine:
 
 
         # ----------------------------------
-        # 10. Strong mastery
-        #
-        # IMPORTANT FIX:
-        # Strong mastery permits challenge
-        # only when current behavior does
-        # not show struggle.
+        # Strong mastery
         # ----------------------------------
 
         if (
@@ -421,14 +466,13 @@ class AdaptiveLearningEngine:
             )
 
 
-            if (
-                not struggling
-            ):
+            if not struggling:
 
                 difficulty = (
                     DifficultyLevel
                     .CHALLENGING
                 )
+
 
             else:
 
@@ -438,7 +482,7 @@ class AdaptiveLearningEngine:
 
 
         # ----------------------------------
-        # 11. Support level
+        # Support
         # ----------------------------------
 
         if (
@@ -482,11 +526,7 @@ class AdaptiveLearningEngine:
 
 
         # ----------------------------------
-        # 12. Next activity
-        #
-        # IMPORTANT FIX:
-        # Current struggle has higher
-        # priority than old mastery.
+        # Activity
         # ----------------------------------
 
         if struggling:
@@ -501,8 +541,7 @@ class AdaptiveLearningEngine:
             signals.mastery_score
             is not None
 
-            and signals
-            .mastery_state
+            and signals.mastery_state
             == MasteryState.STRONG
         ):
 
@@ -555,10 +594,6 @@ class AdaptiveLearningEngine:
             )
 
 
-        # ----------------------------------
-        # 13. Summary
-        # ----------------------------------
-
         summary = (
             cls._summary(
                 activity=(
@@ -597,6 +632,10 @@ class AdaptiveLearningEngine:
                 response_pace
             ),
 
+            response_pace_source=(
+                response_pace_source
+            ),
+
             reason_codes=tuple(
                 reasons
             ),
@@ -608,11 +647,79 @@ class AdaptiveLearningEngine:
 
 
     # ======================================================
-    # Response pace
+    # Pace selection
     # ======================================================
 
     @classmethod
     def _response_pace(
+        cls,
+        signals: AdaptiveSignals,
+    ) -> tuple[
+        ResponsePace,
+        ResponsePaceSource,
+    ]:
+
+        # ----------------------------------
+        # First choice:
+        # learner's personal baseline
+        # ----------------------------------
+
+        if (
+            signals.baseline_ready
+
+            and signals
+            .personalized_response_pace
+            != (
+                ResponsePace
+                .INSUFFICIENT_DATA
+            )
+        ):
+
+            return (
+                signals
+                .personalized_response_pace,
+
+                ResponsePaceSource
+                .PERSONAL_BASELINE,
+            )
+
+
+        # ----------------------------------
+        # Fallback:
+        # age-group engineering threshold
+        # ----------------------------------
+
+        age_pace = (
+            cls._age_group_response_pace(
+                signals
+            )
+        )
+
+
+        if (
+            age_pace
+            == ResponsePace
+            .INSUFFICIENT_DATA
+        ):
+
+            return (
+                age_pace,
+
+                ResponsePaceSource
+                .INSUFFICIENT_DATA,
+            )
+
+
+        return (
+            age_pace,
+
+            ResponsePaceSource
+            .AGE_GROUP_FALLBACK,
+        )
+
+
+    @classmethod
+    def _age_group_response_pace(
         cls,
         signals: AdaptiveSignals,
     ) -> ResponsePace:
@@ -710,10 +817,6 @@ class AdaptiveLearningEngine:
         )
 
 
-    # ======================================================
-    # Explanation depth
-    # ======================================================
-
     @staticmethod
     def _explanation_depth(
         age_group: AgeGroup,
@@ -743,10 +846,6 @@ class AdaptiveLearningEngine:
             ExplanationDepth.BALANCED
         )
 
-
-    # ======================================================
-    # Difficulty helpers
-    # ======================================================
 
     @staticmethod
     def _lower_difficulty(
@@ -807,13 +906,9 @@ class AdaptiveLearningEngine:
 
         return (
             DifficultyLevel
-                .CHALLENGING
+            .CHALLENGING
         )
 
-
-    # ======================================================
-    # Summary
-    # ======================================================
 
     @staticmethod
     def _summary(

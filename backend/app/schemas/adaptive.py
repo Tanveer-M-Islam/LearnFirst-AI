@@ -78,6 +78,23 @@ class ResponsePace(
     SLOW = "SLOW"
 
 
+class ResponsePaceSource(
+    str,
+    Enum,
+):
+    PERSONAL_BASELINE = (
+        "PERSONAL_BASELINE"
+    )
+
+    AGE_GROUP_FALLBACK = (
+        "AGE_GROUP_FALLBACK"
+    )
+
+    INSUFFICIENT_DATA = (
+        "INSUFFICIENT_DATA"
+    )
+
+
 class AdaptiveProblemView(
     BaseModel
 ):
@@ -133,6 +150,7 @@ class AdaptivePlanResponse(
 
     retry_success_count: int
 
+
     # ----------------------------------
     # Phase 13 telemetry
     # ----------------------------------
@@ -147,6 +165,37 @@ class AdaptivePlanResponse(
         ResponsePace
         .INSUFFICIENT_DATA
     )
+
+
+    # ----------------------------------
+    # Phase 14 personal baseline
+    # ----------------------------------
+
+    baseline_ready: bool = False
+
+    baseline_sample_count: int = 0
+
+    recent_sample_count: int = 0
+
+    baseline_response_latency_ms: (
+        float | None
+    ) = None
+
+    recent_response_latency_ms: (
+        float | None
+    ) = None
+
+    latency_change_percent: (
+        float | None
+    ) = None
+
+    response_pace_source: (
+        ResponsePaceSource
+    ) = (
+        ResponsePaceSource
+        .INSUFFICIENT_DATA
+    )
+
 
     reason_codes: list[str] = (
         Field(

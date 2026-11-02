@@ -42,15 +42,18 @@ import type {
 
 
 function createId(): string {
+
   if (
     typeof crypto
     !== "undefined"
     && crypto.randomUUID
   ) {
+
     return (
       crypto.randomUUID()
     );
   }
+
 
   return (
     `${Date.now()}-`
@@ -63,17 +66,26 @@ function modeLabel(
   mode:
     LearningSession["mode"],
 ): string {
+
   switch (mode) {
+
     case "HOMEWORK_HELP":
+
       return "Homework Help";
 
+
     case "PRACTICE":
+
       return "Practice";
 
+
     case "LEARN":
+
       return "Learn Mode";
 
+
     default:
+
       return "Learning";
   }
 }
@@ -82,35 +94,163 @@ function modeLabel(
 function supportLabel(
   hintLevel: number,
 ): string {
-  if (hintLevel <= 0) {
+
+  if (
+    hintLevel <= 0
+  ) {
+
     return "Independent";
   }
 
-  if (hintLevel <= 2) {
+
+  if (
+    hintLevel <= 2
+  ) {
+
     return "Gentle guidance";
   }
 
-  if (hintLevel <= 4) {
+
+  if (
+    hintLevel <= 4
+  ) {
+
     return "Guided support";
   }
 
-  if (hintLevel <= 6) {
+
+  if (
+    hintLevel <= 6
+  ) {
+
     return "Strong support";
   }
+
 
   return "Full teaching";
 }
 
 
+/*
+========================================
+Phase 14.1
+Mode-specific initial tutor message
+========================================
+*/
+
+function initialTutorMessage(
+  session: LearningSession,
+): string {
+
+  switch (
+    session.mode
+  ) {
+
+    case "PRACTICE":
+
+      return (
+        "Here is your practice problem: "
+        + (
+          session.current_problem
+          ?? "your current challenge"
+        )
+        + ". Try it independently first. "
+        + "Show me your answer or "
+        + "your first step."
+      );
+
+
+    case "LEARN":
+
+      return (
+        "We'll learn "
+        + (
+          session.topic
+          ?? "this concept"
+        )
+        + " before focusing on solving. "
+        + "Tell me one thing you already "
+        + "know about it. You can also "
+        + "say \"I don't know yet.\""
+      );
+
+
+    default:
+
+      return (
+        "Let's work through your "
+        + "homework problem together. "
+        + "Start by showing me what "
+        + "you would try first."
+      );
+  }
+}
+
+
+/*
+========================================
+Problem heading changes by mode
+========================================
+*/
+
+function problemLabel(
+  session: LearningSession,
+): string {
+
+  if (
+    session.mode
+    === "LEARN"
+
+    && !session.current_problem
+  ) {
+
+    return "Concept focus";
+  }
+
+
+  if (
+    session.mode
+    === "PRACTICE"
+  ) {
+
+    return "Practice problem";
+  }
+
+
+  return "Current problem";
+}
+
+
+/*
+========================================
+Display either problem or concept
+========================================
+*/
+
+function problemDisplay(
+  session: LearningSession,
+): string {
+
+  return (
+    session.current_problem
+    ?? session.topic
+    ?? "Math"
+  );
+}
+
+
 export default function TutorPage() {
+
   const navigate =
     useNavigate();
+
 
   const {
     sessionId,
   } = useParams<{
     sessionId: string;
   }>();
+
 
   const [
     session,
@@ -119,6 +259,7 @@ export default function TutorPage() {
     LearningSession | null
   >(null);
 
+
   const [
     messages,
     setMessages,
@@ -126,20 +267,24 @@ export default function TutorPage() {
     ChatMessage[]
   >([]);
 
+
   const [
     input,
     setInput,
   ] = useState("");
+
 
   const [
     loading,
     setLoading,
   ] = useState(false);
 
+
   const [
     pageLoading,
     setPageLoading,
   ] = useState(true);
+
 
   const [
     error,
@@ -148,127 +293,209 @@ export default function TutorPage() {
     string | null
   >(null);
 
+
   const endRef =
-    useRef<HTMLDivElement | null>(
+    useRef<
+      HTMLDivElement | null
+    >(
       null,
     );
 
 
-  useEffect(() => {
-    if (!sessionId) {
-      setError(
-        "Learning session "
-        + "not found.",
-      );
+  /*
+  ========================================
+  Load learning session
+  ========================================
+  */
 
-      setPageLoading(false);
+  useEffect(
+    () => {
 
-      return;
-    }
+      if (
+        !sessionId
+      ) {
 
-    const loadSession =
-      async () => {
-        try {
-          const data =
-            await getLearningSession(
-              sessionId,
-            );
+        setError(
+          "Learning session "
+          + "not found.",
+        );
 
-          setSession(data);
+        setPageLoading(
+          false,
+        );
 
-          setMessages([
-            {
-              id:
-                createId(),
-
-              role:
-                "tutor",
-
-              text:
-                (
-                  "Let's work through "
-                  + "this together. "
-                  + "Start by showing "
-                  + "me what you would "
-                  + "try first."
-                ),
-
-              createdAt:
-                Date.now(),
-            },
-          ]);
-        } catch (err) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : (
-                "Could not load "
-                + "the session."
-              ),
-          );
-        } finally {
-          setPageLoading(false);
-        }
-      };
-
-    void loadSession();
-  }, [sessionId]);
-
-
-  useEffect(() => {
-    endRef.current
-      ?.scrollIntoView({
-        behavior: "smooth",
-      });
-  }, [
-    messages,
-    loading,
-  ]);
-
-
-  const refreshSession =
-    async () => {
-      if (!sessionId) {
         return;
       }
 
+
+      const loadSession =
+        async () => {
+
+          try {
+
+            const data =
+              await getLearningSession(
+                sessionId,
+              );
+
+
+            setSession(
+              data,
+            );
+
+
+            /*
+            ==================================
+            Mode-specific opening message
+            ==================================
+            */
+
+            setMessages([
+              {
+                id:
+                  createId(),
+
+                role:
+                  "tutor",
+
+                text:
+                  initialTutorMessage(
+                    data,
+                  ),
+
+                createdAt:
+                  Date.now(),
+              },
+            ]);
+
+
+          } catch (err) {
+
+            setError(
+              err instanceof Error
+                ? err.message
+                : (
+                  "Could not load "
+                  + "the session."
+                ),
+            );
+
+
+          } finally {
+
+            setPageLoading(
+              false,
+            );
+          }
+        };
+
+
+      void loadSession();
+
+    },
+    [
+      sessionId,
+    ],
+  );
+
+
+  /*
+  ========================================
+  Auto scroll
+  ========================================
+  */
+
+  useEffect(
+    () => {
+
+      endRef.current
+        ?.scrollIntoView({
+          behavior:
+            "smooth",
+        });
+
+    },
+    [
+      messages,
+      loading,
+    ],
+  );
+
+
+  /*
+  ========================================
+  Refresh session state
+  ========================================
+  */
+
+  const refreshSession =
+    async () => {
+
+      if (
+        !sessionId
+      ) {
+
+        return;
+      }
+
+
       try {
+
         const updated =
           await getLearningSession(
             sessionId,
           );
 
+
         setSession(
           updated,
         );
+
+
       } catch {
+
         // Optional refresh only.
       }
     };
 
 
+  /*
+  ========================================
+  Send tutor message
+  ========================================
+  */
+
   const sendMessage =
     async (
       textOverride?: string,
     ) => {
+
       if (
         !sessionId
         || loading
       ) {
+
         return;
       }
+
 
       const text = (
         textOverride
         ?? input
       ).trim();
 
-      if (!text) {
+
+      if (
+        !text
+      ) {
+
         return;
       }
 
+
       const studentMessage:
         ChatMessage = {
+
           id:
             createId(),
 
@@ -281,18 +508,30 @@ export default function TutorPage() {
             Date.now(),
         };
 
+
       setMessages(
-        (current) => [
+        (
+          current,
+        ) => [
           ...current,
           studentMessage,
         ],
       );
 
+
       setInput("");
-      setLoading(true);
-      setError(null);
+
+      setLoading(
+        true,
+      );
+
+      setError(
+        null,
+      );
+
 
       try {
+
         const response:
           TutorMessageResponse =
             await sendTutorMessage(
@@ -300,8 +539,10 @@ export default function TutorPage() {
               text,
             );
 
+
         const tutorMessage:
           ChatMessage = {
+
             id:
               createId(),
 
@@ -323,15 +564,30 @@ export default function TutorPage() {
               Date.now(),
           };
 
+
         setMessages(
-          (current) => [
+          (
+            current,
+          ) => [
             ...current,
             tutorMessage,
           ],
         );
 
+
+        /*
+        ==================================
+        Important for Practice Mode:
+        new problem may now be stored
+        in the backend.
+        ==================================
+        */
+
         await refreshSession();
+
+
       } catch (err) {
+
         setError(
           err instanceof Error
             ? err.message
@@ -341,48 +597,78 @@ export default function TutorPage() {
               + "Please try again."
             ),
         );
+
+
       } finally {
-        setLoading(false);
+
+        setLoading(
+          false,
+        );
       }
     };
 
 
-  if (pageLoading) {
+  /*
+  ========================================
+  Page loading
+  ========================================
+  */
+
+  if (
+    pageLoading
+  ) {
+
     return (
       <div className="tutor-page-loading">
+
         <div className="thinking-orb">
+
           <BrainCircuit
             size={32}
           />
+
         </div>
+
 
         <strong>
           Preparing your
           learning space...
         </strong>
+
       </div>
     );
   }
 
 
+  /*
+  ========================================
+  Session load error
+  ========================================
+  */
+
   if (
     error
     && !session
   ) {
+
     return (
       <div className="tutor-load-error surface-card">
+
         <CircleHelp
           size={34}
         />
+
 
         <h2>
           We couldn't open
           this lesson.
         </h2>
 
+
         <p>
           {error}
         </p>
+
 
         <button
           type="button"
@@ -395,35 +681,61 @@ export default function TutorPage() {
         >
           Start another lesson
         </button>
+
       </div>
     );
   }
 
 
-  if (!session) {
+  if (
+    !session
+  ) {
+
     return null;
   }
 
+
+  /*
+  ========================================
+  Latest validation
+  ========================================
+  */
 
   const latestTutorMessage = [
     ...messages,
   ]
     .reverse()
     .find(
-      (message) =>
+      (
+        message,
+      ) =>
         message.role
         === "tutor",
     );
+
 
   const latestValidation =
     latestTutorMessage
       ?.validation;
 
 
+  /*
+  ========================================
+  UI
+  ========================================
+  */
+
   return (
     <div className="tutor-page">
+
+      {/* =============================
+          Header
+      ============================== */}
+
       <header className="tutor-page-header">
+
         <div>
+
           <button
             type="button"
             className="page-back-button"
@@ -440,14 +752,20 @@ export default function TutorPage() {
             Dashboard
           </button>
 
+
           <div className="tutor-title-row">
+
             <div className="tutor-title-icon">
+
               <BrainCircuit
                 size={25}
               />
+
             </div>
 
+
             <div>
+
               <span>
                 Math Tutor
               </span>
@@ -458,139 +776,266 @@ export default function TutorPage() {
                   ?? "Math"
                 }
               </h1>
+
             </div>
+
           </div>
+
         </div>
+
 
         <div className="session-status-pill">
+
           <span />
-          Learning
+
+          {
+            modeLabel(
+              session.mode,
+            )
+          }
+
         </div>
+
       </header>
 
+
+      {/* =============================
+          Workspace
+      ============================== */}
+
       <div className="tutor-workspace">
+
+        {/* ===========================
+            Main tutor area
+        ============================ */}
+
         <section className="tutor-main-card surface-card">
+
           <div className="current-problem-bar">
+
             <div>
+
               <span>
-                Current problem
+                {
+                  problemLabel(
+                    session,
+                  )
+                }
               </span>
+
 
               <strong>
                 {
-                  session
-                    .current_problem
-                  ?? (
-                    "No problem "
-                    + "selected"
+                  problemDisplay(
+                    session,
                   )
                 }
               </strong>
+
             </div>
 
+
             <div className="problem-mode">
+
               {
                 modeLabel(
                   session.mode,
                 )
               }
+
             </div>
+
           </div>
 
+
+          {/* =========================
+              Chat
+          ========================== */}
+
           <div className="chat-window">
+
             {messages.map(
-              (message) => (
+              (
+                message,
+              ) => (
+
                 <div
                   key={
                     message.id
                   }
                 >
+
                   <ChatBubble
                     message={
                       message
                     }
                   />
 
+
                   {(
                     message.role
                     === "tutor"
+
                     && message
                       .validation
                   ) && (
+
                     <div className="feedback-wrap">
+
                       <MathFeedbackCard
                         validation={
                           message
                             .validation
                         }
                       />
+
                     </div>
                   )}
+
                 </div>
               ),
             )}
 
+
+            {/* =======================
+                Thinking indicator
+            ======================== */}
+
             {loading && (
+
               <div className="chat-row chat-row-tutor">
+
                 <div className="chat-avatar tutor-avatar">
+
                   <BrainCircuit
                     size={18}
                   />
+
                 </div>
 
+
                 <div className="thinking-bubble">
+
                   <div className="thinking-dots">
                     <span />
                     <span />
                     <span />
                   </div>
 
+
                   <p>
                     LearnFirst is
                     thinking about
-                    your attempt...
+                    your learning...
                   </p>
+
                 </div>
+
               </div>
             )}
 
-            <div ref={endRef} />
+
+            <div
+              ref={
+                endRef
+              }
+            />
+
           </div>
 
+
+          {/* =========================
+              Error
+          ========================== */}
+
           {error && (
+
             <div className="chat-error">
               {error}
             </div>
+
           )}
 
+
+          {/* =========================
+              Mode-aware composer
+          ========================== */}
+
           <TutorComposer
-            value={input}
-            disabled={loading}
-            onChange={setInput}
+            value={
+              input
+            }
+
+            disabled={
+              loading
+            }
+
+            mode={
+              session.mode
+            }
+
+            onChange={
+              setInput
+            }
+
             onSubmit={() =>
               void sendMessage()
             }
+
             onQuickMessage={
-              (message) =>
+              (
+                message,
+              ) =>
                 void sendMessage(
                   message,
                 )
             }
           />
+
         </section>
 
+
+        {/* ===========================
+            Side panel
+        ============================ */}
+
         <aside className="tutor-side-panel">
+
+          {/* =========================
+              Current challenge
+          ========================== */}
+
           <div className="surface-card tutor-info-card">
+
             <span className="side-card-label">
-              Your challenge
+
+              {
+                session.mode
+                === "LEARN"
+                && !session
+                  .current_problem
+                  ? "Learning concept"
+
+                  : session.mode
+                    === "PRACTICE"
+                    ? "Practice challenge"
+
+                    : "Your challenge"
+              }
+
             </span>
 
+
             <div className="side-problem">
+
               {
-                session
-                  .current_problem
+                problemDisplay(
+                  session,
+                )
               }
+
             </div>
+
 
             <button
               type="button"
@@ -605,23 +1050,47 @@ export default function TutorPage() {
                 size={16}
               />
 
-              New problem
+              {
+                session.mode
+                === "LEARN"
+                  ? "Choose learning mode"
+
+                  : session.mode
+                    === "PRACTICE"
+                    ? "Choose another activity"
+
+                    : "New problem"
+              }
+
             </button>
+
           </div>
 
+
+          {/* =========================
+              Learning support
+          ========================== */}
+
           <div className="surface-card tutor-info-card">
+
             <span className="side-card-label">
               Learning support
             </span>
 
+
             <div className="support-status">
+
               <div className="support-icon">
+
                 <Sparkles
                   size={20}
                 />
+
               </div>
 
+
               <div>
+
                 <strong>
                   {
                     supportLabel(
@@ -631,21 +1100,33 @@ export default function TutorPage() {
                   }
                 </strong>
 
+
                 <p>
                   LearnFirst gives
                   only as much help
                   as you need.
                 </p>
+
               </div>
+
             </div>
 
+
             <div className="support-meter">
+
               {Array.from({
                 length: 7,
               }).map(
-                (_, index) => (
+                (
+                  _,
+                  index,
+                ) => (
+
                   <span
-                    key={index}
+                    key={
+                      index
+                    }
+
                     className={
                       index
                       < Math.max(
@@ -657,22 +1138,35 @@ export default function TutorPage() {
                         : ""
                     }
                   />
+
                 ),
               )}
+
             </div>
+
           </div>
 
+
+          {/* =========================
+              Lesson stats
+          ========================== */}
+
           <div className="surface-card tutor-info-card session-progress-card">
+
             <span className="side-card-label">
               This lesson
             </span>
 
+
             <div className="lesson-stat">
+
               <CheckCircle2
                 size={18}
               />
 
+
               <div>
+
                 <strong>
                   {
                     session
@@ -683,15 +1177,21 @@ export default function TutorPage() {
                 <span>
                   Attempts
                 </span>
+
               </div>
+
             </div>
 
+
             <div className="lesson-stat">
+
               <CircleHelp
                 size={18}
               />
 
+
               <div>
+
                 <strong>
                   {
                     session
@@ -702,25 +1202,51 @@ export default function TutorPage() {
                 <span>
                   Answer requests
                 </span>
+
               </div>
+
             </div>
+
           </div>
+
         </aside>
+
       </div>
 
-      {latestValidation
-        ?.status
-        === "CORRECT" && (
+
+      {/* =============================
+          Mastery CTA
+          
+          Practice Mode does not show
+          this after every correct
+          answer because it automatically
+          continues with another problem.
+      ============================== */}
+
+      {(
+        latestValidation
+          ?.status
+        === "CORRECT"
+
+        && session.mode
+        !== "PRACTICE"
+      ) && (
+
         <div className="mastery-cta">
+
           <div>
+
             <Sparkles
               size={20}
             />
 
+
             <div>
+
               <strong>
                 Nice work!
               </strong>
+
 
               <span>
                 Ready to check
@@ -729,12 +1255,16 @@ export default function TutorPage() {
                 problems
                 independently?
               </span>
+
             </div>
+
           </div>
+
 
           <button
             type="button"
             className="primary-button"
+
             onClick={() =>
               navigate(
                 (
@@ -751,8 +1281,11 @@ export default function TutorPage() {
               size={18}
             />
           </button>
+
         </div>
+
       )}
+
     </div>
   );
 }

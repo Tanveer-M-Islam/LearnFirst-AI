@@ -1,7 +1,15 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import (
+    Session,
+)
 
+from app.adaptive.problem_bank import (
+    get_adaptive_problem,
+)
 from app.database.repositories.session_repository import (
     LearningSessionRepository,
+)
+from app.database.repositories.student_attempt_repository import (
+    StudentAttemptRepository,
 )
 from app.database.repositories.student_repository import (
     StudentRepository,
@@ -31,11 +39,15 @@ from app.schemas.chat import (
 from app.schemas.enums import (
     AgeGroup,
     AttemptStatus,
+    DifficultyLevel,
     LearningMode,
     MasteryState,
     Subject,
     TutorAction,
     TutorIntent,
+)
+from app.services.adaptive_learning_service import (
+    AdaptiveLearningService,
 )
 from app.services.tutor_service import (
     TutorService,
@@ -65,11 +77,13 @@ class TutorChatService:
             LearningSessionRepository
             .get_by_id(
                 db=db,
+
                 session_id=(
                     session_id
                 ),
             )
         )
+
 
         if (
             learning_session
@@ -94,7 +108,11 @@ class TutorChatService:
             )
         )
 
-        if student is None:
+
+        if (
+            student
+            is None
+        ):
 
             raise ValueError(
                 "Student not found."
@@ -108,15 +126,72 @@ class TutorChatService:
         )
 
 
+        mode = (
+            LearningMode(
+                learning_session
+                .mode
+            )
+        )
+
+
+        subject = (
+            Subject(
+                learning_session
+                .subject
+            )
+        )
+
+
+        # ==================================
+        # Practice-question request
+        #
+        # Practice and Learn Mode both use
+        # a real stored problem from the
+        # deterministic problem bank.
+        # ==================================
+
+        if (
+            subject
+            == Subject.MATH
+
+            and mode
+            in {
+                LearningMode.PRACTICE,
+                LearningMode.LEARN,
+            }
+
+            and intent
+            == TutorIntent
+            .PRACTICE_REQUEST
+        ):
+
+            learning_session = (
+                cls
+                ._assign_next_math_problem(
+                    db=db,
+
+                    learning_session=(
+                        learning_session
+                    ),
+                )
+            )
+
+
+        # ==================================
+        # Math validation
+        # ==================================
+
         math_validation: (
             MathValidationResult
             | None
         ) = None
 
+
         attempt_status: (
             AttemptStatus
             | None
         ) = None
+
 
         hint_level_before = (
             learning_session
@@ -153,10 +228,12 @@ class TutorChatService:
                     )
                 )
 
+
                 attempt_status = (
                     math_validation
                     .status
                 )
+
 
             else:
 
@@ -165,6 +242,10 @@ class TutorChatService:
                     .UNCLEAR
                 )
 
+
+        # ==================================
+        # Tutor policy decision
+        # ==================================
 
         decision_input = (
             TutorDecisionInput(
@@ -214,6 +295,7 @@ class TutorChatService:
             )
         )
 
+
         if (
             refreshed_session
             is None
@@ -225,6 +307,10 @@ class TutorChatService:
                 "reloaded."
             )
 
+
+        # ==================================
+        # Record deterministic Math attempt
+        # ==================================
 
         if (
             math_validation
@@ -251,6 +337,7 @@ class TutorChatService:
                 ),
             )
 
+
             refreshed_session = (
                 LearningSessionRepository
                 .get_by_id(
@@ -261,6 +348,7 @@ class TutorChatService:
                     ),
                 )
             )
+
 
             if (
                 refreshed_session
@@ -273,6 +361,70 @@ class TutorChatService:
                     "reloaded."
                 )
 
+
+        # ==================================
+        # Automatic next problem
+        #
+        # After a correct Practice/Learn
+        # attempt, assign the next actual
+        # problem in the database.
+        # ==================================
+
+        next_problem_after_success = None
+
+
+        if (
+            math_validation
+            is not None
+
+            and math_validation.status
+            == AttemptStatus.CORRECT
+
+            and LearningMode(
+                refreshed_session.mode
+            )
+            in {
+                LearningMode.PRACTICE,
+                LearningMode.LEARN,
+            }
+        ):
+
+            previous_problem = (
+                refreshed_session
+                .current_problem
+            )
+
+
+            refreshed_session = (
+                cls
+                ._assign_next_math_problem(
+                    db=db,
+
+                    learning_session=(
+                        refreshed_session
+                    ),
+                )
+            )
+
+
+            if (
+                refreshed_session
+                .current_problem
+
+                and refreshed_session
+                .current_problem
+                != previous_problem
+            ):
+
+                next_problem_after_success = (
+                    refreshed_session
+                    .current_problem
+                )
+
+
+        # ==================================
+        # Build current tutor state
+        # ==================================
 
         state = (
             TutorSessionState(
@@ -348,6 +500,21 @@ class TutorChatService:
                         .mastery_state
                     )
                 ),
+
+                adaptive_difficulty=(
+                    decision
+                    .adaptive_difficulty
+                ),
+
+                adaptive_support=(
+                    decision
+                    .adaptive_support
+                ),
+
+                explanation_depth=(
+                    decision
+                    .explanation_depth
+                ),
             )
         )
 
@@ -356,100 +523,111 @@ class TutorChatService:
             create_public_validation(
                 math_validation
             )
+
             if math_validation
             is not None
+
             else None
         )
 
 
+        # ==================================
+        # Successful practice:
+        # deterministic next problem
+        # ==================================
+
+        if (
+            next_problem_after_success
+            is not None
+        ):
+
+            if (
+                state.mode
+                == LearningMode.PRACTICE
+            ):
+
+                reply = (
+                    "Correct — nice work. "
+                    "Let's keep practicing. "
+                    "Try this next problem: "
+                    f"{next_problem_after_success}. "
+                    "Try it independently first."
+                )
+
+
+            else:
+
+                reply = (
+                    "Correct. Now let's "
+                    "check that the idea "
+                    "is becoming independent. "
+                    "Try this next problem: "
+                    f"{next_problem_after_success}."
+                )
+
+
+            return (
+                TutorMessageResponse(
+                    session_id=(
+                        session_id
+                    ),
+
+                    student_message=(
+                        student_message
+                    ),
+
+                    detected_intent=(
+                        intent
+                    ),
+
+                    decision=(
+                        decision
+                    ),
+
+                    math_validation=(
+                        public_validation
+                    ),
+
+                    rag_used=False,
+
+                    rag_sources=[],
+
+                    reply=reply,
+
+                    provider="system",
+
+                    model=(
+                        "adaptive-practice"
+                    ),
+
+                    latency_ms=0.0,
+                )
+            )
+
+
+        # ==================================
+        # Other deterministic responses
+        # ==================================
+
         deterministic_reply = (
             cls._deterministic_response(
-                decision.next_action
+                action=(
+                    decision
+                    .next_action
+                ),
+
+                state=state,
             )
         )
+
 
         if (
             deterministic_reply
             is not None
         ):
 
-            return TutorMessageResponse(
-                session_id=(
-                    session_id
-                ),
-
-                student_message=(
-                    student_message
-                ),
-
-                detected_intent=(
-                    intent
-                ),
-
-                decision=(
-                    decision
-                ),
-
-                math_validation=(
-                    public_validation
-                ),
-
-                rag_used=False,
-
-                rag_sources=[],
-
-                reply=(
-                    deterministic_reply
-                ),
-
-                provider="system",
-
-                model=(
-                    "deterministic"
-                ),
-
-                latency_ms=0.0,
-            )
-
-
-        rag_context: (
-            RAGContext
-            | None
-        ) = None
-
-
-        if (
-            decision
-            .requires_rag
-        ):
-
-            rag_service = (
-                RAGService()
-            )
-
-            rag_context = (
-                rag_service.retrieve(
-                    query=(
-                        student_message
-                    ),
-
-                    subject=(
-                        state.subject.value
-                    ),
-
-                    concept_code=(
-                        state.concept_code
-                    ),
-                )
-            )
-
-
-            if (
-                not rag_context
-                .has_context
-            ):
-
-                return TutorMessageResponse(
+            return (
+                TutorMessageResponse(
                     session_id=(
                         session_id
                     ),
@@ -475,25 +653,112 @@ class TutorChatService:
                     rag_sources=[],
 
                     reply=(
-                        "I don't have enough "
-                        "verified curriculum "
-                        "material for this "
-                        "question yet. Let's "
-                        "choose another topic "
-                        "or ask a trusted "
-                        "teacher or learning "
-                        "resource."
+                        deterministic_reply
                     ),
 
                     provider="system",
 
                     model=(
-                        "rag-grounding-guard"
+                        "deterministic"
                     ),
 
                     latency_ms=0.0,
                 )
+            )
 
+
+        # ==================================
+        # RAG
+        # ==================================
+
+        rag_context: (
+            RAGContext
+            | None
+        ) = None
+
+
+        if (
+            decision.requires_rag
+        ):
+
+            rag_service = (
+                RAGService()
+            )
+
+
+            rag_context = (
+                rag_service.retrieve(
+                    query=(
+                        student_message
+                    ),
+
+                    subject=(
+                        state.subject.value
+                    ),
+
+                    concept_code=(
+                        state.concept_code
+                    ),
+                )
+            )
+
+
+            if (
+                not rag_context
+                .has_context
+            ):
+
+                return (
+                    TutorMessageResponse(
+                        session_id=(
+                            session_id
+                        ),
+
+                        student_message=(
+                            student_message
+                        ),
+
+                        detected_intent=(
+                            intent
+                        ),
+
+                        decision=(
+                            decision
+                        ),
+
+                        math_validation=(
+                            public_validation
+                        ),
+
+                        rag_used=False,
+
+                        rag_sources=[],
+
+                        reply=(
+                            "I don't have enough "
+                            "verified curriculum "
+                            "material for this "
+                            "question yet. Let's "
+                            "choose another topic "
+                            "or ask a trusted "
+                            "teacher or learning "
+                            "resource."
+                        ),
+
+                        provider="system",
+
+                        model=(
+                            "rag-grounding-guard"
+                        ),
+
+                        latency_ms=0.0,
+                    )
+                )
+
+
+        # ==================================
+        # LLM response
+        # ==================================
 
         request = (
             TutorPromptBuilder.build(
@@ -523,63 +788,280 @@ class TutorChatService:
         )
 
 
-        return TutorMessageResponse(
-            session_id=(
-                session_id
-            ),
+        return (
+            TutorMessageResponse(
+                session_id=(
+                    session_id
+                ),
 
-            student_message=(
-                student_message
-            ),
+                student_message=(
+                    student_message
+                ),
 
-            detected_intent=(
-                intent
-            ),
+                detected_intent=(
+                    intent
+                ),
 
-            decision=(
-                decision
-            ),
+                decision=(
+                    decision
+                ),
 
-            math_validation=(
-                public_validation
-            ),
+                math_validation=(
+                    public_validation
+                ),
 
-            rag_used=bool(
-                rag_context
-                and rag_context
-                .has_context
-            ),
+                rag_used=bool(
+                    rag_context
+                    and rag_context
+                    .has_context
+                ),
 
-            rag_sources=(
-                rag_context
-                .public_sources()
-                if rag_context
-                is not None
-                else []
-            ),
+                rag_sources=(
+                    rag_context
+                    .public_sources()
 
-            reply=(
-                result.content
-            ),
+                    if rag_context
+                    is not None
 
-            provider=(
-                result.provider
-            ),
+                    else []
+                ),
 
-            model=(
-                result.model
-            ),
+                reply=(
+                    result.content
+                ),
 
-            latency_ms=(
-                result.latency_ms
-            ),
+                provider=(
+                    result.provider
+                ),
+
+                model=(
+                    result.model
+                ),
+
+                latency_ms=(
+                    result.latency_ms
+                ),
+            )
         )
 
+
+    # ======================================================
+    # Assign deterministic adaptive problem
+    # ======================================================
+
+    @classmethod
+    def _assign_next_math_problem(
+        cls,
+        db: Session,
+        learning_session,
+    ):
+
+        concept_code = (
+            learning_session
+            .concept_code
+        )
+
+
+        if (
+            concept_code
+            is None
+        ):
+
+            return learning_session
+
+
+        # ----------------------------------
+        # Get current adaptive difficulty
+        # ----------------------------------
+
+        difficulty = (
+            DifficultyLevel.EASY
+        )
+
+
+        try:
+
+            plan = (
+                AdaptiveLearningService
+                .get_plan(
+                    db=db,
+
+                    student_id=(
+                        learning_session
+                        .student_id
+                    ),
+
+                    concept_code=(
+                        concept_code
+                    ),
+                )
+            )
+
+
+            difficulty = (
+                plan.difficulty
+            )
+
+
+        except (
+            LookupError,
+            ValueError,
+        ):
+
+            difficulty = (
+                DifficultyLevel.EASY
+            )
+
+
+        # ----------------------------------
+        # Use total historical attempts
+        # so the problem sequence does
+        # not reset every session.
+        # ----------------------------------
+
+        attempts = [
+            attempt
+
+            for attempt
+            in (
+                StudentAttemptRepository
+                .list_by_student(
+                    db=db,
+
+                    student_id=(
+                        learning_session
+                        .student_id
+                    ),
+                )
+            )
+
+            if (
+                attempt.problem_ref
+                == concept_code
+            )
+        ]
+
+
+        offset = (
+            len(
+                attempts
+            )
+        )
+
+
+        problem = (
+            get_adaptive_problem(
+                concept_code=(
+                    concept_code
+                ),
+
+                difficulty=(
+                    difficulty
+                ),
+
+                offset=(
+                    offset
+                ),
+            )
+        )
+
+
+        # ----------------------------------
+        # Avoid immediately repeating
+        # the same equation.
+        # ----------------------------------
+
+        if (
+            problem
+            is not None
+
+            and problem.prompt
+            == (
+                learning_session
+                .current_problem
+            )
+        ):
+
+            problem = (
+                get_adaptive_problem(
+                    concept_code=(
+                        concept_code
+                    ),
+
+                    difficulty=(
+                        difficulty
+                    ),
+
+                    offset=(
+                        offset + 1
+                    ),
+                )
+            )
+
+
+        if (
+            problem
+            is None
+        ):
+
+            return learning_session
+
+
+        learning_session.current_problem = (
+            problem.prompt
+        )
+
+
+        learning_session.current_hint_level = 0
+
+
+        learning_session.attempt_count = 0
+
+
+        learning_session.current_misconception = (
+            None
+        )
+
+
+        return (
+            LearningSessionRepository
+            .save(
+                db=db,
+
+                learning_session=(
+                    learning_session
+                ),
+            )
+        )
+
+
+    # ======================================================
+    # Deterministic tutor messages
+    # ======================================================
 
     @staticmethod
     def _deterministic_response(
         action: TutorAction,
+        state: TutorSessionState,
     ) -> str | None:
+
+        if (
+            action
+            == TutorAction
+            .GENERATE_PRACTICE_QUESTION
+
+            and state.current_problem
+        ):
+
+            return (
+                "Here is your practice "
+                "problem: "
+                f"{state.current_problem}. "
+                "Try it first and show "
+                "me your answer or "
+                "next step."
+            )
+
 
         if (
             action
@@ -595,6 +1077,7 @@ class TutorChatService:
                 "to reveal the answer."
             )
 
+
         if (
             action
             == TutorAction
@@ -607,6 +1090,7 @@ class TutorChatService:
                 "hints or solutions "
                 "during the test."
             )
+
 
         if (
             action
@@ -621,5 +1105,6 @@ class TutorChatService:
                 "involve a trusted "
                 "adult who can help."
             )
+
 
         return None

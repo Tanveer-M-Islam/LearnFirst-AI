@@ -32,6 +32,19 @@ export type ExplanationDepth =
   | "DEEP";
 
 
+export type ResponsePace =
+  | "INSUFFICIENT_DATA"
+  | "FAST"
+  | "TYPICAL"
+  | "SLOW";
+
+
+export type ResponsePaceSource =
+  | "PERSONAL_BASELINE"
+  | "AGE_GROUP_FALLBACK"
+  | "INSUFFICIENT_DATA";
+
+
 export interface AdaptiveProblem {
   problem_id: string;
 
@@ -77,6 +90,39 @@ export interface AdaptivePlan {
 
   retry_success_count:
     number;
+
+
+  measured_response_count:
+    number;
+
+  average_response_latency_ms:
+    number | null;
+
+  response_pace:
+    ResponsePace;
+
+
+  baseline_ready:
+    boolean;
+
+  baseline_sample_count:
+    number;
+
+  recent_sample_count:
+    number;
+
+  baseline_response_latency_ms:
+    number | null;
+
+  recent_response_latency_ms:
+    number | null;
+
+  latency_change_percent:
+    number | null;
+
+  response_pace_source:
+    ResponsePaceSource;
+
 
   reason_codes: string[];
 
