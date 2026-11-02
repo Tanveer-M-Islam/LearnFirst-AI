@@ -9,6 +9,9 @@ from app.math.models import (
 from app.rag.models import (
     RAGSourceView,
 )
+from app.science.models import (
+    ScienceValidationView,
+)
 from app.schemas.enums import (
     TutorIntent,
 )
@@ -42,7 +45,13 @@ class TutorMessageResponse(
     )
 
     math_validation: (
-        MathValidationView | None
+        MathValidationView
+        | None
+    ) = None
+
+    science_validation: (
+        ScienceValidationView
+        | None
     ) = None
 
     rag_used: bool = False

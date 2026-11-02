@@ -116,6 +116,31 @@ export interface MathValidation {
 }
 
 
+export interface ScienceValidation {
+  supported: boolean;
+
+  concept_code: string;
+
+  question_id:
+    string | null;
+
+  status:
+    AttemptStatus;
+
+  coverage_score:
+    number;
+
+  matched_ideas:
+    string[];
+
+  misconception_code:
+    string | null;
+
+  feedback_summary:
+    string;
+}
+
+
 export interface RAGSource {
   source_id: string;
 
@@ -142,6 +167,9 @@ export interface TutorMessageResponse {
 
   math_validation:
     MathValidation | null;
+
+  science_validation:
+    ScienceValidation | null;
 
   rag_used: boolean;
 
@@ -172,6 +200,9 @@ export interface ChatMessage {
 
   validation?:
     MathValidation | null;
+
+  scienceValidation?:
+    ScienceValidation | null;
 
   decision?:
     TutorDecision | null;

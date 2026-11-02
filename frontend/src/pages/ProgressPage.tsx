@@ -19,11 +19,17 @@ import {
 
 import {
   useNavigate,
+  useSearchParams,
 } from "react-router";
 
 import {
   getConceptProgress,
 } from "../api/assessments";
+
+import {
+  MATH_TOPICS,
+  getMathTopic,
+} from "../data/mathTopics";
 
 import type {
   ConceptProgress,
@@ -36,14 +42,14 @@ import {
 } from "../utils/studentStorage";
 
 
-const CONCEPT_CODE =
-  "MATH_ALG_LINEAR_01";
-
-
 function masteryLabel(
   mastery: MasteryState,
 ): string {
-  switch (mastery) {
+
+  switch (
+    mastery
+  ) {
+
     case "STRONG":
       return "Strong";
 
@@ -62,7 +68,11 @@ function masteryLabel(
 function difficultyLabel(
   difficulty: DifficultyLevel,
 ): string {
-  switch (difficulty) {
+
+  switch (
+    difficulty
+  ) {
+
     case "CHALLENGING":
       return "Challenging";
 
@@ -77,46 +87,78 @@ function difficultyLabel(
 
 function masteryMessage(
   mastery: MasteryState,
+  topicTitle: string,
 ): string {
-  switch (mastery) {
+
+  switch (
+    mastery
+  ) {
+
     case "STRONG":
+
       return (
         "You are showing strong "
-        + "understanding of linear "
-        + "equations."
+        + "understanding of "
+        + topicTitle
+        + "."
       );
+
 
     case "DEVELOPING":
+
       return (
-        "You're building a good "
-        + "understanding. Keep "
-        + "practicing independently."
+        "You're developing your "
+        + "understanding of "
+        + topicTitle
+        + ". Keep practicing "
+        + "independently."
       );
+
 
     case "LEARNING":
+
       return (
-        "You're still learning this "
-        + "concept. Mistakes and "
-        + "retries are part of the "
-        + "process."
+        "You're still learning "
+        + topicTitle
+        + ". Mistakes and retries "
+        + "are part of the process."
       );
 
+
     default:
+
       return (
-        "Start with a diagnostic "
-        + "to discover your current "
-        + "learning level."
+        "Take the topic diagnostic "
+        + "to establish your "
+        + "starting level."
       );
   }
 }
 
 
 export default function ProgressPage() {
+
   const navigate =
     useNavigate();
 
+
+  const [
+    searchParams,
+    setSearchParams,
+  ] = useSearchParams();
+
+
   const student =
     getStoredStudent();
+
+
+  const topic =
+    getMathTopic(
+      searchParams.get(
+        "concept",
+      ),
+    );
+
 
   const [
     progress,
@@ -125,10 +167,14 @@ export default function ProgressPage() {
     ConceptProgress | null
   >(null);
 
+
   const [
     loading,
     setLoading,
-  ] = useState(true);
+  ] = useState(
+    true,
+  );
+
 
   const [
     error,
@@ -140,7 +186,11 @@ export default function ProgressPage() {
 
   const loadProgress =
     async () => {
-      if (!student) {
+
+      if (
+        !student
+      ) {
+
         navigate(
           "/setup",
         );
@@ -148,18 +198,34 @@ export default function ProgressPage() {
         return;
       }
 
-      setLoading(true);
-      setError(null);
+
+      setLoading(
+        true,
+      );
+
+
+      setError(
+        null,
+      );
+
 
       try {
+
         const data =
           await getConceptProgress(
             student.id,
-            CONCEPT_CODE,
+            topic
+              .conceptCode,
           );
 
-        setProgress(data);
+
+        setProgress(
+          data,
+        );
+
+
       } catch (err) {
+
         setError(
           err instanceof Error
             ? err.message
@@ -168,107 +234,163 @@ export default function ProgressPage() {
               + "your progress."
             ),
         );
+
+
       } finally {
-        setLoading(false);
+
+        setLoading(
+          false,
+        );
       }
     };
 
 
-  useEffect(() => {
-    void loadProgress();
-  }, []);
+  useEffect(
+    () => {
+
+      void loadProgress();
+
+    },
+    [
+      topic.conceptCode,
+    ],
+  );
 
 
   const learningMetrics =
-    progress?.learning_metrics;
+    progress
+      ?.learning_metrics;
 
 
   const hasLearningActivity =
-    useMemo(() => {
-      if (!progress) {
-        return false;
-      }
+    useMemo(
+      () => {
 
-      return Boolean(
-        progress.diagnostic
-        || progress.mastery
-        || (
-          progress.learning_metrics
-            .total_attempts > 0
-        ),
-      );
-    }, [progress]);
+        if (
+          !progress
+        ) {
+
+          return false;
+        }
 
 
-  if (loading) {
+        return Boolean(
+          progress.diagnostic
+
+          || progress.mastery
+
+          || progress
+            .learning_metrics
+            .total_attempts
+            > 0
+        );
+      },
+
+      [
+        progress,
+      ],
+    );
+
+
+  if (
+    loading
+  ) {
+
     return (
+
       <div className="progress-loading">
+
         <div className="progress-loading-icon">
+
           <TrendingUp
             size={30}
           />
+
         </div>
 
+
         <strong>
-          Loading your progress...
+          Loading {
+            topic.title
+          } progress...
         </strong>
+
       </div>
     );
   }
 
 
-  if (error) {
+  if (
+    error
+  ) {
+
     return (
+
       <div className="progress-error surface-card">
+
         <RefreshCcw
           size={32}
         />
+
 
         <h2>
           We couldn't load
           your progress.
         </h2>
 
+
         <p>
           {error}
         </p>
 
+
         <button
           type="button"
           className="primary-button"
+
           onClick={() =>
             void loadProgress()
           }
         >
           Try again
         </button>
+
       </div>
     );
   }
 
 
-  if (!progress) {
+  if (
+    !progress
+  ) {
+
     return null;
   }
 
 
   const diagnosticScore =
-    progress.diagnostic
+    progress
+      .diagnostic
       ?.score_percent
-      ?? null;
+    ?? null;
+
 
   const masteryScore =
-    progress.mastery
+    progress
+      .mastery
       ?.score_percent
-      ?? null;
+    ?? null;
+
 
   const gain =
     progress
       .score_gain_percentage_points;
 
+
   const mastery =
     progress
       .current_mastery_state;
+
 
   const difficulty =
     progress
@@ -276,33 +398,45 @@ export default function ProgressPage() {
 
 
   return (
+
     <div className="progress-page">
+
       <header className="progress-page-header">
+
         <div>
+
           <div className="progress-kicker">
+
             <Sparkles
               size={16}
             />
 
-            Your learning journey
+            Math progress
+
           </div>
 
+
           <h1>
-            See how you're growing.
+            {
+              topic.title
+            }
           </h1>
 
+
           <p>
-            LearnFirst tracks your
-            learning attempts,
-            retries and mastery —
-            not just your final
-            answers.
+            Each Math concept keeps
+            independent progress,
+            mastery and learning
+            metrics.
           </p>
+
         </div>
+
 
         <button
           type="button"
           className="secondary-button"
+
           onClick={() =>
             void loadProgress()
           }
@@ -313,620 +447,989 @@ export default function ProgressPage() {
 
           Refresh
         </button>
+
       </header>
 
-      {!hasLearningActivity ? (
-        <section className="empty-progress surface-card">
-          <div className="empty-progress-icon">
-            <Target
-              size={34}
-            />
-          </div>
+
+      {/* =============================
+          Topic selector
+      ============================== */}
+
+      <section className="progress-section-heading">
+
+        <div>
+
+          <span className="small-label">
+            Math topics
+          </span>
+
 
           <h2>
-            Your learning journey
-            starts here.
+            View another topic
           </h2>
 
-          <p>
-            Take a short diagnostic
-            first. LearnFirst will
-            use it to understand
-            your starting level.
-          </p>
+        </div>
 
-          <button
-            type="button"
-            className="primary-button"
-            onClick={() =>
-              navigate(
-                "/assessments/math/diagnostic",
-              )
-            }
-          >
-            Check my starting level
+      </section>
 
-            <ArrowRight
-              size={18}
-            />
-          </button>
-        </section>
-      ) : (
-        <>
-          <section className="progress-summary-grid">
-            <article className="progress-summary-card diagnostic-summary">
-              <div className="summary-card-icon">
-                <Target
-                  size={23}
-                />
-              </div>
 
-              <span>
-                Starting score
-              </span>
+      <div className="learning-mode-grid">
 
-              <strong>
-                {diagnosticScore
-                  !== null
-                  ? `${diagnosticScore}%`
-                  : "—"}
-              </strong>
+        {MATH_TOPICS.map(
+          (
+            item,
+          ) => {
 
-              <p>
-                Diagnostic
-                assessment
-              </p>
-            </article>
+            const selected =
+              item.conceptCode
+              === topic
+                .conceptCode;
 
-            <article className="progress-summary-card mastery-summary">
-              <div className="summary-card-icon">
-                <Trophy
-                  size={23}
-                />
-              </div>
 
-              <span>
-                Mastery score
-              </span>
+            return (
 
-              <strong>
-                {masteryScore
-                  !== null
-                  ? `${masteryScore}%`
-                  : "—"}
-              </strong>
-
-              <p>
-                Independent
-                mastery check
-              </p>
-            </article>
-
-            <article className="progress-summary-card gain-summary">
-              <div className="summary-card-icon">
-                <TrendingUp
-                  size={23}
-                />
-              </div>
-
-              <span>
-                Observed gain
-              </span>
-
-              <strong>
-                {gain !== null
-                  ? (
-                    `${gain > 0
-                      ? "+"
-                      : ""}`
-                    + `${gain}`
-                  )
-                  : "—"}
-              </strong>
-
-              <p>
-                Percentage points
-              </p>
-            </article>
-
-            <article className="progress-summary-card level-summary">
-              <div className="summary-card-icon">
-                <BrainCircuit
-                  size={23}
-                />
-              </div>
-
-              <span>
-                Current level
-              </span>
-
-              <strong className="level-text">
-                {
-                  masteryLabel(
-                    mastery,
-                  )
+              <button
+                key={
+                  item.conceptCode
                 }
-              </strong>
 
-              <p>
-                Concept mastery
-              </p>
-            </article>
-          </section>
+                type="button"
 
-          <section className="progress-content-grid">
-            <article className="surface-card score-journey-card">
-              <div className="progress-card-title">
-                <div>
-                  <span className="small-label">
-                    Score journey
-                  </span>
-
-                  <h2>
-                    From starting
-                    point to mastery
-                  </h2>
-                </div>
-
-                <TrendingUp
-                  size={27}
-                />
-              </div>
-
-              <div className="score-journey">
-                <div className="score-stage">
-                  <div className="score-stage-heading">
-                    <span>
-                      Diagnostic
-                    </span>
-
-                    <strong>
-                      {diagnosticScore
-                        !== null
-                        ? (
-                          `${diagnosticScore}%`
-                        )
-                        : "Not taken"}
-                    </strong>
-                  </div>
-
-                  <div className="score-track">
-                    <div
-                      style={{
-                        width:
-                          `${diagnosticScore
-                            ?? 0}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div className="journey-arrow">
-                  <ArrowRight
-                    size={21}
-                  />
-                </div>
-
-                <div className="score-stage">
-                  <div className="score-stage-heading">
-                    <span>
-                      Mastery
-                    </span>
-
-                    <strong>
-                      {masteryScore
-                        !== null
-                        ? (
-                          `${masteryScore}%`
-                        )
-                        : "Not taken"}
-                    </strong>
-                  </div>
-
-                  <div className="score-track mastery-track">
-                    <div
-                      style={{
-                        width:
-                          `${masteryScore
-                            ?? 0}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {gain !== null && (
-                <div
-                  className={
-                    gain > 0
-                      ? (
-                        "progress-gain-message "
-                        + "positive"
-                      )
-                      : (
-                        "progress-gain-message"
-                      )
-                  }
-                >
-                  <Sparkles
-                    size={18}
-                  />
-
-                  <div>
-                    <strong>
-                      {gain > 0
-                        ? (
-                          `+${gain} percentage `
-                          + "points"
-                        )
-                        : (
-                          `${gain} percentage `
-                          + "points"
-                        )}
-                    </strong>
-
-                    <span>
-                      Observed change
-                      between your two
-                      LearnFirst
-                      assessments.
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <p className="score-disclaimer">
-                These scores describe
-                performance inside
-                LearnFirst. They are
-                not school grades or
-                clinical measurements.
-              </p>
-            </article>
-
-            <article className="surface-card mastery-overview-card">
-              <div className="mastery-overview-icon">
-                <BrainCircuit
-                  size={26}
-                />
-              </div>
-
-              <span className="small-label">
-                Current understanding
-              </span>
-
-              <h2>
-                {
-                  masteryLabel(
-                    mastery,
-                  )
+                className={
+                  selected
+                    ? (
+                      "learning-mode-card "
+                      + "selected"
+                    )
+                    : (
+                      "learning-mode-card"
+                    )
                 }
-              </h2>
 
-              <p>
-                {
-                  masteryMessage(
-                    mastery,
-                  )
+                onClick={() =>
+                  setSearchParams({
+                    concept:
+                      item
+                        .conceptCode,
+                  })
                 }
-              </p>
-
-              <div className="difficulty-box">
-                <div>
-                  <Gauge
-                    size={19}
-                  />
-
-                  <span>
-                    Recommended
-                    next difficulty
-                  </span>
-                </div>
+              >
 
                 <strong>
                   {
-                    difficultyLabel(
-                      difficulty,
-                    )
+                    item.title
                   }
                 </strong>
-              </div>
 
-              <button
-                type="button"
-                className="primary-button mastery-practice-button"
-                onClick={() =>
-                  navigate(
-                    "/learn/math",
-                  )
-                }
-              >
-                Practice Math
 
-                <ArrowRight
-                  size={18}
-                />
+                <p>
+                  {
+                    item.description
+                  }
+                </p>
+
+
+                <span className="mode-radio">
+
+                  {
+                    selected
+                      ? "✓"
+                      : ""
+                  }
+
+                </span>
+
               </button>
-            </article>
-          </section>
+            );
+          },
+        )}
 
-          <section className="progress-section-heading">
-            <div>
-              <span className="small-label">
-                Learning independence
-              </span>
+      </div>
 
-              <h2>
-                How you are learning
-              </h2>
 
-              <p>
-                These metrics focus on
-                attempts, retries and
-                independent problem
-                solving.
-              </p>
+      {!hasLearningActivity
+        ? (
+
+          <section className="empty-progress surface-card">
+
+            <div className="empty-progress-icon">
+
+              <Target
+                size={34}
+              />
+
             </div>
-          </section>
 
-          <section className="learning-metrics-grid">
-            <article className="learning-metric-card surface-card">
-              <div className="metric-icon purple-metric">
-                <BrainCircuit
-                  size={22}
-                />
-              </div>
 
-              <strong>
-                {
-                  learningMetrics
-                    ?.total_attempts
-                  ?? 0
-                }
-              </strong>
+            <h2>
+              No {
+                topic.title
+              } progress yet.
+            </h2>
 
-              <span>
-                Total attempts
-              </span>
 
-              <p>
-                Every serious try
-                counts as learning.
-              </p>
-            </article>
+            <p>
+              Take a short diagnostic
+              to create a starting
+              profile for this topic.
+            </p>
 
-            <article className="learning-metric-card surface-card">
-              <div className="metric-icon blue-metric">
-                <Target
-                  size={22}
-                />
-              </div>
 
-              <strong>
-                {
-                  learningMetrics
-                    ?.independent_attempts
-                  ?? 0
-                }
-              </strong>
+            <button
+              type="button"
+              className="primary-button"
 
-              <span>
-                Independent tries
-              </span>
-
-              <p>
-                Attempts made with
-                little or no help.
-              </p>
-            </article>
-
-            <article className="learning-metric-card surface-card">
-              <div className="metric-icon green-metric">
-                <CheckCircle2
-                  size={22}
-                />
-              </div>
-
-              <strong>
-                {
-                  learningMetrics
-                    ?.independent_success_rate
-                  ?? 0
-                }
-                %
-              </strong>
-
-              <span>
-                Independent success
-              </span>
-
-              <p>
-                Success among your
-                independent attempts.
-              </p>
-            </article>
-
-            <article className="learning-metric-card surface-card">
-              <div className="metric-icon orange-metric">
-                <RefreshCcw
-                  size={22}
-                />
-              </div>
-
-              <strong>
-                {
-                  learningMetrics
-                    ?.retry_success_count
-                  ?? 0
-                }
-              </strong>
-
-              <span>
-                Retry wins
-              </span>
-
-              <p>
-                Times you recovered
-                after an earlier
-                mistake.
-              </p>
-            </article>
-          </section>
-
-          <section className="progress-content-grid lower-progress-grid">
-            <article className="surface-card support-usage-card">
-              <div className="progress-card-title">
-                <div>
-                  <span className="small-label">
-                    Support usage
-                  </span>
-
-                  <h2>
-                    How much help
-                    did you need?
-                  </h2>
-                </div>
-
-                <Lightbulb
-                  size={26}
-                />
-              </div>
-
-              <div className="support-stat-row">
-                <div>
-                  <span>
-                    Independent
-                    attempt rate
-                  </span>
-
-                  <strong>
-                    {
-                      learningMetrics
-                        ?.independent_attempt_rate
-                      ?? 0
-                    }
-                    %
-                  </strong>
-                </div>
-
-                <div className="mini-metric-track">
-                  <div
-                    style={{
-                      width:
-                        `${Math.min(
-                          learningMetrics
-                            ?.independent_attempt_rate
-                            ?? 0,
-                          100,
-                        )}%`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="support-stat-row">
-                <div>
-                  <span>
-                    Average hint level
-                  </span>
-
-                  <strong>
-                    {
-                      learningMetrics
-                        ?.average_hint_level
-                      ?? 0
-                    }
-                    /7
-                  </strong>
-                </div>
-
-                <div className="mini-metric-track hint-metric-track">
-                  <div
-                    style={{
-                      width:
-                        `${Math.min(
-                          (
-                            (
-                              learningMetrics
-                                ?.average_hint_level
-                              ?? 0
-                            )
-                            / 7
-                          )
-                          * 100,
-                          100,
-                        )}%`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="support-stat-row">
-                <div>
-                  <span>
-                    Correct attempts
-                  </span>
-
-                  <strong>
-                    {
-                      learningMetrics
-                        ?.correct_attempts
-                      ?? 0
-                    }
-                  </strong>
-                </div>
-              </div>
-            </article>
-
-            <article className="surface-card answer-independence-card">
-              <div className="answer-independence-icon">
-                <Lightbulb
-                  size={25}
-                />
-              </div>
-
-              <span className="small-label">
-                Think-first habit
-              </span>
-
-              <h2>
-                {
-                  learningMetrics
-                    ?.direct_answer_requests
-                  ?? 0
-                }
-                {" "}
-                direct answer
-                {
+              onClick={() =>
+                navigate(
                   (
+                    "/assessments/math/diagnostic"
+                    + `?concept=${topic.conceptCode}`
+                  ),
+                )
+              }
+            >
+              Check my starting level
+
+              <ArrowRight
+                size={18}
+              />
+            </button>
+
+          </section>
+
+        )
+        : (
+
+          <>
+
+            <section className="progress-summary-grid">
+
+              <article className="progress-summary-card diagnostic-summary">
+
+                <div className="summary-card-icon">
+
+                  <Target
+                    size={23}
+                  />
+
+                </div>
+
+
+                <span>
+                  Starting score
+                </span>
+
+
+                <strong>
+
+                  {
+                    diagnosticScore
+                    !== null
+
+                      ? (
+                        `${diagnosticScore}%`
+                      )
+
+                      : "—"
+                  }
+
+                </strong>
+
+
+                <p>
+                  Diagnostic
+                </p>
+
+              </article>
+
+
+              <article className="progress-summary-card mastery-summary">
+
+                <div className="summary-card-icon">
+
+                  <Trophy
+                    size={23}
+                  />
+
+                </div>
+
+
+                <span>
+                  Mastery score
+                </span>
+
+
+                <strong>
+
+                  {
+                    masteryScore
+                    !== null
+
+                      ? (
+                        `${masteryScore}%`
+                      )
+
+                      : "—"
+                  }
+
+                </strong>
+
+
+                <p>
+                  Mastery check
+                </p>
+
+              </article>
+
+
+              <article className="progress-summary-card gain-summary">
+
+                <div className="summary-card-icon">
+
+                  <TrendingUp
+                    size={23}
+                  />
+
+                </div>
+
+
+                <span>
+                  Observed gain
+                </span>
+
+
+                <strong>
+
+                  {
+                    gain !== null
+
+                      ? (
+                        (
+                          gain > 0
+                            ? "+"
+                            : ""
+                        )
+                        + gain
+                      )
+
+                      : "—"
+                  }
+
+                </strong>
+
+
+                <p>
+                  Percentage points
+                </p>
+
+              </article>
+
+
+              <article className="progress-summary-card level-summary">
+
+                <div className="summary-card-icon">
+
+                  <BrainCircuit
+                    size={23}
+                  />
+
+                </div>
+
+
+                <span>
+                  Current level
+                </span>
+
+
+                <strong className="level-text">
+
+                  {
+                    masteryLabel(
+                      mastery,
+                    )
+                  }
+
+                </strong>
+
+
+                <p>
+                  Topic mastery
+                </p>
+
+              </article>
+
+            </section>
+
+
+            <section className="progress-content-grid">
+
+              <article className="surface-card score-journey-card">
+
+                <div className="progress-card-title">
+
+                  <div>
+
+                    <span className="small-label">
+                      Score journey
+                    </span>
+
+
+                    <h2>
+                      Starting point
+                      to mastery
+                    </h2>
+
+                  </div>
+
+
+                  <TrendingUp
+                    size={27}
+                  />
+
+                </div>
+
+
+                <div className="score-journey">
+
+                  <div className="score-stage">
+
+                    <div className="score-stage-heading">
+
+                      <span>
+                        Diagnostic
+                      </span>
+
+
+                      <strong>
+
+                        {
+                          diagnosticScore
+                          !== null
+
+                            ? (
+                              `${diagnosticScore}%`
+                            )
+
+                            : "Not taken"
+                        }
+
+                      </strong>
+
+                    </div>
+
+
+                    <div className="score-track">
+
+                      <div
+                        style={{
+                          width:
+                            (
+                              `${diagnosticScore ?? 0}%`
+                            ),
+                        }}
+                      />
+
+                    </div>
+
+                  </div>
+
+
+                  <div className="journey-arrow">
+
+                    <ArrowRight
+                      size={21}
+                    />
+
+                  </div>
+
+
+                  <div className="score-stage">
+
+                    <div className="score-stage-heading">
+
+                      <span>
+                        Mastery
+                      </span>
+
+
+                      <strong>
+
+                        {
+                          masteryScore
+                          !== null
+
+                            ? (
+                              `${masteryScore}%`
+                            )
+
+                            : "Not taken"
+                        }
+
+                      </strong>
+
+                    </div>
+
+
+                    <div className="score-track mastery-track">
+
+                      <div
+                        style={{
+                          width:
+                            (
+                              `${masteryScore ?? 0}%`
+                            ),
+                        }}
+                      />
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+
+                {gain !== null && (
+
+                  <div
+                    className={
+                      gain > 0
+                        ? (
+                          "progress-gain-message "
+                          + "positive"
+                        )
+                        : (
+                          "progress-gain-message"
+                        )
+                    }
+                  >
+
+                    <Sparkles
+                      size={18}
+                    />
+
+
+                    <div>
+
+                      <strong>
+
+                        {
+                          gain > 0
+                            ? `+${gain}`
+                            : gain
+                        }
+
+                        {" "}
+                        percentage points
+
+                      </strong>
+
+
+                      <span>
+                        Observed change
+                        between your two
+                        LearnFirst
+                        assessments.
+                      </span>
+
+                    </div>
+
+                  </div>
+                )}
+
+
+                <p className="score-disclaimer">
+                  These scores describe
+                  performance inside
+                  LearnFirst and are
+                  not school grades.
+                </p>
+
+              </article>
+
+
+              <article className="surface-card mastery-overview-card">
+
+                <div className="mastery-overview-icon">
+
+                  <BrainCircuit
+                    size={26}
+                  />
+
+                </div>
+
+
+                <span className="small-label">
+                  Current understanding
+                </span>
+
+
+                <h2>
+
+                  {
+                    masteryLabel(
+                      mastery,
+                    )
+                  }
+
+                </h2>
+
+
+                <p>
+
+                  {
+                    masteryMessage(
+                      mastery,
+                      topic.title,
+                    )
+                  }
+
+                </p>
+
+
+                <div className="difficulty-box">
+
+                  <div>
+
+                    <Gauge
+                      size={19}
+                    />
+
+
+                    <span>
+                      Recommended
+                      next difficulty
+                    </span>
+
+                  </div>
+
+
+                  <strong>
+
+                    {
+                      difficultyLabel(
+                        difficulty,
+                      )
+                    }
+
+                  </strong>
+
+                </div>
+
+
+                <button
+                  type="button"
+                  className="primary-button mastery-practice-button"
+
+                  onClick={() =>
+                    navigate(
+                      (
+                        "/learn/math"
+                        + `?concept=${topic.conceptCode}`
+                      ),
+                    )
+                  }
+                >
+                  Practice {
+                    topic.shortTitle
+                  }
+
+                  <ArrowRight
+                    size={18}
+                  />
+                </button>
+
+              </article>
+
+            </section>
+
+
+            <section className="progress-section-heading">
+
+              <div>
+
+                <span className="small-label">
+                  Learning independence
+                </span>
+
+
+                <h2>
+                  How you are learning
+                </h2>
+
+
+                <p>
+                  These metrics apply
+                  specifically to {
+                    topic.title
+                  }.
+                </p>
+
+              </div>
+
+            </section>
+
+
+            <section className="learning-metrics-grid">
+
+              <article className="learning-metric-card surface-card">
+
+                <div className="metric-icon purple-metric">
+
+                  <BrainCircuit
+                    size={22}
+                  />
+
+                </div>
+
+
+                <strong>
+
+                  {
+                    learningMetrics
+                      ?.total_attempts
+                    ?? 0
+                  }
+
+                </strong>
+
+
+                <span>
+                  Total attempts
+                </span>
+
+
+                <p>
+                  Every serious try
+                  counts as learning.
+                </p>
+
+              </article>
+
+
+              <article className="learning-metric-card surface-card">
+
+                <div className="metric-icon blue-metric">
+
+                  <Target
+                    size={22}
+                  />
+
+                </div>
+
+
+                <strong>
+
+                  {
+                    learningMetrics
+                      ?.independent_attempts
+                    ?? 0
+                  }
+
+                </strong>
+
+
+                <span>
+                  Independent tries
+                </span>
+
+
+                <p>
+                  Attempts made with
+                  little or no help.
+                </p>
+
+              </article>
+
+
+              <article className="learning-metric-card surface-card">
+
+                <div className="metric-icon green-metric">
+
+                  <CheckCircle2
+                    size={22}
+                  />
+
+                </div>
+
+
+                <strong>
+
+                  {
+                    learningMetrics
+                      ?.independent_success_rate
+                    ?? 0
+                  }
+                  %
+
+                </strong>
+
+
+                <span>
+                  Independent success
+                </span>
+
+
+                <p>
+                  Success among
+                  independent attempts.
+                </p>
+
+              </article>
+
+
+              <article className="learning-metric-card surface-card">
+
+                <div className="metric-icon orange-metric">
+
+                  <RefreshCcw
+                    size={22}
+                  />
+
+                </div>
+
+
+                <strong>
+
+                  {
+                    learningMetrics
+                      ?.retry_success_count
+                    ?? 0
+                  }
+
+                </strong>
+
+
+                <span>
+                  Retry wins
+                </span>
+
+
+                <p>
+                  Times you recovered
+                  after a mistake.
+                </p>
+
+              </article>
+
+            </section>
+
+
+            <section className="progress-content-grid lower-progress-grid">
+
+              <article className="surface-card support-usage-card">
+
+                <div className="progress-card-title">
+
+                  <div>
+
+                    <span className="small-label">
+                      Support usage
+                    </span>
+
+
+                    <h2>
+                      How much help
+                      did you need?
+                    </h2>
+
+                  </div>
+
+
+                  <Lightbulb
+                    size={26}
+                  />
+
+                </div>
+
+
+                <div className="support-stat-row">
+
+                  <div>
+
+                    <span>
+                      Independent
+                      attempt rate
+                    </span>
+
+
+                    <strong>
+
+                      {
+                        learningMetrics
+                          ?.independent_attempt_rate
+                        ?? 0
+                      }
+                      %
+
+                    </strong>
+
+                  </div>
+
+
+                  <div className="mini-metric-track">
+
+                    <div
+                      style={{
+                        width:
+                          (
+                            `${Math.min(
+                              learningMetrics
+                                ?.independent_attempt_rate
+                                ?? 0,
+                              100,
+                            )}%`
+                          ),
+                      }}
+                    />
+
+                  </div>
+
+                </div>
+
+
+                <div className="support-stat-row">
+
+                  <div>
+
+                    <span>
+                      Average hint level
+                    </span>
+
+
+                    <strong>
+
+                      {
+                        learningMetrics
+                          ?.average_hint_level
+                        ?? 0
+                      }
+                      /7
+
+                    </strong>
+
+                  </div>
+
+
+                  <div className="mini-metric-track hint-metric-track">
+
+                    <div
+                      style={{
+                        width:
+                          (
+                            `${Math.min(
+                              (
+                                (
+                                  learningMetrics
+                                    ?.average_hint_level
+                                  ?? 0
+                                )
+                                / 7
+                              )
+                              * 100,
+                              100,
+                            )}%`
+                          ),
+                      }}
+                    />
+
+                  </div>
+
+                </div>
+
+
+                <div className="support-stat-row">
+
+                  <div>
+
+                    <span>
+                      Correct attempts
+                    </span>
+
+
+                    <strong>
+
+                      {
+                        learningMetrics
+                          ?.correct_attempts
+                        ?? 0
+                      }
+
+                    </strong>
+
+                  </div>
+
+                </div>
+
+              </article>
+
+
+              <article className="surface-card answer-independence-card">
+
+                <div className="answer-independence-icon">
+
+                  <Lightbulb
+                    size={25}
+                  />
+
+                </div>
+
+
+                <span className="small-label">
+                  Think-first habit
+                </span>
+
+
+                <h2>
+
+                  {
                     learningMetrics
                       ?.direct_answer_requests
                     ?? 0
-                  ) === 1
-                    ? " request"
-                    : " requests"
-                }
-              </h2>
+                  }
 
-              <p>
-                Asking for an answer
-                is not a failure.
-                LearnFirst uses this
-                signal to encourage
-                another independent
-                attempt first.
-              </p>
+                  {" "}
 
-              <div className="think-first-note">
-                🌱 The goal is
-                gradually needing
-                less help as your
-                understanding grows.
-              </div>
-            </article>
-          </section>
-        </>
-      )}
+                  direct answer
+
+                  {
+                    (
+                      learningMetrics
+                        ?.direct_answer_requests
+                      ?? 0
+                    )
+                    === 1
+
+                      ? " request"
+
+                      : " requests"
+                  }
+
+                </h2>
+
+
+                <p>
+                  LearnFirst uses this
+                  signal together with
+                  attempts, hints and
+                  mastery—not by itself.
+                </p>
+
+
+                <div className="think-first-note">
+                  🌱 The goal is
+                  gradually needing
+                  less support as
+                  understanding grows.
+                </div>
+
+              </article>
+
+            </section>
+
+          </>
+
+        )}
+
     </div>
   );
 }

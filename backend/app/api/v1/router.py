@@ -17,6 +17,9 @@ from app.api.v1.curriculum import (
 from app.api.v1.health import (
     router as health_router,
 )
+from app.api.v1.science_adaptive import (
+    router as science_adaptive_router,
+)
 from app.api.v1.sessions import (
     router as sessions_router,
 )
@@ -40,33 +43,46 @@ api_router.include_router(
     health_router
 )
 
+
 api_router.include_router(
     students_router
 )
+
 
 api_router.include_router(
     sessions_router
 )
 
+
 api_router.include_router(
     tutor_router
 )
+
 
 api_router.include_router(
     chat_router
 )
 
+
 api_router.include_router(
     assessments_router
 )
+
 
 api_router.include_router(
     curriculum_router
 )
 
+
 api_router.include_router(
     adaptive_router
 )
+
+
+api_router.include_router(
+    science_adaptive_router
+)
+
 
 api_router.include_router(
     telemetry_router

@@ -1,6 +1,8 @@
 import {
   BookOpen,
+  Calculator,
   ChartNoAxesColumnIncreasing,
+  FlaskConical,
   GraduationCap,
   Home,
   Sparkles,
@@ -11,25 +13,81 @@ import {
 } from "react-router";
 
 
-const items = [
+const mainItems = [
+
   {
-    path: "/dashboard",
-    label: "Home",
-    icon: Home,
+    path:
+      "/dashboard",
+
+    label:
+      "Home",
+
+    icon:
+      Home,
   },
+
+
   {
-    path: "/learn",
-    label: "Learn",
-    icon: Sparkles,
+    path:
+      "/learn",
+
+    label:
+      "Learn",
+
+    icon:
+      Sparkles,
   },
+];
+
+
+const learnItems = [
+
   {
-    path: "/practice",
-    label: "Practice",
-    icon: BookOpen,
+    path:
+      "/learn/math",
+
+    label:
+      "Math",
+
+    icon:
+      Calculator,
   },
+
+
   {
-    path: "/progress",
-    label: "Progress",
+    path:
+      "/learn/science",
+
+    label:
+      "Science",
+
+    icon:
+      FlaskConical,
+  },
+];
+
+
+const bottomItems = [
+
+  {
+    path:
+      "/practice",
+
+    label:
+      "Practice",
+
+    icon:
+      BookOpen,
+  },
+
+
+  {
+    path:
+      "/progress",
+
+    label:
+      "Progress",
+
     icon:
       ChartNoAxesColumnIncreasing,
   },
@@ -37,78 +95,254 @@ const items = [
 
 
 export default function Sidebar() {
+
   return (
+
     <aside className="sidebar">
+
       <div className="sidebar-brand">
+
         <div className="brand-mark">
+
           <GraduationCap
             size={23}
           />
+
         </div>
 
+
         <div className="sidebar-brand-text">
+
           <div className="brand-name">
             LearnFirst
           </div>
 
+
           <div className="brand-subtitle">
             Learn. Think. Grow.
           </div>
+
         </div>
+
       </div>
 
+
       <nav className="sidebar-nav">
-        {items.map((item) => {
-          const Icon =
-            item.icon;
 
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({
-                isActive,
-              }) =>
-                [
-                  "sidebar-link",
-                  isActive
-                    ? "active"
-                    : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")
-              }
-            >
-              <Icon
-                size={21}
-                strokeWidth={2}
-              />
+        {mainItems.map(
+          (
+            item,
+          ) => {
 
-              <span>
-                {item.label}
-              </span>
-            </NavLink>
-          );
-        })}
+            const Icon =
+              item.icon;
+
+
+            return (
+
+              <NavLink
+                key={
+                  item.path
+                }
+
+                to={
+                  item.path
+                }
+
+                end={
+                  item.path
+                  === "/dashboard"
+                }
+
+                className={({
+                  isActive,
+                }) =>
+                  [
+                    "sidebar-link",
+
+                    isActive
+                      ? "active"
+                      : "",
+                  ]
+                    .filter(
+                      Boolean,
+                    )
+                    .join(
+                      " ",
+                    )
+                }
+              >
+
+                <Icon
+                  size={21}
+                  strokeWidth={2}
+                />
+
+
+                <span>
+                  {
+                    item.label
+                  }
+                </span>
+
+              </NavLink>
+            );
+          },
+        )}
+
+
+        {/* =============================
+            Learn sub-navigation
+        ============================== */}
+
+        {learnItems.map(
+          (
+            item,
+          ) => {
+
+            const Icon =
+              item.icon;
+
+
+            return (
+
+              <NavLink
+                key={
+                  item.path
+                }
+
+                to={
+                  item.path
+                }
+
+                className={({
+                  isActive,
+                }) =>
+                  [
+                    "sidebar-link",
+
+                    isActive
+                      ? "active"
+                      : "",
+                  ]
+                    .filter(
+                      Boolean,
+                    )
+                    .join(
+                      " ",
+                    )
+                }
+
+                style={{
+                  paddingLeft:
+                    "34px",
+
+                  fontSize:
+                    "0.9rem",
+                }}
+              >
+
+                <Icon
+                  size={18}
+                  strokeWidth={2}
+                />
+
+
+                <span>
+                  {
+                    item.label
+                  }
+                </span>
+
+              </NavLink>
+            );
+          },
+        )}
+
+
+        {bottomItems.map(
+          (
+            item,
+          ) => {
+
+            const Icon =
+              item.icon;
+
+
+            return (
+
+              <NavLink
+                key={
+                  item.path
+                }
+
+                to={
+                  item.path
+                }
+
+                className={({
+                  isActive,
+                }) =>
+                  [
+                    "sidebar-link",
+
+                    isActive
+                      ? "active"
+                      : "",
+                  ]
+                    .filter(
+                      Boolean,
+                    )
+                    .join(
+                      " ",
+                    )
+                }
+              >
+
+                <Icon
+                  size={21}
+                  strokeWidth={2}
+                />
+
+
+                <span>
+                  {
+                    item.label
+                  }
+                </span>
+
+              </NavLink>
+            );
+          },
+        )}
+
       </nav>
 
+
       <div className="sidebar-helper">
+
         <div className="sidebar-helper-icon">
           ✨
         </div>
 
+
         <div>
+
           <strong>
             Think first
           </strong>
+
 
           <p>
             LearnFirst helps you
             discover the answer,
             not just receive it.
           </p>
+
         </div>
+
       </div>
+
     </aside>
   );
 }

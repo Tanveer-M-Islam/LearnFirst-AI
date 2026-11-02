@@ -30,8 +30,24 @@ from app.math.models import (
 from app.rag.models import (
     RAGContext,
 )
+from app.rag.query_builder import (
+    RAGQueryBuilder,
+)
 from app.rag.service import (
     RAGService,
+)
+from app.science.attempt_service import (
+    ScienceAttemptService,
+)
+from app.science.evaluator import (
+    ScienceUnderstandingEvaluator,
+)
+from app.science.models import (
+    ScienceValidationResult,
+    create_public_science_validation,
+)
+from app.science.question_bank import (
+    get_science_question,
 )
 from app.schemas.chat import (
     TutorMessageResponse,
@@ -48,6 +64,9 @@ from app.schemas.enums import (
 )
 from app.services.adaptive_learning_service import (
     AdaptiveLearningService,
+)
+from app.services.science_adaptive_learning_service import (
+    ScienceAdaptiveLearningService,
 )
 from app.services.tutor_service import (
     TutorService,
@@ -119,9 +138,10 @@ class TutorChatService:
             )
 
 
-        intent = (
-            IntentRouter.classify(
-                student_message
+        subject = (
+            Subject(
+                learning_session
+                .subject
             )
         )
 
@@ -134,20 +154,16 @@ class TutorChatService:
         )
 
 
-        subject = (
-            Subject(
-                learning_session
-                .subject
+        intent = (
+            IntentRouter
+            .classify(
+                student_message
             )
         )
 
 
         # ==================================
-        # Practice-question request
-        #
-        # Practice and Learn Mode both use
-        # a real stored problem from the
-        # deterministic problem bank.
+        # Math practice request
         # ==================================
 
         if (
@@ -178,11 +194,78 @@ class TutorChatService:
 
 
         # ==================================
-        # Math validation
+        # Science quiz request
+        # ==================================
+
+        if (
+            subject
+            == Subject.SCIENCE
+
+            and intent
+            == TutorIntent
+            .PRACTICE_REQUEST
+        ):
+
+            learning_session = (
+                cls
+                ._assign_next_science_question(
+                    db=db,
+
+                    learning_session=(
+                        learning_session
+                    ),
+                )
+            )
+
+
+        # ==================================
+        # Science natural explanation
+        #
+        # Natural Science answers usually
+        # do not look like Math answers.
+        #
+        # If an active Science question
+        # exists, normal explanatory text
+        # can be treated as an attempt.
+        # ==================================
+
+        if (
+            subject
+            == Subject.SCIENCE
+
+            and learning_session
+            .current_problem
+
+            and intent
+            == TutorIntent
+            .LEARN_CONCEPT
+
+            and (
+                ScienceUnderstandingEvaluator
+                .looks_like_answer(
+                    student_message
+                )
+            )
+        ):
+
+            intent = (
+                TutorIntent
+                .STUDENT_ATTEMPT
+            )
+
+
+        # ==================================
+        # Validation
         # ==================================
 
         math_validation: (
             MathValidationResult
+            | None
+        ) = None
+
+
+        science_validation: (
+            ScienceValidationResult
             | None
         ) = None
 
@@ -205,10 +288,13 @@ class TutorChatService:
             .STUDENT_ATTEMPT
         ):
 
+            # ------------------------------
+            # Math
+            # ------------------------------
+
             if (
-                learning_session
-                .subject
-                == Subject.MATH.value
+                subject
+                == Subject.MATH
 
                 and learning_session
                 .current_problem
@@ -235,6 +321,47 @@ class TutorChatService:
                 )
 
 
+            # ------------------------------
+            # Science
+            # ------------------------------
+
+            elif (
+                subject
+                == Subject.SCIENCE
+
+                and learning_session
+                .current_problem
+
+                and learning_session
+                .concept_code
+            ):
+
+                science_validation = (
+                    ScienceAttemptService
+                    .analyze(
+                        concept_code=(
+                            learning_session
+                            .concept_code
+                        ),
+
+                        question_prompt=(
+                            learning_session
+                            .current_problem
+                        ),
+
+                        student_message=(
+                            student_message
+                        ),
+                    )
+                )
+
+
+                attempt_status = (
+                    science_validation
+                    .status
+                )
+
+
             else:
 
                 attempt_status = (
@@ -244,12 +371,14 @@ class TutorChatService:
 
 
         # ==================================
-        # Tutor policy decision
+        # Tutor decision
         # ==================================
 
         decision_input = (
             TutorDecisionInput(
-                intent=intent,
+                intent=(
+                    intent
+                ),
 
                 attempt_status=(
                     attempt_status
@@ -309,7 +438,7 @@ class TutorChatService:
 
 
         # ==================================
-        # Record deterministic Math attempt
+        # Record Math attempt
         # ==================================
 
         if (
@@ -350,27 +479,65 @@ class TutorChatService:
             )
 
 
-            if (
-                refreshed_session
-                is None
-            ):
+        # ==================================
+        # Record Science attempt
+        # ==================================
 
-                raise ValueError(
-                    "Learning session "
-                    "could not be "
-                    "reloaded."
+        if (
+            science_validation
+            is not None
+        ):
+
+            ScienceAttemptService.record(
+                db=db,
+
+                learning_session=(
+                    refreshed_session
+                ),
+
+                student_message=(
+                    student_message
+                ),
+
+                validation=(
+                    science_validation
+                ),
+
+                hint_level_before=(
+                    hint_level_before
+                ),
+            )
+
+
+            refreshed_session = (
+                LearningSessionRepository
+                .get_by_id(
+                    db=db,
+
+                    session_id=(
+                        session_id
+                    ),
                 )
+            )
+
+
+        if (
+            refreshed_session
+            is None
+        ):
+
+            raise ValueError(
+                "Learning session "
+                "could not be "
+                "reloaded."
+            )
 
 
         # ==================================
-        # Automatic next problem
-        #
-        # After a correct Practice/Learn
-        # attempt, assign the next actual
-        # problem in the database.
+        # Automatic Math next problem
         # ==================================
 
-        next_problem_after_success = None
+        next_math_problem = None
 
 
         if (
@@ -416,21 +583,68 @@ class TutorChatService:
                 != previous_problem
             ):
 
-                next_problem_after_success = (
+                next_math_problem = (
                     refreshed_session
                     .current_problem
                 )
 
 
         # ==================================
-        # Build current tutor state
+        # Automatic Science next question
+        # ==================================
+
+        next_science_question = None
+
+
+        if (
+            science_validation
+            is not None
+
+            and science_validation.status
+            == AttemptStatus.CORRECT
+        ):
+
+            previous_question = (
+                refreshed_session
+                .current_problem
+            )
+
+
+            refreshed_session = (
+                cls
+                ._assign_next_science_question(
+                    db=db,
+
+                    learning_session=(
+                        refreshed_session
+                    ),
+                )
+            )
+
+
+            if (
+                refreshed_session
+                .current_problem
+
+                and refreshed_session
+                .current_problem
+                != previous_question
+            ):
+
+                next_science_question = (
+                    refreshed_session
+                    .current_problem
+                )
+
+
+        # ==================================
+        # State
         # ==================================
 
         state = (
             TutorSessionState(
                 session_id=(
-                    refreshed_session
-                    .id
+                    refreshed_session.id
                 ),
 
                 student_id=(
@@ -440,28 +654,24 @@ class TutorChatService:
 
                 age_group=(
                     AgeGroup(
-                        student
-                        .age_group
+                        student.age_group
                     )
                 ),
 
                 mode=(
                     LearningMode(
-                        refreshed_session
-                        .mode
+                        refreshed_session.mode
                     )
                 ),
 
                 subject=(
                     Subject(
-                        refreshed_session
-                        .subject
+                        refreshed_session.subject
                     )
                 ),
 
                 topic=(
-                    refreshed_session
-                    .topic
+                    refreshed_session.topic
                 ),
 
                 concept_code=(
@@ -519,7 +729,7 @@ class TutorChatService:
         )
 
 
-        public_validation = (
+        public_math_validation = (
             create_public_validation(
                 math_validation
             )
@@ -531,13 +741,24 @@ class TutorChatService:
         )
 
 
+        public_science_validation = (
+            create_public_science_validation(
+                science_validation
+            )
+
+            if science_validation
+            is not None
+
+            else None
+        )
+
+
         # ==================================
-        # Successful practice:
-        # deterministic next problem
+        # Math correct response
         # ==================================
 
         if (
-            next_problem_after_success
+            next_math_problem
             is not None
         ):
 
@@ -550,7 +771,7 @@ class TutorChatService:
                     "Correct — nice work. "
                     "Let's keep practicing. "
                     "Try this next problem: "
-                    f"{next_problem_after_success}. "
+                    f"{next_math_problem}. "
                     "Try it independently first."
                 )
 
@@ -562,7 +783,7 @@ class TutorChatService:
                     "check that the idea "
                     "is becoming independent. "
                     "Try this next problem: "
-                    f"{next_problem_after_success}."
+                    f"{next_math_problem}."
                 )
 
 
@@ -585,14 +806,18 @@ class TutorChatService:
                     ),
 
                     math_validation=(
-                        public_validation
+                        public_math_validation
                     ),
+
+                    science_validation=None,
 
                     rag_used=False,
 
                     rag_sources=[],
 
-                    reply=reply,
+                    reply=(
+                        reply
+                    ),
 
                     provider="system",
 
@@ -606,17 +831,106 @@ class TutorChatService:
 
 
         # ==================================
-        # Other deterministic responses
+        # Science correct response
+        # ==================================
+
+        if (
+            next_science_question
+            is not None
+
+            and science_validation
+            is not None
+        ):
+
+            recognized = (
+                ", ".join(
+                    science_validation
+                    .matched_ideas[
+                        :3
+                    ]
+                )
+            )
+
+
+            if recognized:
+
+                reply = (
+                    "Your explanation included "
+                    "the important ideas about "
+                    f"{recognized}. "
+                    "Now try this next question: "
+                    f"{next_science_question}"
+                )
+
+
+            else:
+
+                reply = (
+                    "Your explanation shows "
+                    "the main idea. "
+                    "Now try this next question: "
+                    f"{next_science_question}"
+                )
+
+
+            return (
+                TutorMessageResponse(
+                    session_id=(
+                        session_id
+                    ),
+
+                    student_message=(
+                        student_message
+                    ),
+
+                    detected_intent=(
+                        intent
+                    ),
+
+                    decision=(
+                        decision
+                    ),
+
+                    math_validation=None,
+
+                    science_validation=(
+                        public_science_validation
+                    ),
+
+                    rag_used=False,
+
+                    rag_sources=[],
+
+                    reply=(
+                        reply
+                    ),
+
+                    provider="system",
+
+                    model=(
+                        "science-rubric"
+                    ),
+
+                    latency_ms=0.0,
+                )
+            )
+
+
+        # ==================================
+        # Deterministic responses
         # ==================================
 
         deterministic_reply = (
-            cls._deterministic_response(
+            cls
+            ._deterministic_response(
                 action=(
                     decision
                     .next_action
                 ),
 
-                state=state,
+                state=(
+                    state
+                ),
             )
         )
 
@@ -645,7 +959,11 @@ class TutorChatService:
                     ),
 
                     math_validation=(
-                        public_validation
+                        public_math_validation
+                    ),
+
+                    science_validation=(
+                        public_science_validation
                     ),
 
                     rag_used=False,
@@ -658,9 +976,7 @@ class TutorChatService:
 
                     provider="system",
 
-                    model=(
-                        "deterministic"
-                    ),
+                    model="deterministic",
 
                     latency_ms=0.0,
                 )
@@ -686,18 +1002,58 @@ class TutorChatService:
             )
 
 
-            rag_context = (
-                rag_service.retrieve(
-                    query=(
+            # ==================================
+            # PHASE 15.1 FIX
+            #
+            # Do NOT send generic messages like
+            # "Give me a hint" directly into
+            # vector search.
+            #
+            # Attach current Science context.
+            # ==================================
+
+            rag_query = (
+                RAGQueryBuilder
+                .build(
+                    student_message=(
                         student_message
                     ),
 
                     subject=(
-                        state.subject.value
+                        state.subject
+                    ),
+
+                    topic=(
+                        state.topic
                     ),
 
                     concept_code=(
                         state.concept_code
+                    ),
+
+                    current_problem=(
+                        state.current_problem
+                    ),
+                )
+            )
+
+
+            rag_context = (
+                rag_service
+                .retrieve(
+                    query=(
+                        rag_query
+                    ),
+
+                    subject=(
+                        state
+                        .subject
+                        .value
+                    ),
+
+                    concept_code=(
+                        state
+                        .concept_code
                     ),
                 )
             )
@@ -727,7 +1083,11 @@ class TutorChatService:
                         ),
 
                         math_validation=(
-                            public_validation
+                            public_math_validation
+                        ),
+
+                        science_validation=(
+                            public_science_validation
                         ),
 
                         rag_used=False,
@@ -761,17 +1121,26 @@ class TutorChatService:
         # ==================================
 
         request = (
-            TutorPromptBuilder.build(
+            TutorPromptBuilder
+            .build(
                 student_message=(
                     student_message
                 ),
 
-                state=state,
+                state=(
+                    state
+                ),
 
-                decision=decision,
+                decision=(
+                    decision
+                ),
 
                 math_validation=(
                     math_validation
+                ),
+
+                science_validation=(
+                    science_validation
                 ),
 
                 rag_context=(
@@ -807,7 +1176,11 @@ class TutorChatService:
                 ),
 
                 math_validation=(
-                    public_validation
+                    public_math_validation
+                ),
+
+                science_validation=(
+                    public_science_validation
                 ),
 
                 rag_used=bool(
@@ -846,7 +1219,7 @@ class TutorChatService:
 
 
     # ======================================================
-    # Assign deterministic adaptive problem
+    # Math adaptive problem
     # ======================================================
 
     @classmethod
@@ -867,12 +1240,10 @@ class TutorChatService:
             is None
         ):
 
-            return learning_session
+            return (
+                learning_session
+            )
 
-
-        # ----------------------------------
-        # Get current adaptive difficulty
-        # ----------------------------------
 
         difficulty = (
             DifficultyLevel.EASY
@@ -913,13 +1284,8 @@ class TutorChatService:
             )
 
 
-        # ----------------------------------
-        # Use total historical attempts
-        # so the problem sequence does
-        # not reset every session.
-        # ----------------------------------
-
         attempts = [
+
             attempt
 
             for attempt
@@ -966,20 +1332,13 @@ class TutorChatService:
         )
 
 
-        # ----------------------------------
-        # Avoid immediately repeating
-        # the same equation.
-        # ----------------------------------
-
         if (
             problem
             is not None
 
             and problem.prompt
-            == (
-                learning_session
-                .current_problem
-            )
+            == learning_session
+            .current_problem
         ):
 
             problem = (
@@ -1004,23 +1363,29 @@ class TutorChatService:
             is None
         ):
 
-            return learning_session
+            return (
+                learning_session
+            )
 
 
-        learning_session.current_problem = (
-            problem.prompt
-        )
+        learning_session\
+            .current_problem = (
+                problem.prompt
+            )
 
 
-        learning_session.current_hint_level = 0
+        learning_session\
+            .current_hint_level = 0
 
 
-        learning_session.attempt_count = 0
+        learning_session\
+            .attempt_count = 0
 
 
-        learning_session.current_misconception = (
-            None
-        )
+        learning_session\
+            .current_misconception = (
+                None
+            )
 
 
         return (
@@ -1036,7 +1401,189 @@ class TutorChatService:
 
 
     # ======================================================
-    # Deterministic tutor messages
+    # Science adaptive question
+    # ======================================================
+
+    @classmethod
+    def _assign_next_science_question(
+        cls,
+        db: Session,
+        learning_session,
+    ):
+
+        concept_code = (
+            learning_session
+            .concept_code
+        )
+
+
+        if (
+            concept_code
+            is None
+        ):
+
+            return (
+                learning_session
+            )
+
+
+        difficulty = (
+            DifficultyLevel.EASY
+        )
+
+
+        try:
+
+            plan = (
+                ScienceAdaptiveLearningService
+                .get_plan(
+                    db=db,
+
+                    student_id=(
+                        learning_session
+                        .student_id
+                    ),
+
+                    concept_code=(
+                        concept_code
+                    ),
+                )
+            )
+
+
+            difficulty = (
+                plan.difficulty
+            )
+
+
+        except (
+            LookupError,
+            ValueError,
+        ):
+
+            difficulty = (
+                DifficultyLevel.EASY
+            )
+
+
+        attempts = [
+
+            attempt
+
+            for attempt
+            in (
+                StudentAttemptRepository
+                .list_by_student(
+                    db=db,
+
+                    student_id=(
+                        learning_session
+                        .student_id
+                    ),
+                )
+            )
+
+            if (
+                attempt.problem_ref
+                == concept_code
+            )
+        ]
+
+
+        offset = (
+            len(
+                attempts
+            )
+        )
+
+
+        question = (
+            get_science_question(
+                concept_code=(
+                    concept_code
+                ),
+
+                offset=(
+                    offset
+                ),
+
+                difficulty=(
+                    difficulty
+                ),
+            )
+        )
+
+
+        if (
+            question
+            is not None
+
+            and question.prompt
+            == learning_session
+            .current_problem
+        ):
+
+            question = (
+                get_science_question(
+                    concept_code=(
+                        concept_code
+                    ),
+
+                    offset=(
+                        offset + 1
+                    ),
+
+                    difficulty=(
+                        difficulty
+                    ),
+                )
+            )
+
+
+        if (
+            question
+            is None
+        ):
+
+            return (
+                learning_session
+            )
+
+
+        learning_session\
+            .current_problem = (
+                question.prompt
+            )
+
+
+        learning_session\
+            .current_hint_level = 0
+
+
+        learning_session\
+            .attempt_count = 0
+
+
+        learning_session\
+            .current_misconception = (
+                None
+            )
+
+
+        return (
+            LearningSessionRepository
+            .save(
+                db=db,
+
+                learning_session=(
+                    learning_session
+                ),
+            )
+        )
+
+
+    # ======================================================
+    # Deterministic responses
     # ======================================================
 
     @staticmethod
@@ -1052,6 +1599,20 @@ class TutorChatService:
 
             and state.current_problem
         ):
+
+            if (
+                state.subject
+                == Subject.SCIENCE
+            ):
+
+                return (
+                    "Here is your Science "
+                    "question: "
+                    f"{state.current_problem} "
+                    "Explain the idea in "
+                    "your own words."
+                )
+
 
             return (
                 "Here is your practice "

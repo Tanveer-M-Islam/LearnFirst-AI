@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -25,6 +26,15 @@ import {
   submitAssessment,
 } from "../api/assessments";
 
+import {
+  getLearningSession,
+} from "../api/sessions";
+
+import {
+  DEFAULT_MATH_CONCEPT_CODE,
+  getMathTopic,
+} from "../data/mathTopics";
+
 import type {
   AssessmentAnswerInput,
   AssessmentResult,
@@ -37,15 +47,13 @@ import {
 } from "../utils/studentStorage";
 
 
-const CONCEPT_CODE =
-  "MATH_ALG_LINEAR_01";
-
-
 function getAssessmentType(
   value: string | undefined,
 ): AssessmentType {
+
   return (
-    value?.toLowerCase()
+    value
+      ?.toLowerCase()
     === "mastery"
   )
     ? "MASTERY"
@@ -56,7 +64,11 @@ function getAssessmentType(
 function scoreMessage(
   score: number,
 ): string {
-  if (score >= 80) {
+
+  if (
+    score >= 80
+  ) {
+
     return (
       "You have a strong "
       + "understanding of "
@@ -64,7 +76,11 @@ function scoreMessage(
     );
   }
 
-  if (score >= 60) {
+
+  if (
+    score >= 60
+  ) {
+
     return (
       "You understand much of "
       + "the idea. A little more "
@@ -72,7 +88,11 @@ function scoreMessage(
     );
   }
 
-  if (score >= 40) {
+
+  if (
+    score >= 40
+  ) {
+
     return (
       "You have a useful starting "
       + "point. LearnFirst will "
@@ -80,17 +100,20 @@ function scoreMessage(
     );
   }
 
+
   return (
-    "That's okay — this gives "
-    + "LearnFirst a clear place "
-    + "to begin teaching."
+    "This gives LearnFirst "
+    + "a clear place to begin "
+    + "teaching."
   );
 }
 
 
 export default function AssessmentPage() {
+
   const navigate =
     useNavigate();
+
 
   const {
     assessmentType:
@@ -99,22 +122,48 @@ export default function AssessmentPage() {
     assessmentType: string;
   }>();
 
+
   const [
     searchParams,
   ] = useSearchParams();
 
+
   const student =
     getStoredStudent();
+
 
   const assessmentType =
     getAssessmentType(
       assessmentTypeParam,
     );
 
+
   const sessionId =
     searchParams.get(
       "sessionId",
     );
+
+
+  const conceptFromUrl =
+    searchParams.get(
+      "concept",
+    );
+
+
+  const [
+    conceptCode,
+    setConceptCode,
+  ] = useState(
+    conceptFromUrl
+    ?? DEFAULT_MATH_CONCEPT_CODE,
+  );
+
+
+  const topic =
+    getMathTopic(
+      conceptCode,
+    );
+
 
   const [
     assessment,
@@ -123,17 +172,23 @@ export default function AssessmentPage() {
     AssessmentStartResponse | null
   >(null);
 
+
   const [
     currentIndex,
     setCurrentIndex,
   ] = useState(0);
 
+
   const [
     answers,
     setAnswers,
   ] = useState<
-    Record<string, string>
+    Record<
+      string,
+      string
+    >
   >({});
+
 
   const [
     result,
@@ -142,10 +197,14 @@ export default function AssessmentPage() {
     AssessmentResult | null
   >(null);
 
+
   const [
     loading,
     setLoading,
-  ] = useState(false);
+  ] = useState(
+    false,
+  );
+
 
   const [
     error,
@@ -158,6 +217,70 @@ export default function AssessmentPage() {
   const isMastery =
     assessmentType
     === "MASTERY";
+
+
+  useEffect(
+    () => {
+
+      if (
+        conceptFromUrl
+      ) {
+
+        setConceptCode(
+          conceptFromUrl,
+        );
+
+        return;
+      }
+
+
+      if (
+        !sessionId
+      ) {
+
+        return;
+      }
+
+
+      const resolveSessionConcept =
+        async () => {
+
+          try {
+
+            const session =
+              await getLearningSession(
+                sessionId,
+              );
+
+
+            if (
+              session.concept_code
+            ) {
+
+              setConceptCode(
+                session
+                  .concept_code,
+              );
+            }
+
+
+          } catch {
+
+            // The assessment API
+            // will provide the final
+            // validation if needed.
+          }
+        };
+
+
+      void resolveSessionConcept();
+
+    },
+    [
+      conceptFromUrl,
+      sessionId,
+    ],
+  );
 
 
   const currentQuestion =
@@ -200,13 +323,27 @@ export default function AssessmentPage() {
           (value) =>
             value.trim(),
         ).length,
-      [answers],
+
+      [
+        answers,
+      ],
+    );
+
+
+  const mathReturnPath =
+    (
+      "/learn/math"
+      + `?concept=${conceptCode}`
     );
 
 
   const beginAssessment =
     async () => {
-      if (!student) {
+
+      if (
+        !student
+      ) {
+
         navigate(
           "/setup",
         );
@@ -214,12 +351,53 @@ export default function AssessmentPage() {
         return;
       }
 
-      setLoading(true);
-      setError(null);
+
+      setLoading(
+        true,
+      );
+
+
+      setError(
+        null,
+      );
+
 
       try {
+
+        let finalConceptCode =
+          conceptCode;
+
+
+        if (
+          sessionId
+          && !conceptFromUrl
+        ) {
+
+          const session =
+            await getLearningSession(
+              sessionId,
+            );
+
+
+          if (
+            session.concept_code
+          ) {
+
+            finalConceptCode =
+              session
+                .concept_code;
+
+
+            setConceptCode(
+              finalConceptCode,
+            );
+          }
+        }
+
+
         const data =
           await startAssessment({
+
             student_id:
               student.id,
 
@@ -230,18 +408,30 @@ export default function AssessmentPage() {
               "MATH",
 
             concept_code:
-              CONCEPT_CODE,
+              finalConceptCode,
 
             assessment_type:
               assessmentType,
           });
 
-        setAssessment(data);
 
-        setCurrentIndex(0);
+        setAssessment(
+          data,
+        );
 
-        setAnswers({});
+
+        setCurrentIndex(
+          0,
+        );
+
+
+        setAnswers(
+          {},
+        );
+
+
       } catch (err) {
+
         setError(
           err instanceof Error
             ? err.message
@@ -250,8 +440,13 @@ export default function AssessmentPage() {
               + "the assessment."
             ),
         );
+
+
       } finally {
-        setLoading(false);
+
+        setLoading(
+          false,
+        );
       }
     };
 
@@ -259,12 +454,20 @@ export default function AssessmentPage() {
   const updateAnswer = (
     value: string,
   ) => {
-    if (!currentQuestion) {
+
+    if (
+      !currentQuestion
+    ) {
+
       return;
     }
 
+
     setAnswers(
-      (current) => ({
+      (
+        current,
+      ) => ({
+
         ...current,
 
         [
@@ -277,41 +480,61 @@ export default function AssessmentPage() {
   };
 
 
-  const nextQuestion = () => {
-    if (!currentAnswer.trim()) {
+  const nextQuestion =
+    () => {
+
+      if (
+        !currentAnswer
+          .trim()
+      ) {
+
+        setError(
+          "Try answering this "
+          + "question first.",
+        );
+
+        return;
+      }
+
+
       setError(
-        "Try answering this "
-        + "question first.",
+        null,
       );
 
-      return;
-    }
 
-    setError(null);
-
-    if (
-      assessment
-      && currentIndex
-      < (
+      if (
         assessment
-          .total_questions
-        - 1
-      )
-    ) {
-      setCurrentIndex(
-        (current) =>
-          current + 1,
-      );
-    }
-  };
+
+        && currentIndex
+        < (
+          assessment
+            .total_questions
+          - 1
+        )
+      ) {
+
+        setCurrentIndex(
+          (
+            current,
+          ) =>
+            current + 1,
+        );
+      }
+    };
 
 
   const previousQuestion =
     () => {
-      setError(null);
+
+      setError(
+        null,
+      );
+
 
       setCurrentIndex(
-        (current) =>
+        (
+          current,
+        ) =>
           Math.max(
             current - 1,
             0,
@@ -322,11 +545,21 @@ export default function AssessmentPage() {
 
   const finishAssessment =
     async () => {
-      if (!assessment) {
+
+      if (
+        !assessment
+        || !currentQuestion
+      ) {
+
         return;
       }
 
-      if (!currentAnswer.trim()) {
+
+      if (
+        !currentAnswer
+          .trim()
+      ) {
+
         setError(
           "Try answering this "
           + "question first.",
@@ -335,29 +568,41 @@ export default function AssessmentPage() {
         return;
       }
 
+
       const completeAnswers = {
+
         ...answers,
 
         [
-          currentQuestion!
+          currentQuestion
             .question_id
         ]:
           currentAnswer,
       };
 
+
       const missing =
-        assessment.questions
+        assessment
+          .questions
           .some(
-            (question) =>
+            (
+              question,
+            ) =>
               !(
                 completeAnswers[
                   question
                     .question_id
-                ] ?? ""
-              ).trim(),
+                ]
+                ?? ""
+              )
+                .trim(),
           );
 
-      if (missing) {
+
+      if (
+        missing
+      ) {
+
         setError(
           "Please answer all "
           + "five questions.",
@@ -366,11 +611,16 @@ export default function AssessmentPage() {
         return;
       }
 
+
       const payload:
         AssessmentAnswerInput[] =
-          assessment.questions
+          assessment
+            .questions
             .map(
-              (question) => ({
+              (
+                question,
+              ) => ({
+
                 question_id:
                   question
                     .question_id,
@@ -379,14 +629,24 @@ export default function AssessmentPage() {
                   completeAnswers[
                     question
                       .question_id
-                  ].trim(),
+                  ]
+                    .trim(),
               }),
             );
 
-      setLoading(true);
-      setError(null);
+
+      setLoading(
+        true,
+      );
+
+
+      setError(
+        null,
+      );
+
 
       try {
+
         const data =
           await submitAssessment(
             assessment
@@ -395,12 +655,19 @@ export default function AssessmentPage() {
             payload,
           );
 
+
         setAnswers(
           completeAnswers,
         );
 
-        setResult(data);
+
+        setResult(
+          data,
+        );
+
+
       } catch (err) {
+
         setError(
           err instanceof Error
             ? err.message
@@ -409,20 +676,46 @@ export default function AssessmentPage() {
               + "the assessment."
             ),
         );
+
+
       } finally {
-        setLoading(false);
+
+        setLoading(
+          false,
+        );
       }
     };
 
 
-  if (result) {
+  if (
+    result
+  ) {
+
     const gain =
       result
         .score_gain_percentage_points;
 
+
+    const resultTopic =
+      getMathTopic(
+        result
+          .concept_code,
+      );
+
+
+    const resultMathPath =
+      (
+        "/learn/math"
+        + `?concept=${result.concept_code}`
+      );
+
+
     return (
+
       <div className="assessment-result-page">
+
         <div className="assessment-result-card surface-card">
+
           <div
             className={
               isMastery
@@ -436,6 +729,7 @@ export default function AssessmentPage() {
                 )
             }
           >
+
             {isMastery
               ? (
                 <Trophy
@@ -447,36 +741,65 @@ export default function AssessmentPage() {
                   size={36}
                 />
               )}
+
           </div>
 
+
           <span className="assessment-result-label">
+
+            {
+              resultTopic.title
+            }
+
+            {" • "}
+
             {isMastery
-              ? "Mastery check complete"
-              : "Your starting point"}
+              ? "Mastery check"
+              : "Diagnostic"}
+
           </span>
 
+
           <h1>
-            {result.score_percent}%
+            {
+              result.score_percent
+            }
+            %
           </h1>
 
+
           <p className="result-summary">
-            {scoreMessage(
-              result.score_percent,
-            )}
+
+            {
+              scoreMessage(
+                result
+                  .score_percent,
+              )
+            }
+
           </p>
 
+
           <div className="result-score-bar">
+
             <div
               style={{
                 width:
-                  `${result.score_percent}%`,
+                  (
+                    `${result.score_percent}%`
+                  ),
               }}
             />
+
           </div>
 
+
           <div className="result-stats-grid">
+
             <div>
+
               <strong>
+
                 {
                   result
                     .correct_answers
@@ -486,15 +809,20 @@ export default function AssessmentPage() {
                   result
                     .total_questions
                 }
+
               </strong>
 
               <span>
                 Correct
               </span>
+
             </div>
 
+
             <div>
+
               <strong>
+
                 {
                   result
                     .mastery_state
@@ -503,44 +831,61 @@ export default function AssessmentPage() {
                       " ",
                     )
                 }
+
               </strong>
 
               <span>
                 Understanding
               </span>
+
             </div>
 
+
             <div>
+
               <strong>
+
                 {
                   result
                     .recommended_difficulty
                 }
+
               </strong>
 
               <span>
                 Next level
               </span>
+
             </div>
+
           </div>
+
 
           {(
             isMastery
+
             && result
               .baseline_score_percent
               !== null
           ) && (
+
             <div className="score-comparison">
+
               <div className="comparison-heading">
+
                 <Sparkles
                   size={19}
                 />
 
                 Your progress
+
               </div>
 
+
               <div className="comparison-scores">
+
                 <div>
+
                   <span>
                     Starting score
                   </span>
@@ -552,13 +897,17 @@ export default function AssessmentPage() {
                     }
                     %
                   </strong>
+
                 </div>
+
 
                 <ArrowRight
                   size={22}
                 />
 
+
                 <div>
+
                   <span>
                     Mastery score
                   </span>
@@ -570,10 +919,14 @@ export default function AssessmentPage() {
                     }
                     %
                   </strong>
+
                 </div>
+
               </div>
 
+
               {gain !== null && (
+
                 <div
                   className={
                     gain > 0
@@ -584,113 +937,108 @@ export default function AssessmentPage() {
                       : "gain-pill"
                   }
                 >
-                  {gain > 0
-                    ? "+"
-                    : ""}
+
+                  {
+                    gain > 0
+                      ? "+"
+                      : ""
+                  }
+
                   {gain}
+
                   {" "}
                   percentage points
+
                 </div>
               )}
+
             </div>
           )}
 
+
           <div className="assessment-result-actions">
-            {isMastery ? (
-              <>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() =>
-                    navigate(
-                      "/dashboard",
-                    )
-                  }
-                >
-                  Dashboard
-                </button>
 
-                <button
-                  type="button"
-                  className="primary-button"
-                  onClick={() =>
-                    navigate(
-                      "/learn/math",
-                    )
-                  }
-                >
-                  Practice another
-                  problem
+            <button
+              type="button"
+              className="secondary-button"
 
-                  <ArrowRight
-                    size={18}
-                  />
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() =>
-                    navigate(
-                      "/dashboard",
-                    )
-                  }
-                >
-                  Dashboard
-                </button>
+              onClick={() =>
+                navigate(
+                  "/dashboard",
+                )
+              }
+            >
+              Dashboard
+            </button>
 
-                <button
-                  type="button"
-                  className="primary-button"
-                  onClick={() =>
-                    navigate(
-                      "/learn/math",
-                    )
-                  }
-                >
-                  Start guided learning
 
-                  <ArrowRight
-                    size={18}
-                  />
-                </button>
-              </>
-            )}
+            <button
+              type="button"
+              className="primary-button"
+
+              onClick={() =>
+                navigate(
+                  resultMathPath,
+                )
+              }
+            >
+
+              {
+                isMastery
+                  ? (
+                    "Continue "
+                    + resultTopic
+                      .shortTitle
+                  )
+                  : (
+                    "Start guided learning"
+                  )
+              }
+
+              <ArrowRight
+                size={18}
+              />
+
+            </button>
+
           </div>
+
 
           <p className="assessment-result-note">
             This score describes
-            your performance on
-            this LearnFirst
-            assessment. It is not
-            a school grade.
+            your performance on this
+            LearnFirst assessment.
+            It is not a school grade.
           </p>
+
         </div>
+
       </div>
     );
   }
 
 
-  if (!assessment) {
+  if (
+    !assessment
+  ) {
+
     return (
+
       <div className="assessment-intro-page">
+
         <button
           type="button"
           className="page-back-button"
+
           onClick={() =>
             navigate(
               isMastery
-                ? (
-                  sessionId
-                    ? (
-                      "/learn/math/"
-                      + `session/${sessionId}`
-                    )
-                    : "/learn/math"
-                )
-                : "/learn/math",
+                && sessionId
+                  ? (
+                    "/learn/math/"
+                    + `session/${sessionId}`
+                  )
+                  : mathReturnPath,
             )
           }
         >
@@ -701,7 +1049,9 @@ export default function AssessmentPage() {
           Back
         </button>
 
+
         <div className="assessment-intro-card surface-card">
+
           <div
             className={
               isMastery
@@ -714,6 +1064,7 @@ export default function AssessmentPage() {
                 )
             }
           >
+
             {isMastery
               ? (
                 <Trophy
@@ -725,15 +1076,27 @@ export default function AssessmentPage() {
                   size={33}
                 />
               )}
+
           </div>
 
+
           <span className="assessment-eyebrow">
+
+            {
+              topic.title
+            }
+
+            {" • "}
+
             {isMastery
               ? "Mastery check"
               : "Quick diagnostic"}
+
           </span>
 
+
           <h1>
+
             {isMastery
               ? (
                 "Let's see what "
@@ -743,31 +1106,32 @@ export default function AssessmentPage() {
                 "Let's find your "
                 + "starting point."
               )}
+
           </h1>
 
+
           <p>
+
             {isMastery
               ? (
                 "You'll solve five "
                 + "fresh problems "
-                + "without hints. "
-                + "This helps "
-                + "LearnFirst check "
-                + "what you can do "
-                + "independently."
+                + "without hints."
               )
               : (
                 "Answer five short "
-                + "Math questions. "
-                + "LearnFirst will "
-                + "use the result "
-                + "to choose the "
-                + "right level of "
-                + "support."
+                + "questions from "
+                + topic.title
+                + ". LearnFirst will "
+                + "use your result to "
+                + "adapt this topic."
               )}
+
           </p>
 
+
           <div className="assessment-intro-details">
+
             <div>
               <Check size={18} />
               5 questions
@@ -780,51 +1144,70 @@ export default function AssessmentPage() {
 
             <div>
               <Check size={18} />
-              No penalty for mistakes
+              Topic-specific score
             </div>
+
           </div>
 
+
           {error && (
+
             <div className="error-message">
               {error}
             </div>
+
           )}
+
 
           <button
             type="button"
             className="primary-button assessment-begin-button"
-            disabled={loading}
+
+            disabled={
+              loading
+            }
+
             onClick={() =>
               void beginAssessment()
             }
           >
-            {loading
-              ? "Preparing questions..."
-              : (
-                <>
-                  Begin
 
-                  <ArrowRight
-                    size={19}
-                  />
-                </>
-              )}
+            {
+              loading
+                ? "Preparing questions..."
+                : "Begin"
+            }
+
+
+            {!loading
+              && (
+              <ArrowRight
+                size={19}
+              />
+            )}
+
           </button>
+
         </div>
+
       </div>
     );
   }
 
 
   return (
+
     <div className="assessment-page">
+
       <header className="assessment-header">
+
         <button
           type="button"
           className="page-back-button"
+
           onClick={() =>
             navigate(
-              "/learn/math",
+              mathReturnPath,
             )
           }
         >
@@ -835,27 +1218,42 @@ export default function AssessmentPage() {
           Exit assessment
         </button>
 
+
         <div className="assessment-header-title">
+
           <BrainCircuit
             size={22}
           />
 
+
           <div>
+
             <span>
+
               {isMastery
                 ? "Mastery check"
                 : "Diagnostic"}
+
             </span>
 
+
             <strong>
-              Linear Equations
+              {
+                topic.title
+              }
             </strong>
+
           </div>
+
         </div>
+
       </header>
 
+
       <div className="assessment-progress-header">
+
         <div>
+
           <span>
             Question
             {" "}
@@ -869,41 +1267,63 @@ export default function AssessmentPage() {
             }
           </span>
 
+
           <strong>
             {answeredCount}
             {" "}
             answered
           </strong>
+
         </div>
 
+
         <div className="assessment-progress-track">
+
           <div
             style={{
               width:
-                `${progressPercent}%`,
+                (
+                  `${progressPercent}%`
+                ),
             }}
           />
+
         </div>
+
       </div>
 
+
       <section className="assessment-question-card surface-card">
+
         <div className="question-difficulty">
+
           {
             currentQuestion
               ?.difficulty
           }
+
         </div>
 
+
         <span className="question-label">
-          Solve for x
+
+          {
+            topic
+              .assessmentQuestionLabel
+          }
+
         </span>
 
+
         <div className="assessment-problem">
+
           {
             currentQuestion
               ?.prompt
           }
+
         </div>
+
 
         <label
           htmlFor="assessment-answer"
@@ -912,24 +1332,43 @@ export default function AssessmentPage() {
           Your answer
         </label>
 
+
         <input
           id="assessment-answer"
           className="assessment-answer-input"
-          value={currentAnswer}
+
+          value={
+            currentAnswer
+          }
+
           autoFocus
-          disabled={loading}
-          placeholder="Example: x = 4"
+
+          disabled={
+            loading
+          }
+
+          placeholder={
+            topic
+              .answerPlaceholder
+          }
+
           onChange={(event) =>
             updateAnswer(
-              event.target.value,
+              event
+                .target
+                .value,
             )
           }
+
           onKeyDown={(event) => {
+
             if (
               event.key
               === "Enter"
             ) {
+
               event.preventDefault();
+
 
               if (
                 currentIndex
@@ -939,34 +1378,48 @@ export default function AssessmentPage() {
                   - 1
                 )
               ) {
+
                 void finishAssessment();
+
               } else {
+
                 nextQuestion();
               }
             }
           }}
         />
 
+
         <p className="assessment-answer-help">
-          Write your final answer
-          clearly, for example
-          <strong> x = 4</strong>.
+
+          {
+            topic
+              .answerHelp
+          }
+
         </p>
 
+
         {error && (
+
           <div className="error-message">
             {error}
           </div>
+
         )}
 
+
         <div className="assessment-navigation">
+
           <button
             type="button"
             className="secondary-button"
+
             disabled={
               currentIndex === 0
               || loading
             }
+
             onClick={
               previousQuestion
             }
@@ -978,6 +1431,7 @@ export default function AssessmentPage() {
             Previous
           </button>
 
+
           {currentIndex
             === (
               assessment
@@ -985,32 +1439,47 @@ export default function AssessmentPage() {
               - 1
             )
             ? (
+
               <button
                 type="button"
                 className="primary-button"
-                disabled={loading}
+
+                disabled={
+                  loading
+                }
+
                 onClick={() =>
                   void finishAssessment()
                 }
               >
-                {loading
-                  ? "Checking..."
-                  : (
-                    <>
-                      Finish
 
-                      <Check
-                        size={18}
-                      />
-                    </>
-                  )}
+                {
+                  loading
+                    ? "Checking..."
+                    : "Finish"
+                }
+
+
+                {!loading
+                  && (
+                  <Check
+                    size={18}
+                  />
+                )}
+
               </button>
+
             )
             : (
+
               <button
                 type="button"
                 className="primary-button"
-                disabled={loading}
+
+                disabled={
+                  loading
+                }
+
                 onClick={
                   nextQuestion
                 }
@@ -1021,16 +1490,23 @@ export default function AssessmentPage() {
                   size={18}
                 />
               </button>
+
             )}
+
         </div>
+
       </section>
 
+
       <p className="assessment-footer-message">
-        Take your time. This is
-        about understanding what
-        you know, not getting a
-        perfect score.
+        Take your time. This
+        assessment only describes
+        your current LearnFirst
+        performance for {
+          topic.title
+        }.
       </p>
+
     </div>
   );
 }

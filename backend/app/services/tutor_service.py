@@ -1,4 +1,6 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import (
+    Session,
+)
 
 from app.database.models.tutor_decision import (
     TutorDecision,
@@ -21,6 +23,9 @@ from app.schemas.enums import (
 )
 from app.services.adaptive_learning_service import (
     AdaptiveLearningService,
+)
+from app.services.science_adaptive_learning_service import (
+    ScienceAdaptiveLearningService,
 )
 from app.tutor.decision_models import (
     TutorDecisionInput,
@@ -58,16 +63,19 @@ class TutorService:
             LearningSessionRepository
             .get_by_id(
                 db=db,
+
                 session_id=(
                     session_id
                 ),
             )
         )
 
+
         if (
             learning_session
             is None
         ):
+
             raise ValueError(
                 "Learning session "
                 "not found."
@@ -78,6 +86,7 @@ class TutorService:
             StudentRepository
             .get_by_id(
                 db=db,
+
                 student_id=(
                     learning_session
                     .student_id
@@ -85,24 +94,35 @@ class TutorService:
             )
         )
 
-        if student is None:
+
+        if (
+            student
+            is None
+        ):
 
             raise ValueError(
                 "Student not found."
             )
 
 
-        subject = Subject(
-            learning_session
-            .subject
+        subject = (
+            Subject(
+                learning_session
+                .subject
+            )
         )
 
 
-        # ----------------------------------
+        # ==================================
         # Adaptive profile
-        # ----------------------------------
+        # ==================================
 
         adaptive_plan = None
+
+
+        # ----------------------------------
+        # Math
+        # ----------------------------------
 
         if (
             subject
@@ -130,109 +150,188 @@ class TutorService:
                     )
                 )
 
+
             except (
                 LookupError,
                 ValueError,
             ):
 
-                # Adaptive learning should
-                # never prevent tutoring
-                # from functioning.
+                adaptive_plan = None
+
+
+        # ----------------------------------
+        # Science
+        # ----------------------------------
+
+        elif (
+            subject
+            == Subject.SCIENCE
+
+            and learning_session
+            .concept_code
+        ):
+
+            try:
+
+                adaptive_plan = (
+                    ScienceAdaptiveLearningService
+                    .get_plan(
+                        db=db,
+
+                        student_id=(
+                            student.id
+                        ),
+
+                        concept_code=(
+                            learning_session
+                            .concept_code
+                        ),
+                    )
+                )
+
+
+                learning_session\
+                    .mastery_state = (
+                        adaptive_plan
+                        .mastery_state
+                        .value
+                    )
+
+
+            except (
+                LookupError,
+                ValueError,
+            ):
 
                 adaptive_plan = None
 
 
-        state = TutorSessionState(
-            session_id=(
-                learning_session.id
-            ),
-
-            student_id=(
+        mastery_state = (
+            MasteryState(
                 learning_session
-                .student_id
-            ),
+                .mastery_state
+            )
+        )
 
-            age_group=AgeGroup(
-                student.age_group
-            ),
 
-            mode=LearningMode(
-                learning_session.mode
-            ),
+        if (
+            adaptive_plan
+            is not None
 
-            subject=subject,
+            and subject
+            == Subject.SCIENCE
+        ):
 
-            topic=(
-                learning_session.topic
-            ),
+            mastery_state = (
+                adaptive_plan
+                .mastery_state
+            )
 
-            concept_code=(
-                learning_session
-                .concept_code
-            ),
 
-            current_problem=(
-                learning_session
-                .current_problem
-            ),
+        state = (
+            TutorSessionState(
+                session_id=(
+                    learning_session.id
+                ),
 
-            attempt_count=(
-                learning_session
-                .attempt_count
-            ),
-
-            hint_level=(
-                learning_session
-                .current_hint_level
-            ),
-
-            direct_answer_requests=(
-                learning_session
-                .direct_answer_requests
-            ),
-
-            current_misconception=(
-                learning_session
-                .current_misconception
-            ),
-
-            mastery_state=(
-                MasteryState(
+                student_id=(
                     learning_session
-                    .mastery_state
-                )
-            ),
+                    .student_id
+                ),
 
-            adaptive_difficulty=(
-                adaptive_plan
-                .difficulty
-                if adaptive_plan
-                is not None
-                else None
-            ),
+                age_group=(
+                    AgeGroup(
+                        student.age_group
+                    )
+                ),
 
-            adaptive_support=(
-                adaptive_plan
-                .support_level
-                if adaptive_plan
-                is not None
-                else None
-            ),
+                mode=(
+                    LearningMode(
+                        learning_session.mode
+                    )
+                ),
 
-            explanation_depth=(
-                adaptive_plan
-                .explanation_depth
-                if adaptive_plan
-                is not None
-                else None
-            ),
+                subject=(
+                    subject
+                ),
+
+                topic=(
+                    learning_session.topic
+                ),
+
+                concept_code=(
+                    learning_session
+                    .concept_code
+                ),
+
+                current_problem=(
+                    learning_session
+                    .current_problem
+                ),
+
+                attempt_count=(
+                    learning_session
+                    .attempt_count
+                ),
+
+                hint_level=(
+                    learning_session
+                    .current_hint_level
+                ),
+
+                direct_answer_requests=(
+                    learning_session
+                    .direct_answer_requests
+                ),
+
+                current_misconception=(
+                    learning_session
+                    .current_misconception
+                ),
+
+                mastery_state=(
+                    mastery_state
+                ),
+
+                adaptive_difficulty=(
+                    adaptive_plan
+                    .difficulty
+
+                    if adaptive_plan
+                    is not None
+
+                    else None
+                ),
+
+                adaptive_support=(
+                    adaptive_plan
+                    .support_level
+
+                    if adaptive_plan
+                    is not None
+
+                    else None
+                ),
+
+                explanation_depth=(
+                    adaptive_plan
+                    .explanation_depth
+
+                    if adaptive_plan
+                    is not None
+
+                    else None
+                ),
+            )
         )
 
 
         result = (
             cls.policy_engine
             .decide(
-                state=state,
+                state=(
+                    state
+                ),
 
                 decision_input=(
                     decision_input
@@ -250,7 +349,9 @@ class TutorService:
                 decision_input
             ),
 
-            result=result,
+            result=(
+                result
+            ),
         )
 
 
@@ -269,7 +370,9 @@ class TutorService:
         cls._save_decision(
             db=db,
 
-            result=result,
+            result=(
+                result
+            ),
 
             decision_input=(
                 decision_input
@@ -281,7 +384,9 @@ class TutorService:
         )
 
 
-        return result
+        return (
+            result
+        )
 
 
     @staticmethod
@@ -296,15 +401,16 @@ class TutorService:
     ) -> None:
 
         if (
-            decision_input
-            .new_problem
+            decision_input.new_problem
         ):
 
             learning_session\
                 .attempt_count = 0
 
+
             learning_session\
                 .current_hint_level = 0
+
 
         else:
 
@@ -354,71 +460,74 @@ class TutorService:
         ) = None,
     ) -> None:
 
-        decision = TutorDecision(
-            session_id=(
-                result.session_id
-            ),
+        decision = (
+            TutorDecision(
+                session_id=(
+                    result.session_id
+                ),
 
-            student_id=(
-                result.student_id
-            ),
+                student_id=(
+                    result.student_id
+                ),
 
-            detected_intent=(
-                result.intent.value
-            ),
+                detected_intent=(
+                    result.intent.value
+                ),
 
-            subject=(
-                result.subject.value
-            ),
+                subject=(
+                    result.subject.value
+                ),
 
-            attempt_status=(
-                decision_input
-                .attempt_status
-                .value
+                attempt_status=(
+                    decision_input
+                    .attempt_status
+                    .value
 
-                if decision_input
-                .attempt_status
+                    if decision_input
+                    .attempt_status
 
-                else None
-            ),
+                    else None
+                ),
 
-            selected_action=(
-                result
-                .next_action
-                .value
-            ),
+                selected_action=(
+                    result
+                    .next_action
+                    .value
+                ),
 
-            selected_hint_level=(
-                result.hint_level
-            ),
+                selected_hint_level=(
+                    result.hint_level
+                ),
 
-            allow_final_answer=(
-                result
-                .allow_final_answer
-            ),
+                allow_final_answer=(
+                    result
+                    .allow_final_answer
+                ),
 
-            requires_rag=(
-                result.requires_rag
-            ),
+                requires_rag=(
+                    result
+                    .requires_rag
+                ),
 
-            requires_validation=(
-                result
-                .requires_validation
-            ),
+                requires_validation=(
+                    result
+                    .requires_validation
+                ),
 
-            requires_mastery_check=(
-                result
-                .requires_mastery_check
-            ),
+                requires_mastery_check=(
+                    result
+                    .requires_mastery_check
+                ),
 
-            policy_bypass_detected=(
-                result
-                .policy_bypass_detected
-            ),
+                policy_bypass_detected=(
+                    result
+                    .policy_bypass_detected
+                ),
 
-            model_used=(
-                model_used
-            ),
+                model_used=(
+                    model_used
+                ),
+            )
         )
 
 
@@ -426,6 +535,9 @@ class TutorService:
             TutorDecisionRepository
             .create(
                 db=db,
-                decision=decision,
+
+                decision=(
+                    decision
+                ),
             )
         )
