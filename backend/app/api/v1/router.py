@@ -1,5 +1,8 @@
 from fastapi import APIRouter
 
+from app.api.v1.adaptive import (
+    router as adaptive_router,
+)
 from app.api.v1.assessments import (
     router as assessments_router,
 )
@@ -52,4 +55,8 @@ api_router.include_router(
 
 api_router.include_router(
     curriculum_router
+)
+
+api_router.include_router(
+    adaptive_router
 )
