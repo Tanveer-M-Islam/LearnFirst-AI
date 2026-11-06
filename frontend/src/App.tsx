@@ -8,13 +8,19 @@ import AppShell from "./components/layout/AppShell";
 
 import AssessmentPage from "./pages/AssessmentPage";
 import DashboardPage from "./pages/DashboardPage";
+import EnglishProgressPage from "./pages/EnglishProgressPage";
+import EnglishStartPage from "./pages/EnglishStartPage";
+import EnglishTutorPage from "./pages/EnglishTutorPage";
 import LearnPage from "./pages/LearnPage";
 import MathStartPage from "./pages/MathStartPage";
 import ProgressHubPage from "./pages/ProgressHubPage";
 import ProgressPage from "./pages/ProgressPage";
+import ScienceAssessmentPage from "./pages/ScienceAssessmentPage";
 import ScienceProgressPage from "./pages/ScienceProgressPage";
 import ScienceStartPage from "./pages/ScienceStartPage";
 import ScienceTutorPage from "./pages/ScienceTutorPage";
+import StudentLoginPage from "./pages/StudentLoginPage";
+import StudentProfilePage from "./pages/StudentProfilePage";
 import StudentSetupPage from "./pages/StudentSetupPage";
 import TutorPage from "./pages/TutorPage";
 import WelcomePage from "./pages/WelcomePage";
@@ -34,11 +40,9 @@ function ComingSoon({
         ✨
       </div>
 
-
       <h1>
         {title}
       </h1>
-
 
       <p>
         We're building this
@@ -56,9 +60,12 @@ export default function App() {
 
     <Routes>
 
+      {/* =========================
+          Public
+      ========================== */}
+
       <Route
         path="/"
-
         element={
           <WelcomePage />
         }
@@ -67,12 +74,23 @@ export default function App() {
 
       <Route
         path="/setup"
-
         element={
           <StudentSetupPage />
         }
       />
 
+
+      <Route
+        path="/login"
+        element={
+          <StudentLoginPage />
+        }
+      />
+
+
+      {/* =========================
+          Main app
+      ========================== */}
 
       <Route
         element={
@@ -82,20 +100,26 @@ export default function App() {
 
         <Route
           path="/dashboard"
-
           element={
             <DashboardPage />
           }
         />
 
 
+        <Route
+          path="/profile"
+          element={
+            <StudentProfilePage />
+          }
+        />
+
+
         {/* =========================
-            Learn Hub
+            Learn hub
         ========================== */}
 
         <Route
           path="/learn"
-
           element={
             <LearnPage />
           }
@@ -108,7 +132,6 @@ export default function App() {
 
         <Route
           path="/learn/math"
-
           element={
             <MathStartPage />
           }
@@ -117,7 +140,6 @@ export default function App() {
 
         <Route
           path="/learn/math/session/:sessionId"
-
           element={
             <TutorPage />
           }
@@ -126,7 +148,6 @@ export default function App() {
 
         <Route
           path="/assessments/math/:assessmentType"
-
           element={
             <AssessmentPage />
           }
@@ -139,7 +160,6 @@ export default function App() {
 
         <Route
           path="/learn/science"
-
           element={
             <ScienceStartPage />
           }
@@ -148,9 +168,36 @@ export default function App() {
 
         <Route
           path="/learn/science/session/:sessionId"
-
           element={
             <ScienceTutorPage />
+          }
+        />
+
+
+        <Route
+          path="/assessments/science/:assessmentType"
+          element={
+            <ScienceAssessmentPage />
+          }
+        />
+
+
+        {/* =========================
+            English
+        ========================== */}
+
+        <Route
+          path="/learn/english"
+          element={
+            <EnglishStartPage />
+          }
+        />
+
+
+        <Route
+          path="/learn/english/session/:sessionId"
+          element={
+            <EnglishTutorPage />
           }
         />
 
@@ -161,7 +208,6 @@ export default function App() {
 
         <Route
           path="/practice"
-
           element={
             <ComingSoon
               title="Practice"
@@ -171,12 +217,11 @@ export default function App() {
 
 
         {/* =========================
-            Progress Hub
+            Progress
         ========================== */}
 
         <Route
           path="/progress"
-
           element={
             <ProgressHubPage />
           }
@@ -185,7 +230,6 @@ export default function App() {
 
         <Route
           path="/progress/math"
-
           element={
             <ProgressPage />
           }
@@ -194,18 +238,28 @@ export default function App() {
 
         <Route
           path="/progress/science"
-
           element={
             <ScienceProgressPage />
+          }
+        />
+
+
+        <Route
+          path="/progress/english"
+          element={
+            <EnglishProgressPage />
           }
         />
 
       </Route>
 
 
+      {/* =========================
+          Fallback
+      ========================== */}
+
       <Route
         path="*"
-
         element={
           <Navigate
             to="/"

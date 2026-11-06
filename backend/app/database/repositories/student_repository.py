@@ -1,6 +1,10 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import (
+    Session,
+)
 
-from app.database.models.student import StudentProfile
+from app.database.models.student import (
+    StudentProfile,
+)
 
 
 class StudentRepository:
@@ -11,13 +15,37 @@ class StudentRepository:
         student: StudentProfile,
     ) -> StudentProfile:
 
-        db.add(student)
+        db.add(
+            student
+        )
 
         db.commit()
 
-        db.refresh(student)
+        db.refresh(
+            student
+        )
 
         return student
+
+
+    @staticmethod
+    def save(
+        db: Session,
+        student: StudentProfile,
+    ) -> StudentProfile:
+
+        db.add(
+            student
+        )
+
+        db.commit()
+
+        db.refresh(
+            student
+        )
+
+        return student
+
 
     @staticmethod
     def get_by_id(
@@ -26,9 +54,37 @@ class StudentRepository:
     ) -> StudentProfile | None:
 
         return (
-            db.query(StudentProfile)
+            db.query(
+                StudentProfile
+            )
             .filter(
-                StudentProfile.id == student_id
+                StudentProfile.id
+                == student_id
+            )
+            .first()
+        )
+
+
+    @staticmethod
+    def get_by_username(
+        db: Session,
+        username: str,
+    ) -> StudentProfile | None:
+
+        normalized_username = (
+            username
+            .strip()
+            .lower()
+        )
+
+
+        return (
+            db.query(
+                StudentProfile
+            )
+            .filter(
+                StudentProfile.username
+                == normalized_username
             )
             .first()
         )

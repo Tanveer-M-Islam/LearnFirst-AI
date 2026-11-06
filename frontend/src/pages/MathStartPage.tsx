@@ -21,7 +21,6 @@ import {
 
 import {
   useNavigate,
-  useSearchParams,
 } from "react-router";
 
 import {
@@ -29,24 +28,25 @@ import {
 } from "../api/adaptive";
 
 import {
+  getStudentCurriculumPath,
+} from "../api/curriculum";
+
+import {
   createLearningSession,
 } from "../api/sessions";
 
 import {
-  MATH_TOPICS,
   getMathTopic,
 } from "../data/mathTopics";
 
 import type {
   AdaptiveActivity,
   AdaptivePlan,
-  AdaptiveSupport,
-  ExplanationDepth,
 } from "../types/adaptive";
 
 import type {
-  DifficultyLevel,
-} from "../types/assessment";
+  StudentCurriculumPath,
+} from "../types/curriculum";
 
 import type {
   LearningMode,
@@ -57,44 +57,38 @@ import {
 } from "../utils/studentStorage";
 
 
-const modes: {
-  value: LearningMode;
-  title: string;
-  description: string;
-  icon: typeof PencilLine;
-}[] = [
-
+const modes = [
   {
     value:
-      "HOMEWORK_HELP",
+      "LEARN" as LearningMode,
 
     title:
-      "Homework Help",
+      "Learn",
 
     description:
       (
-        "Bring your own problem. "
-        + "Try it first and receive "
-        + "progressive guidance."
+        "Understand the concept "
+        + "before moving into "
+        + "independent practice."
       ),
 
     icon:
-      PencilLine,
+      Lightbulb,
   },
 
 
   {
     value:
-      "PRACTICE",
+      "PRACTICE" as LearningMode,
 
     title:
       "Practice",
 
     description:
       (
-        "LearnFirst chooses problems "
-        + "and adapts them using "
-        + "your progress."
+        "Solve adaptive problems "
+        + "at your current "
+        + "curriculum level."
       ),
 
     icon:
@@ -104,115 +98,129 @@ const modes: {
 
   {
     value:
-      "LEARN",
+      "HOMEWORK_HELP" as LearningMode,
 
     title:
-      "Learn",
+      "Homework Help",
 
     description:
       (
-        "Understand the concept "
-        + "before moving into "
-        + "practice."
+        "Bring a problem from "
+        + "your current Math topic."
       ),
 
     icon:
-      Lightbulb,
+      PencilLine,
   },
 ];
 
 
-function difficultyLabel(
-  difficulty: DifficultyLevel,
+function fallbackConceptForAge(
+  age: number,
 ): string {
 
-  switch (
-    difficulty
+  if (
+    age <= 7
   ) {
 
-    case "CHALLENGING":
-      return "Challenging";
-
-    case "MODERATE":
-      return "Moderate";
-
-    default:
-      return "Easy";
+    return (
+      "MATH_ARITH_BASIC_01"
+    );
   }
+
+
+  if (
+    age === 8
+  ) {
+
+    return (
+      "MATH_ARITH_MULTDIV_01"
+    );
+  }
+
+
+  if (
+    age === 9
+  ) {
+
+    return (
+      "MATH_ARITH_FRAC_01"
+    );
+  }
+
+
+  if (
+    age === 10
+  ) {
+
+    return (
+      "MATH_ARITH_INT_01"
+    );
+  }
+
+
+  if (
+    age === 11
+  ) {
+
+    return (
+      "MATH_ARITH_ORDER_01"
+    );
+  }
+
+
+  if (
+    age === 12
+  ) {
+
+    return (
+      "MATH_PREALG_EXPR_01"
+    );
+  }
+
+
+  if (
+    age === 13
+  ) {
+
+    return (
+      "MATH_ALG_LINEAR_01"
+    );
+  }
+
+
+  return (
+    "MATH_GRAPH_LINEAR_01"
+  );
 }
 
 
-function supportLabel(
-  support: AdaptiveSupport,
+function readableLabel(
+  value: string,
 ): string {
 
-  switch (
-    support
-  ) {
-
-    case "STRONG":
-      return "Strong support";
-
-    case "GUIDED":
-      return "Guided support";
-
-    default:
-      return "Gentle support";
-  }
+  return (
+    value
+      .replace(
+        /_/g,
+        " ",
+      )
+      .toLowerCase()
+      .replace(
+        /\b\w/g,
+        (
+          character,
+        ) =>
+          character
+            .toUpperCase(),
+      )
+  );
 }
 
 
-function explanationLabel(
-  depth: ExplanationDepth,
-): string {
-
-  switch (
-    depth
-  ) {
-
-    case "DEEP":
-      return "Deeper explanations";
-
-    case "SIMPLE":
-      return "Simple explanations";
-
-    default:
-      return "Balanced explanations";
-  }
-}
-
-
-function activityLabel(
-  activity: AdaptiveActivity,
-): string {
-
-  switch (
-    activity
-  ) {
-
-    case "TAKE_DIAGNOSTIC":
-      return "Check your starting level";
-
-    case "GUIDED_PRACTICE":
-      return "Guided practice";
-
-    case "INDEPENDENT_PRACTICE":
-      return "Independent practice";
-
-    case "REVIEW_FOUNDATION":
-      return "Review the foundation";
-
-    case "TAKE_MASTERY_CHECK":
-      return "Take a mastery check";
-
-    case "CHALLENGE_PRACTICE":
-      return "Challenge practice";
-  }
-}
-
-
-function activityDescription(
-  activity: AdaptiveActivity,
+function activityTitle(
+  activity:
+    AdaptiveActivity,
 ): string {
 
   switch (
@@ -222,16 +230,70 @@ function activityDescription(
     case "TAKE_DIAGNOSTIC":
 
       return (
-        "Take a short assessment "
-        + "for this topic before "
-        + "LearnFirst adapts it."
+        "Check your starting level"
       );
 
 
     case "GUIDED_PRACTICE":
 
       return (
-        "Continue practicing with "
+        "Guided practice"
+      );
+
+
+    case "INDEPENDENT_PRACTICE":
+
+      return (
+        "Independent practice"
+      );
+
+
+    case "REVIEW_FOUNDATION":
+
+      return (
+        "Review the foundation"
+      );
+
+
+    case "TAKE_MASTERY_CHECK":
+
+      return (
+        "Take a mastery check"
+      );
+
+
+    case "CHALLENGE_PRACTICE":
+
+      return (
+        "Challenge practice"
+      );
+  }
+}
+
+
+function activityDescription(
+  activity:
+    AdaptiveActivity,
+): string {
+
+  switch (
+    activity
+  ) {
+
+    case "TAKE_DIAGNOSTIC":
+
+      return (
+        "Take a short diagnostic "
+        + "so LearnFirst can establish "
+        + "your starting level."
+      );
+
+
+    case "GUIDED_PRACTICE":
+
+      return (
+        "Continue with practice "
+        + "while LearnFirst provides "
         + "guided support."
       );
 
@@ -239,16 +301,17 @@ function activityDescription(
     case "INDEPENDENT_PRACTICE":
 
       return (
-        "You're ready to solve "
-        + "more independently."
+        "Your current evidence suggests "
+        + "you are ready to work more "
+        + "independently."
       );
 
 
     case "REVIEW_FOUNDATION":
 
       return (
-        "Review this topic before "
-        + "returning to harder "
+        "Review the concept before "
+        + "moving back into harder "
         + "practice."
       );
 
@@ -257,15 +320,15 @@ function activityDescription(
 
       return (
         "Your recent work suggests "
-        + "you're ready for an "
-        + "independent mastery check."
+        + "you are ready to check "
+        + "your mastery."
       );
 
 
     case "CHALLENGE_PRACTICE":
 
       return (
-        "Your mastery is strong. "
+        "Your understanding is strong. "
         + "Try a more challenging "
         + "problem."
       );
@@ -274,7 +337,8 @@ function activityDescription(
 
 
 function activityIcon(
-  activity: AdaptiveActivity,
+  activity:
+    AdaptiveActivity,
 ) {
 
   switch (
@@ -282,40 +346,46 @@ function activityIcon(
   ) {
 
     case "TAKE_DIAGNOSTIC":
-      return ClipboardCheck;
+
+      return (
+        ClipboardCheck
+      );
+
 
     case "TAKE_MASTERY_CHECK":
-      return Trophy;
+
+      return (
+        Trophy
+      );
+
 
     case "CHALLENGE_PRACTICE":
-      return Sparkles;
+
+      return (
+        Sparkles
+      );
+
 
     case "REVIEW_FOUNDATION":
-      return Lightbulb;
+
+      return (
+        Lightbulb
+      );
+
 
     case "INDEPENDENT_PRACTICE":
-      return Target;
+
+      return (
+        Target
+      );
+
 
     default:
-      return BrainCircuit;
+
+      return (
+        BrainCircuit
+      );
   }
-}
-
-
-function adaptiveMode(
-  activity: AdaptiveActivity,
-): LearningMode {
-
-  if (
-    activity
-    === "REVIEW_FOUNDATION"
-  ) {
-
-    return "LEARN";
-  }
-
-
-  return "PRACTICE";
 }
 
 
@@ -323,12 +393,6 @@ export default function MathStartPage() {
 
   const navigate =
     useNavigate();
-
-
-  const [
-    searchParams,
-    setSearchParams,
-  ] = useSearchParams();
 
 
   const student =
@@ -339,17 +403,57 @@ export default function MathStartPage() {
     student?.id;
 
 
-  const selectedTopic =
-    getMathTopic(
-      searchParams.get(
-        "concept",
-      ),
+  const learnerAge =
+    student?.age
+    ?? 7;
+
+
+  const fallbackConceptCode =
+    fallbackConceptForAge(
+      learnerAge,
     );
 
 
+  const [
+    curriculum,
+    setCurriculum,
+  ] = useState<
+    StudentCurriculumPath | null
+  >(
+    null,
+  );
+
+
+  const [
+    curriculumLoading,
+    setCurriculumLoading,
+  ] = useState(
+    true,
+  );
+
+
+  const [
+    curriculumError,
+    setCurriculumError,
+  ] = useState<
+    string | null
+  >(
+    null,
+  );
+
+
   const conceptCode =
-    selectedTopic
-      .conceptCode;
+    curriculum
+      ?.recommended_concept
+      ?.concept_code
+
+    ?? fallbackConceptCode;
+
+
+  const selectedTopic =
+    getMathTopic(
+      conceptCode,
+    );
 
 
   const [
@@ -357,14 +461,16 @@ export default function MathStartPage() {
     setAdaptivePlan,
   ] = useState<
     AdaptivePlan | null
-  >(null);
+  >(
+    null,
+  );
 
 
   const [
     adaptiveLoading,
     setAdaptiveLoading,
   ] = useState(
-    true,
+    false,
   );
 
 
@@ -373,14 +479,8 @@ export default function MathStartPage() {
     setAdaptiveError,
   ] = useState<
     string | null
-  >(null);
-
-
-  const [
-    adaptiveStarting,
-    setAdaptiveStarting,
-  ] = useState(
-    false,
+  >(
+    null,
   );
 
 
@@ -390,7 +490,7 @@ export default function MathStartPage() {
   ] = useState<
     LearningMode
   >(
-    "HOMEWORK_HELP",
+    "LEARN",
   );
 
 
@@ -398,14 +498,13 @@ export default function MathStartPage() {
     problem,
     setProblem,
   ] = useState(
-    selectedTopic
-      .sampleProblems[0],
+    "",
   );
 
 
   const [
-    loading,
-    setLoading,
+    starting,
+    setStarting,
   ] = useState(
     false,
   );
@@ -416,46 +515,90 @@ export default function MathStartPage() {
     setError,
   ] = useState<
     string | null
-  >(null);
+  >(
+    null,
+  );
 
 
-  const selectTopic = (
-    nextConceptCode: string,
-  ) => {
+  // ======================================
+  // Curriculum
+  // ======================================
 
-    setSearchParams({
-      concept:
-        nextConceptCode,
-    });
+  const loadCurriculum =
+    async () => {
+
+      if (
+        !studentId
+      ) {
+
+        navigate(
+          "/login",
+        );
+
+        return;
+      }
 
 
-    const nextTopic =
-      getMathTopic(
-        nextConceptCode,
+      setCurriculumLoading(
+        true,
       );
 
 
-    setProblem(
-      nextTopic
-        .sampleProblems[0],
-    );
+      setCurriculumError(
+        null,
+      );
 
 
-    setAdaptivePlan(
-      null,
-    );
+      try {
+
+        const data =
+          await getStudentCurriculumPath(
+            studentId,
+            "MATH",
+          );
 
 
-    setAdaptiveError(
-      null,
-    );
+        setCurriculum(
+          data,
+        );
 
 
-    setError(
-      null,
-    );
-  };
+      } catch (err) {
 
+        setCurriculumError(
+          err instanceof Error
+            ? err.message
+            : (
+              "Could not load your "
+              + "curriculum path."
+            ),
+        );
+
+
+      } finally {
+
+        setCurriculumLoading(
+          false,
+        );
+      }
+    };
+
+
+  useEffect(
+    () => {
+
+      void loadCurriculum();
+
+    },
+    [
+      studentId,
+    ],
+  );
+
+
+  // ======================================
+  // Adaptive plan
+  // ======================================
 
   const loadAdaptivePlan =
     async () => {
@@ -463,10 +606,6 @@ export default function MathStartPage() {
       if (
         !studentId
       ) {
-
-        setAdaptiveLoading(
-          false,
-        );
 
         return;
       }
@@ -503,7 +642,7 @@ export default function MathStartPage() {
             ? err.message
             : (
               "Could not load your "
-              + "personalized plan."
+              + "adaptive Math plan."
             ),
         );
 
@@ -520,9 +659,13 @@ export default function MathStartPage() {
   useEffect(
     () => {
 
+      setAdaptivePlan(
+        null,
+      );
+
+
       setProblem(
-        selectedTopic
-          .sampleProblems[0],
+        "",
       );
 
 
@@ -536,23 +679,16 @@ export default function MathStartPage() {
   );
 
 
+  // ======================================
+  // Adaptive recommended action
+  // ======================================
+
   const handleAdaptiveStart =
     async () => {
 
       if (
         !student
-      ) {
-
-        navigate(
-          "/setup",
-        );
-
-        return;
-      }
-
-
-      if (
-        !adaptivePlan
+        || !adaptivePlan
       ) {
 
         return;
@@ -572,6 +708,7 @@ export default function MathStartPage() {
           ),
         );
 
+
         return;
       }
 
@@ -589,33 +726,38 @@ export default function MathStartPage() {
           ),
         );
 
-        return;
-      }
-
-
-      const needsProblem =
-        adaptivePlan
-          .next_activity
-        !== "REVIEW_FOUNDATION";
-
-
-      if (
-        needsProblem
-        && !adaptivePlan
-          .next_problem
-      ) {
-
-        setAdaptiveError(
-          "No adaptive problem is "
-          + "available for this "
-          + "recommendation yet.",
-        );
 
         return;
       }
 
 
-      setAdaptiveStarting(
+      const learningMode:
+        LearningMode = (
+          adaptivePlan
+            .next_activity
+          === "REVIEW_FOUNDATION"
+        )
+          ? "LEARN"
+          : "PRACTICE";
+
+
+      const currentProblem =
+        learningMode
+        === "PRACTICE"
+
+          ? (
+            adaptivePlan
+              .next_problem
+              ?.prompt
+
+            ?? selectedTopic
+              .sampleProblems[0]
+          )
+
+          : null;
+
+
+      setStarting(
         true,
       );
 
@@ -634,34 +776,19 @@ export default function MathStartPage() {
               student.id,
 
             mode:
-              adaptiveMode(
-                adaptivePlan
-                  .next_activity,
-              ),
+              learningMode,
 
             subject:
               "MATH",
 
             topic:
-              selectedTopic
-                .title,
+              selectedTopic.title,
 
             concept_code:
               conceptCode,
 
             current_problem:
-              adaptivePlan
-                .next_activity
-              === "REVIEW_FOUNDATION"
-
-                ? null
-
-                : (
-                  adaptivePlan
-                    .next_problem
-                    ?.prompt
-                  ?? null
-                ),
+              currentProblem,
           });
 
 
@@ -679,7 +806,7 @@ export default function MathStartPage() {
           err instanceof Error
             ? err.message
             : (
-              "Could not start your "
+              "Could not start the "
               + "recommended activity."
             ),
         );
@@ -687,12 +814,16 @@ export default function MathStartPage() {
 
       } finally {
 
-        setAdaptiveStarting(
+        setStarting(
           false,
         );
       }
     };
 
+
+  // ======================================
+  // Manual learning mode
+  // ======================================
 
   const handleStart =
     async () => {
@@ -702,7 +833,7 @@ export default function MathStartPage() {
       ) {
 
         navigate(
-          "/setup",
+          "/login",
         );
 
         return;
@@ -728,7 +859,7 @@ export default function MathStartPage() {
 
           setError(
             "Enter your Math problem "
-            + "before starting.",
+            + "before starting."
           );
 
           return;
@@ -757,16 +888,7 @@ export default function MathStartPage() {
       }
 
 
-      else if (
-        mode
-        === "LEARN"
-      ) {
-
-        sessionProblem = null;
-      }
-
-
-      setLoading(
+      setStarting(
         true,
       );
 
@@ -790,8 +912,7 @@ export default function MathStartPage() {
               "MATH",
 
             topic:
-              selectedTopic
-                .title,
+              selectedTopic.title,
 
             concept_code:
               conceptCode,
@@ -823,7 +944,7 @@ export default function MathStartPage() {
 
       } finally {
 
-        setLoading(
+        setStarting(
           false,
         );
       }
@@ -832,15 +953,58 @@ export default function MathStartPage() {
 
   const AdaptiveIcon =
     adaptivePlan
-      ? activityIcon(
+      ? (
+        activityIcon(
           adaptivePlan
             .next_activity,
         )
+      )
       : BrainCircuit;
 
 
+  if (
+    curriculumLoading
+  ) {
+
+    return (
+
+      <div className="adaptive-loading-card surface-card">
+
+        <div className="adaptive-loading-icon">
+
+          <BrainCircuit
+            size={24}
+          />
+
+        </div>
+
+
+        <div>
+
+          <strong>
+            Finding your Math level...
+          </strong>
+
+
+          <span>
+            Checking your age,
+            grade and learning history.
+          </span>
+
+        </div>
+
+      </div>
+    );
+  }
+
+
   return (
+
     <div className="math-start-page">
+
+      {/* =============================
+          Back
+      ============================== */}
 
       <button
         type="button"
@@ -852,13 +1016,19 @@ export default function MathStartPage() {
           )
         }
       >
+
         <ArrowLeft
           size={18}
         />
 
         Dashboard
+
       </button>
 
+
+      {/* =============================
+          Header
+      ============================== */}
 
       <section className="math-start-header">
 
@@ -874,21 +1044,21 @@ export default function MathStartPage() {
         <div>
 
           <span>
-            Math learning
+            Age-adaptive Math
           </span>
 
 
           <h1>
-            Choose what you
-            want to learn.
+            Your next Math step
           </h1>
 
 
           <p>
-            Each Math topic keeps
-            its own progress,
-            difficulty and learning
-            profile.
+            LearnFirst selects your
+            starting curriculum using
+            age and grade, then adjusts
+            it using your actual
+            learning evidence.
           </p>
 
         </div>
@@ -897,116 +1067,246 @@ export default function MathStartPage() {
 
 
       {/* =============================
-          Topic Selection
+          Curriculum position
       ============================== */}
 
-      <section className="math-start-section">
+      <section className="adaptive-section">
 
-        <div className="section-number">
-          1
+        <div className="adaptive-section-heading">
+
+          <div>
+
+            <span className="adaptive-eyebrow">
+
+              <Target
+                size={15}
+              />
+
+              Curriculum progression
+
+            </span>
+
+
+            <h2>
+              Your current level
+            </h2>
+
+          </div>
+
+
+          <button
+            type="button"
+            className="adaptive-refresh-button"
+
+            disabled={
+              curriculumLoading
+            }
+
+            onClick={() =>
+              void loadCurriculum()
+            }
+          >
+
+            <RefreshCcw
+              size={16}
+            />
+
+            Refresh
+
+          </button>
+
         </div>
 
 
-        <div>
+        <div className="adaptive-plan-card surface-card">
 
-          <h2>
-            Choose a Math topic
-          </h2>
+          <div className="adaptive-plan-main">
+
+            <div className="adaptive-plan-icon">
+
+              <Calculator
+                size={28}
+              />
+
+            </div>
 
 
-          <p>
-            LearnFirst adapts each
-            topic independently.
-          </p>
+            <div className="adaptive-plan-copy">
+
+              <span>
+                Current curriculum concept
+              </span>
+
+
+              <h3>
+                {
+                  selectedTopic.title
+                }
+              </h3>
+
+
+              <p>
+                {
+                  selectedTopic.description
+                }
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div className="adaptive-profile-grid">
+
+            <div>
+
+              <Target
+                size={18}
+              />
+
+              <span>
+                Learner age
+              </span>
+
+
+              <strong>
+                {
+                  learnerAge
+                }
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <Calculator
+                size={18}
+              />
+
+              <span>
+                Expected level
+              </span>
+
+
+              <strong>
+
+                {
+                  curriculum
+                    ?.target_concept
+                    ?.title
+
+                  ?? selectedTopic
+                    .title
+                }
+
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <BrainCircuit
+                size={18}
+              />
+
+              <span>
+                Current status
+              </span>
+
+
+              <strong>
+
+                {
+                  readableLabel(
+                    curriculum
+                      ?.recommended_concept
+                      ?.status
+
+                    ?? "READY",
+                  )
+                }
+
+              </strong>
+
+            </div>
+
+          </div>
+
+
+          {curriculum
+            ?.prerequisite_review_concept
+            && (
+
+            <div className="adaptive-score-note">
+
+              <span>
+                Prerequisite review
+              </span>
+
+
+              <strong>
+
+                {
+                  curriculum
+                    .prerequisite_review_concept
+                    .title
+                }
+
+              </strong>
+
+            </div>
+
+          )}
+
+
+          <div className="adaptive-plan-footer">
+
+            <p>
+
+              {
+                curriculum
+                  ?.prerequisite_review_concept
+
+                  ? (
+                    "LearnFirst found "
+                    + "evidence of an earlier "
+                    + "skill gap. This skill "
+                    + "is being reviewed before "
+                    + "you continue forward."
+                  )
+
+                  : (
+                    "No demonstrated "
+                    + "prerequisite gap is "
+                    + "blocking your current "
+                    + "Math level."
+                  )
+              }
+
+            </p>
+
+          </div>
 
         </div>
+
+
+        {curriculumError && (
+
+          <div className="adaptive-error">
+
+            {curriculumError}
+
+          </div>
+
+        )}
 
       </section>
 
 
-      <div className="learning-mode-grid">
-
-        {MATH_TOPICS.map(
-          (
-            topic,
-          ) => {
-
-            const selected =
-              topic.conceptCode
-              === conceptCode;
-
-
-            return (
-
-              <button
-                key={
-                  topic.conceptCode
-                }
-
-                type="button"
-
-                className={
-                  selected
-                    ? (
-                      "learning-mode-card "
-                      + "selected"
-                    )
-                    : (
-                      "learning-mode-card"
-                    )
-                }
-
-                onClick={() =>
-                  selectTopic(
-                    topic
-                      .conceptCode,
-                  )
-                }
-              >
-
-                <div className="mode-icon">
-
-                  <Calculator
-                    size={22}
-                  />
-
-                </div>
-
-
-                <strong>
-                  {
-                    topic.title
-                  }
-                </strong>
-
-
-                <p>
-                  {
-                    topic.description
-                  }
-                </p>
-
-
-                <span className="mode-radio">
-
-                  {
-                    selected
-                      ? "✓"
-                      : ""
-                  }
-
-                </span>
-
-              </button>
-            );
-          },
-        )}
-
-      </div>
-
-
       {/* =============================
-          Adaptive Recommendation
+          Adaptive recommendation
       ============================== */}
 
       <section className="adaptive-section">
@@ -1027,10 +1327,7 @@ export default function MathStartPage() {
 
 
             <h2>
-              {
-                selectedTopic
-                  .title
-              }
+              Recommended activity
             </h2>
 
           </div>
@@ -1048,11 +1345,13 @@ export default function MathStartPage() {
               void loadAdaptivePlan()
             }
           >
+
             <RefreshCcw
               size={16}
             />
 
             Refresh
+
           </button>
 
         </div>
@@ -1074,14 +1373,13 @@ export default function MathStartPage() {
             <div>
 
               <strong>
-                Building your
-                learning plan...
+                Building your plan...
               </strong>
 
 
               <span>
-                Checking progress
-                for {
+                Checking your progress
+                in {
                   selectedTopic.title
                 }.
               </span>
@@ -1089,6 +1387,7 @@ export default function MathStartPage() {
             </div>
 
           </div>
+
         )}
 
 
@@ -1118,22 +1417,26 @@ export default function MathStartPage() {
 
 
                 <h3>
+
                   {
-                    activityLabel(
+                    activityTitle(
                       adaptivePlan
                         .next_activity,
                     )
                   }
+
                 </h3>
 
 
                 <p>
+
                   {
                     activityDescription(
                       adaptivePlan
                         .next_activity,
                     )
                   }
+
                 </p>
 
               </div>
@@ -1153,13 +1456,16 @@ export default function MathStartPage() {
                   Difficulty
                 </span>
 
+
                 <strong>
+
                   {
-                    difficultyLabel(
+                    readableLabel(
                       adaptivePlan
                         .difficulty,
                     )
                   }
+
                 </strong>
 
               </div>
@@ -1175,13 +1481,16 @@ export default function MathStartPage() {
                   Support
                 </span>
 
+
                 <strong>
+
                   {
-                    supportLabel(
+                    readableLabel(
                       adaptivePlan
                         .support_level,
                     )
                   }
+
                 </strong>
 
               </div>
@@ -1197,43 +1506,21 @@ export default function MathStartPage() {
                   Explanation
                 </span>
 
+
                 <strong>
+
                   {
-                    explanationLabel(
+                    readableLabel(
                       adaptivePlan
                         .explanation_depth,
                     )
                   }
+
                 </strong>
 
               </div>
 
             </div>
-
-
-            {(
-              adaptivePlan
-                .latest_score_percent
-              !== null
-            ) && (
-
-              <div className="adaptive-score-note">
-
-                <span>
-                  Latest assessment
-                </span>
-
-
-                <strong>
-                  {
-                    adaptivePlan
-                      .latest_score_percent
-                  }
-                  %
-                </strong>
-
-              </div>
-            )}
 
 
             {adaptivePlan
@@ -1250,11 +1537,13 @@ export default function MathStartPage() {
 
 
                   <strong>
+
                     {
                       adaptivePlan
                         .next_problem
                         .prompt
                     }
+
                   </strong>
 
                 </div>
@@ -1263,7 +1552,7 @@ export default function MathStartPage() {
                 <div className="adaptive-problem-level">
 
                   {
-                    difficultyLabel(
+                    readableLabel(
                       adaptivePlan
                         .next_problem
                         .difficulty,
@@ -1273,6 +1562,7 @@ export default function MathStartPage() {
                 </div>
 
               </div>
+
             )}
 
 
@@ -1280,8 +1570,7 @@ export default function MathStartPage() {
 
               <p>
                 {
-                  adaptivePlan
-                    .summary
+                  adaptivePlan.summary
                 }
               </p>
 
@@ -1291,7 +1580,7 @@ export default function MathStartPage() {
                 className="primary-button adaptive-start-button"
 
                 disabled={
-                  adaptiveStarting
+                  starting
                 }
 
                 onClick={() =>
@@ -1300,33 +1589,26 @@ export default function MathStartPage() {
               >
 
                 {
-                  adaptiveStarting
+                  starting
                     ? "Preparing..."
-
                     : adaptivePlan
                       .next_activity
                     === "TAKE_DIAGNOSTIC"
-
                       ? "Start diagnostic"
-
                       : adaptivePlan
                         .next_activity
                       === "TAKE_MASTERY_CHECK"
-
                         ? "Start mastery check"
-
-                        : (
-                          "Start recommended "
-                          + "activity"
-                        )
+                        : "Start recommended activity"
                 }
 
 
-                {!adaptiveStarting
-                  && (
+                {!starting && (
+
                   <ArrowRight
                     size={18}
                   />
+
                 )}
 
               </button>
@@ -1334,16 +1616,16 @@ export default function MathStartPage() {
             </div>
 
           </div>
+
         )}
 
 
-        {(
-          !adaptiveLoading
-          && adaptiveError
-        ) && (
+        {adaptiveError && (
 
           <div className="adaptive-error">
+
             {adaptiveError}
+
           </div>
 
         )}
@@ -1352,7 +1634,7 @@ export default function MathStartPage() {
 
 
       {/* =============================
-          Topic Diagnostic
+          Diagnostic
       ============================== */}
 
       <section className="diagnostic-banner surface-card">
@@ -1376,9 +1658,9 @@ export default function MathStartPage() {
 
 
           <p>
-            This topic has its own
-            diagnostic and mastery
-            history.
+            A diagnostic gives
+            LearnFirst stronger
+            evidence for adaptation.
           </p>
 
         </div>
@@ -1397,11 +1679,13 @@ export default function MathStartPage() {
             )
           }
         >
+
           Check my level
 
           <ArrowRight
             size={17}
           />
+
         </button>
 
       </section>
@@ -1417,13 +1701,13 @@ export default function MathStartPage() {
 
 
       {/* =============================
-          Mode Selection
+          Mode
       ============================== */}
 
       <section className="math-start-section">
 
         <div className="section-number">
-          2
+          1
         </div>
 
 
@@ -1435,9 +1719,9 @@ export default function MathStartPage() {
 
 
           <p>
-            Homework Help, Practice
-            and Learn behave
-            differently.
+            The curriculum topic is
+            chosen for you. You choose
+            how you want to work with it.
           </p>
 
         </div>
@@ -1487,6 +1771,7 @@ export default function MathStartPage() {
                     item.value,
                   );
 
+
                   setError(
                     null,
                   );
@@ -1535,13 +1820,13 @@ export default function MathStartPage() {
 
 
       {/* =============================
-          Mode Content
+          Selected mode content
       ============================== */}
 
       <section className="math-start-section problem-section-heading">
 
         <div className="section-number">
-          3
+          2
         </div>
 
 
@@ -1549,54 +1834,37 @@ export default function MathStartPage() {
 
           <h2>
 
-            {mode
+            {
+              mode
               === "HOMEWORK_HELP"
 
-                ? (
-                  "What problem are "
-                  + "you working on?"
-                )
+                ? "Enter your problem"
 
                 : mode
-                  === "PRACTICE"
+                === "PRACTICE"
 
                   ? (
-                    "Your practice problem"
+                    "Practice "
+                    + selectedTopic.title
                   )
 
                   : (
-                    "Start learning "
+                    "Learn "
                     + selectedTopic.title
-                  )}
+                  )
+            }
 
           </h2>
 
 
           <p>
-
-            {mode
-              === "HOMEWORK_HELP"
-
-                ? (
-                  "Enter a problem from "
-                  + "the selected topic."
-                )
-
-                : mode
-                  === "PRACTICE"
-
-                  ? (
-                    "LearnFirst chooses "
-                    + "a problem using "
-                    + "your topic profile."
-                  )
-
-                  : (
-                    "Learn the concept "
-                    + "first, then move "
-                    + "into practice."
-                  )}
-
+            Current curriculum topic:
+            {" "}
+            <strong>
+              {
+                selectedTopic.title
+              }
+            </strong>
           </p>
 
         </div>
@@ -1605,7 +1873,7 @@ export default function MathStartPage() {
 
 
       {/* =============================
-          Homework Help
+          Homework
       ============================== */}
 
       {mode
@@ -1615,29 +1883,26 @@ export default function MathStartPage() {
         <div className="problem-entry-card surface-card">
 
           <label
-            htmlFor="math-problem"
             className="field-label"
+            htmlFor="math-problem"
           >
+
             {
               selectedTopic.title
-            } problem
+            }
+            {" "}
+            problem
+
           </label>
 
 
           <input
             id="math-problem"
+
             className="math-problem-input"
 
             value={
               problem
-            }
-
-            onChange={(event) =>
-              setProblem(
-                event
-                  .target
-                  .value,
-              )
             }
 
             placeholder={
@@ -1647,13 +1912,21 @@ export default function MathStartPage() {
                   .sampleProblems[0]
               )
             }
+
+            onChange={(event) =>
+              setProblem(
+                event
+                  .target
+                  .value,
+              )
+            }
           />
 
 
           <div className="problem-suggestions">
 
             <span>
-              Try an example
+              Examples
             </span>
 
 
@@ -1663,25 +1936,26 @@ export default function MathStartPage() {
                 .sampleProblems
                 .map(
                   (
-                    item,
+                    example,
                   ) => (
 
                     <button
                       key={
-                        item
+                        example
                       }
 
                       type="button"
 
                       onClick={() =>
                         setProblem(
-                          item,
+                          example,
                         )
                       }
                     >
-                      {item}
-                    </button>
 
+                      {example}
+
+                    </button>
                   ),
                 )}
 
@@ -1690,18 +1964,12 @@ export default function MathStartPage() {
           </div>
 
 
-          <p>
-            LearnFirst will ask
-            you to try the problem
-            before giving detailed
-            help.
-          </p>
-
-
           {error && (
 
             <div className="error-message">
+
               {error}
+
             </div>
 
           )}
@@ -1709,34 +1977,37 @@ export default function MathStartPage() {
 
           <button
             type="button"
+
             className="primary-button start-learning-button"
 
             disabled={
-              loading
+              starting
             }
 
-            onClick={
-              handleStart
+            onClick={() =>
+              void handleStart()
             }
           >
 
             {
-              loading
+              starting
                 ? "Preparing..."
                 : "Start homework help"
             }
 
 
-            {!loading
-              && (
+            {!starting && (
+
               <ArrowRight
-                size={19}
+                size={18}
               />
+
             )}
 
           </button>
 
         </div>
+
       )}
 
 
@@ -1751,18 +2022,13 @@ export default function MathStartPage() {
         <div className="problem-entry-card surface-card">
 
           <span className="field-label">
-            LearnFirst selected
+            Adaptive practice problem
           </span>
 
 
           <div className="adaptive-next-problem">
 
             <div>
-
-              <span>
-                Practice problem
-              </span>
-
 
               <strong>
 
@@ -1779,39 +2045,15 @@ export default function MathStartPage() {
 
             </div>
 
-
-            {adaptivePlan
-              ?.next_problem
-              && (
-
-              <div className="adaptive-problem-level">
-
-                {
-                  difficultyLabel(
-                    adaptivePlan
-                      .next_problem
-                      .difficulty,
-                  )
-                }
-
-              </div>
-            )}
-
           </div>
-
-
-          <p>
-            Your attempts in {
-              selectedTopic.title
-            } affect only this
-            topic's learning profile.
-          </p>
 
 
           {error && (
 
             <div className="error-message">
+
               {error}
+
             </div>
 
           )}
@@ -1819,34 +2061,37 @@ export default function MathStartPage() {
 
           <button
             type="button"
+
             className="primary-button start-learning-button"
 
             disabled={
-              loading
+              starting
             }
 
-            onClick={
-              handleStart
+            onClick={() =>
+              void handleStart()
             }
           >
 
             {
-              loading
+              starting
                 ? "Preparing..."
                 : "Start practice"
             }
 
 
-            {!loading
-              && (
+            {!starting && (
+
               <ArrowRight
-                size={19}
+                size={18}
               />
+
             )}
 
           </button>
 
         </div>
+
       )}
 
 
@@ -1861,18 +2106,13 @@ export default function MathStartPage() {
         <div className="problem-entry-card surface-card">
 
           <span className="field-label">
-            Concept
+            Current concept
           </span>
 
 
           <div className="adaptive-next-problem">
 
             <div>
-
-              <span>
-                Learn first
-              </span>
-
 
               <strong>
                 {
@@ -1886,19 +2126,19 @@ export default function MathStartPage() {
 
 
           <p>
-            LearnFirst will begin
-            with {
-              selectedTopic.title
-            } as a concept. When
-            you're ready, request
-            a practice problem.
+            LearnFirst will first
+            teach the concept, then
+            move you toward independent
+            practice.
           </p>
 
 
           {error && (
 
             <div className="error-message">
+
               {error}
+
             </div>
 
           )}
@@ -1906,34 +2146,37 @@ export default function MathStartPage() {
 
           <button
             type="button"
+
             className="primary-button start-learning-button"
 
             disabled={
-              loading
+              starting
             }
 
-            onClick={
-              handleStart
+            onClick={() =>
+              void handleStart()
             }
           >
 
             {
-              loading
+              starting
                 ? "Preparing..."
                 : "Start learning"
             }
 
 
-            {!loading
-              && (
+            {!starting && (
+
               <ArrowRight
-                size={19}
+                size={18}
               />
+
             )}
 
           </button>
 
         </div>
+
       )}
 
     </div>

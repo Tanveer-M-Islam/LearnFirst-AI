@@ -3,6 +3,9 @@ from pydantic import (
     Field,
 )
 
+from app.english.models import (
+    EnglishValidationView,
+)
 from app.math.models import (
     MathValidationView,
 )
@@ -36,13 +39,9 @@ class TutorMessageResponse(
 
     student_message: str
 
-    detected_intent: (
-        TutorIntent
-    )
+    detected_intent: TutorIntent
 
-    decision: (
-        TutorDecisionResult
-    )
+    decision: TutorDecisionResult
 
     math_validation: (
         MathValidationView
@@ -51,6 +50,11 @@ class TutorMessageResponse(
 
     science_validation: (
         ScienceValidationView
+        | None
+    ) = None
+
+    english_validation: (
+        EnglishValidationView
         | None
     ) = None
 

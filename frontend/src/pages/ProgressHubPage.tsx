@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  BookOpen,
   Calculator,
   FlaskConical,
   Sparkles,
@@ -41,10 +42,11 @@ export default function ProgressHubPage() {
 
 
           <p>
-            Math and Science use
-            different evidence, so
-            LearnFirst shows their
-            progress separately.
+            Math, Science and English
+            use different learning
+            evidence, so LearnFirst
+            shows their progress
+            separately.
           </p>
 
         </div>
@@ -55,6 +57,10 @@ export default function ProgressHubPage() {
       <section className="dashboard-section">
 
         <div className="subject-grid">
+
+          {/* =========================
+              Math
+          ========================== */}
 
           <article
             className={
@@ -106,15 +112,21 @@ export default function ProgressHubPage() {
               type="button"
               className="subject-action"
             >
+
               View Math
 
               <ArrowRight
                 size={18}
               />
+
             </button>
 
           </article>
 
+
+          {/* =========================
+              Science
+          ========================== */}
 
           <article
             className={
@@ -154,8 +166,7 @@ export default function ProgressHubPage() {
 
               <p>
                 See structured
-                explanations,
-                misconceptions,
+                understanding,
                 independence,
                 mastery signal and
                 response pace.
@@ -168,11 +179,80 @@ export default function ProgressHubPage() {
               type="button"
               className="subject-action"
             >
+
               View Science
 
               <ArrowRight
                 size={18}
               />
+
+            </button>
+
+          </article>
+
+
+          {/* =========================
+              English
+          ========================== */}
+
+          <article
+            className={
+              "subject-card "
+              + "subject-english "
+              + "clickable-subject-card"
+            }
+
+            onClick={() =>
+              navigate(
+                "/progress/english",
+              )
+            }
+          >
+
+            <div className="subject-icon">
+
+              <BookOpen
+                size={28}
+              />
+
+            </div>
+
+
+            <div>
+
+              <span className="subject-label">
+                English progress
+              </span>
+
+
+              <h3>
+                Understanding +
+                independent practice
+              </h3>
+
+
+              <p>
+                See understanding,
+                attempts, independent
+                practice and adaptive
+                mastery across English
+                concepts.
+              </p>
+
+            </div>
+
+
+            <button
+              type="button"
+              className="subject-action"
+            >
+
+              View English
+
+              <ArrowRight
+                size={18}
+              />
+
             </button>
 
           </article>

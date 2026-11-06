@@ -1,8 +1,8 @@
 import {
   ArrowLeft,
-  BookOpenCheck,
   BrainCircuit,
   CheckCircle2,
+  CircleHelp,
   FlaskConical,
   Lightbulb,
   Send,
@@ -47,25 +47,22 @@ function createId(): string {
   if (
     typeof crypto
     !== "undefined"
-
     && crypto.randomUUID
   ) {
 
-    return (
-      crypto.randomUUID()
-    );
+    return crypto.randomUUID();
   }
 
 
   return (
-    `${Date.now()}-`
-    + `${Math.random()}`
+    `${Date.now()}-${Math.random()}`
   );
 }
 
 
 function scienceStatusLabel(
-  validation: ScienceValidation,
+  validation:
+    ScienceValidation,
 ): string {
 
   switch (
@@ -74,30 +71,22 @@ function scienceStatusLabel(
 
     case "CORRECT":
 
-      return (
-        "Strong explanation"
-      );
+      return "Strong explanation";
 
 
     case "PARTIALLY_CORRECT":
 
-      return (
-        "Partly there"
-      );
+      return "Partly there";
 
 
     case "INCORRECT":
 
-      return (
-        "Needs another look"
-      );
+      return "Needs another look";
 
 
     default:
 
-      return (
-        "Explain a little more"
-      );
+      return "Explain a little more";
   }
 }
 
@@ -164,9 +153,7 @@ export default function ScienceTutorPage() {
   const endRef =
     useRef<
       HTMLDivElement | null
-    >(
-      null,
-    );
+    >(null);
 
 
   useEffect(
@@ -177,15 +164,12 @@ export default function ScienceTutorPage() {
       ) {
 
         setError(
-          "Science session "
-          + "not found.",
+          "Science session not found.",
         );
-
 
         setPageLoading(
           false,
         );
-
 
         return;
       }
@@ -216,19 +200,26 @@ export default function ScienceTutorPage() {
                   "tutor",
 
                 text:
-                  (
-                    "Let's explore "
-                    + (
-                      data.topic
-                      ?? "this topic"
+                  data.current_problem
+
+                    ? (
+                      "Here is your Science "
+                      + "question: "
+                      + data.current_problem
+                      + ". Explain what you "
+                      + "understand in your "
+                      + "own words."
                     )
-                    + ". Tell me one "
-                    + "thing you already "
-                    + "know about it. "
-                    + "When you're ready, "
-                    + "you can ask me to "
-                    + "quiz you."
-                  ),
+
+                    : (
+                      "Let's explore "
+                      + (
+                        data.topic
+                        ?? "Science"
+                      )
+                      + ". Tell me one thing "
+                      + "you already know about it."
+                    ),
 
                 createdAt:
                   Date.now(),
@@ -242,9 +233,8 @@ export default function ScienceTutorPage() {
               err instanceof Error
                 ? err.message
                 : (
-                  "Could not load "
-                  + "the Science "
-                  + "session."
+                  "Could not load the "
+                  + "Science session."
                 ),
             );
 
@@ -310,14 +300,14 @@ export default function ScienceTutorPage() {
 
       } catch {
 
-        // Optional UI refresh.
+        // Optional UI refresh only.
       }
     };
 
 
   const sendMessage =
     async (
-      messageOverride?: string,
+      override?: string,
     ) => {
 
       if (
@@ -329,10 +319,11 @@ export default function ScienceTutorPage() {
       }
 
 
-      const message = (
-        messageOverride
-        ?? input
-      ).trim();
+      const message =
+        (
+          override
+          ?? input
+        ).trim();
 
 
       if (
@@ -405,20 +396,17 @@ export default function ScienceTutorPage() {
                 response.reply,
 
               decision:
-                response
-                  .decision,
+                response.decision,
 
               scienceValidation:
                 response
                   .science_validation,
 
               ragUsed:
-                response
-                  .rag_used,
+                response.rag_used,
 
               ragSources:
-                response
-                  .rag_sources,
+                response.rag_sources,
 
               createdAt:
                 Date.now(),
@@ -436,8 +424,8 @@ export default function ScienceTutorPage() {
           err instanceof Error
             ? err.message
             : (
-              "LearnFirst could "
-              + "not respond."
+              "LearnFirst could not "
+              + "respond."
             ),
         );
 
@@ -458,7 +446,6 @@ export default function ScienceTutorPage() {
 
     event.preventDefault();
 
-
     void sendMessage();
   };
 
@@ -475,10 +462,8 @@ export default function ScienceTutorPage() {
           size={33}
         />
 
-
         <strong>
-          Preparing your
-          Science lesson...
+          Preparing your Science lesson...
         </strong>
 
       </div>
@@ -496,15 +481,10 @@ export default function ScienceTutorPage() {
       <div className="science-error surface-card">
 
         <p>
-
           {
             error
-            ?? (
-              "Science session "
-              + "not found."
-            )
+            ?? "Science session not found."
           }
-
         </p>
 
 
@@ -544,11 +524,13 @@ export default function ScienceTutorPage() {
               )
             }
           >
+
             <ArrowLeft
               size={18}
             />
 
-            Science topics
+            Science
+
           </button>
 
 
@@ -573,6 +555,7 @@ export default function ScienceTutorPage() {
               <h1>
                 {
                   session.topic
+                  ?? "Science"
                 }
               </h1>
 
@@ -610,15 +593,14 @@ export default function ScienceTutorPage() {
             <div>
 
               <strong>
-                Explore, think,
-                explain
+                Explore, think, explain
               </strong>
 
 
               <span>
-                LearnFirst now checks
-                your conceptual
-                understanding too.
+                Explain ideas in your own
+                words. LearnFirst checks
+                conceptual understanding.
               </span>
 
             </div>
@@ -646,10 +628,6 @@ export default function ScienceTutorPage() {
                   />
 
 
-                  {/* =====================
-                      Science evaluation
-                  ====================== */}
-
                   {(
                     message.role
                     === "tutor"
@@ -668,25 +646,21 @@ export default function ScienceTutorPage() {
                       <div>
 
                         <strong>
-
                           {
                             scienceStatusLabel(
                               message
                                 .scienceValidation,
                             )
                           }
-
                         </strong>
 
 
                         <span>
-
                           {
                             message
                               .scienceValidation
                               .feedback_summary
                           }
-
                         </span>
 
 
@@ -712,17 +686,15 @@ export default function ScienceTutorPage() {
                             }
 
                           </span>
+
                         )}
 
                       </div>
 
                     </div>
+
                   )}
 
-
-                  {/* =====================
-                      Curriculum sources
-                  ====================== */}
 
                   {(
                     message.role
@@ -742,8 +714,7 @@ export default function ScienceTutorPage() {
                       <div>
 
                         <strong>
-                          Grounded in
-                          curriculum
+                          Grounded in curriculum
                         </strong>
 
 
@@ -771,6 +742,7 @@ export default function ScienceTutorPage() {
                       </div>
 
                     </div>
+
                   )}
 
                 </div>
@@ -782,34 +754,27 @@ export default function ScienceTutorPage() {
 
               <div className="science-thinking">
 
-                <div className="science-thinking-icon">
-
-                  <BrainCircuit
-                    size={18}
-                  />
-
-                </div>
+                <BrainCircuit
+                  size={18}
+                />
 
 
                 <div>
 
                   <strong>
-                    LearnFirst is
-                    checking your
-                    explanation...
+                    Thinking about your response...
                   </strong>
 
 
                   <span>
-                    It will compare
-                    your ideas with
-                    the trusted
-                    concept material.
+                    LearnFirst is checking your
+                    understanding and evidence.
                   </span>
 
                 </div>
 
               </div>
+
             )}
 
 
@@ -842,18 +807,17 @@ export default function ScienceTutorPage() {
 
               onClick={() =>
                 void sendMessage(
-                  (
-                    "Explain this "
-                    + "concept simply."
-                  ),
+                  "Explain this simply.",
                 )
               }
             >
-              <BookOpenCheck
+
+              <FlaskConical
                 size={16}
               />
 
-              Explain simply
+              Explain
+
             </button>
 
 
@@ -866,18 +830,17 @@ export default function ScienceTutorPage() {
 
               onClick={() =>
                 void sendMessage(
-                  (
-                    "Can you give "
-                    + "me a hint?"
-                  ),
+                  "Can you give me a hint?",
                 )
               }
             >
+
               <Lightbulb
                 size={16}
               />
 
-              Give me a hint
+              Hint
+
             </button>
 
 
@@ -890,19 +853,17 @@ export default function ScienceTutorPage() {
 
               onClick={() =>
                 void sendMessage(
-                  (
-                    "Ask me a "
-                    + "practice "
-                    + "question."
-                  ),
+                  "Give me a practice question.",
                 )
               }
             >
+
               <Sparkles
                 size={16}
               />
 
-              Quiz me
+              Practice
+
             </button>
 
           </div>
@@ -940,16 +901,13 @@ export default function ScienceTutorPage() {
 
                   : (
                     "Ask about the topic "
-                    + "or explain what "
-                    + "you think..."
+                    + "or explain what you know..."
                   )
               }
 
               onChange={(event) =>
                 setInput(
-                  event
-                    .target
-                    .value,
+                  event.target.value,
                 )
               }
             />
@@ -967,9 +925,11 @@ export default function ScienceTutorPage() {
                 "Send Science message"
               }
             >
+
               <Send
                 size={19}
               />
+
             </button>
 
           </form>
@@ -986,7 +946,9 @@ export default function ScienceTutorPage() {
               {
                 session
                   .current_problem
+
                   ? "Current question"
+
                   : "Current topic"
               }
 
@@ -994,21 +956,17 @@ export default function ScienceTutorPage() {
 
 
             <h3>
-
               {
-                session
-                  .current_problem
+                session.current_problem
                 ?? session.topic
+                ?? "Science"
               }
-
             </h3>
 
 
             <p>
-
               {
-                session
-                  .current_problem
+                session.current_problem
 
                   ? (
                     "Explain what you "
@@ -1017,13 +975,11 @@ export default function ScienceTutorPage() {
                   )
 
                   : (
-                    "Ask questions, "
-                    + "learn the concept "
-                    + "and quiz yourself "
-                    + "when you're ready."
+                    "Learn the concept and "
+                    + "ask for practice when "
+                    + "you are ready."
                   )
               }
-
             </p>
 
           </div>
@@ -1047,41 +1003,71 @@ export default function ScienceTutorPage() {
 
 
             <p>
-              Science teaching is
-              retrieved from the
-              selected curriculum
-              concept before the
-              tutor responds.
+              Science factual teaching uses
+              trusted curriculum context rather
+              than unsupported claims.
             </p>
 
           </div>
 
 
-          <div className="surface-card science-side-card">
-
-            <CheckCircle2
-              size={24}
-            />
-
+          <div className="surface-card science-side-card session-progress-card">
 
             <span className="small-label">
-              Understanding check
+              This lesson
             </span>
 
 
-            <h3>
-              More than keywords
-            </h3>
+            <div className="lesson-stat">
+
+              <CheckCircle2
+                size={18}
+              />
 
 
-            <p>
-              LearnFirst checks
-              several expected ideas,
-              records partial
-              understanding and can
-              detect selected common
-              misconceptions.
-            </p>
+              <div>
+
+                <strong>
+                  {
+                    session
+                      .attempt_count
+                  }
+                </strong>
+
+
+                <span>
+                  Attempts
+                </span>
+
+              </div>
+
+            </div>
+
+
+            <div className="lesson-stat">
+
+              <CircleHelp
+                size={18}
+              />
+
+
+              <div>
+
+                <strong>
+                  {
+                    session
+                      .direct_answer_requests
+                  }
+                </strong>
+
+
+                <span>
+                  Answer requests
+                </span>
+
+              </div>
+
+            </div>
 
           </div>
 

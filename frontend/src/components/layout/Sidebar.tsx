@@ -5,6 +5,7 @@ import {
   FlaskConical,
   GraduationCap,
   Home,
+  Languages,
   Sparkles,
 } from "lucide-react";
 
@@ -63,6 +64,18 @@ const learnItems = [
 
     icon:
       FlaskConical,
+  },
+
+
+  {
+    path:
+      "/learn/english",
+
+    label:
+      "English",
+
+    icon:
+      Languages,
   },
 ];
 
@@ -190,10 +203,6 @@ export default function Sidebar() {
           },
         )}
 
-
-        {/* =============================
-            Learn sub-navigation
-        ============================== */}
 
         {learnItems.map(
           (

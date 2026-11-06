@@ -1,6 +1,4 @@
-from sqlalchemy.orm import (
-    Session,
-)
+from sqlalchemy.orm import Session
 
 from app.database.models.tutor_decision import (
     TutorDecision,
@@ -23,6 +21,9 @@ from app.schemas.enums import (
 )
 from app.services.adaptive_learning_service import (
     AdaptiveLearningService,
+)
+from app.services.english_adaptive_learning_service import (
+    EnglishAdaptiveLearningService,
 )
 from app.services.science_adaptive_learning_service import (
     ScienceAdaptiveLearningService,
@@ -51,85 +52,60 @@ class TutorService:
         cls,
         db: Session,
         session_id: str,
-        decision_input: (
-            TutorDecisionInput
-        ),
-        model_used: (
-            str | None
-        ) = None,
+        decision_input: TutorDecisionInput,
+        model_used: str | None = None,
     ) -> TutorDecisionResult:
 
         learning_session = (
-            LearningSessionRepository
-            .get_by_id(
+            LearningSessionRepository.get_by_id(
                 db=db,
-
-                session_id=(
-                    session_id
-                ),
+                session_id=session_id,
             )
         )
 
 
         if (
-            learning_session
-            is None
+            learning_session is None
         ):
-
             raise ValueError(
-                "Learning session "
-                "not found."
+                "Learning session not found."
             )
 
 
         student = (
-            StudentRepository
-            .get_by_id(
+            StudentRepository.get_by_id(
                 db=db,
-
                 student_id=(
-                    learning_session
-                    .student_id
+                    learning_session.student_id
                 ),
             )
         )
 
 
         if (
-            student
-            is None
+            student is None
         ):
-
             raise ValueError(
                 "Student not found."
             )
 
 
-        subject = (
-            Subject(
-                learning_session
-                .subject
-            )
+        subject = Subject(
+            learning_session.subject
         )
 
-
-        # ==================================
-        # Adaptive profile
-        # ==================================
 
         adaptive_plan = None
 
 
-        # ----------------------------------
-        # Math
-        # ----------------------------------
+        # ==================================
+        # Math adaptive plan
+        # ==================================
 
         if (
-            subject
-            == Subject.MATH
+            subject == Subject.MATH
 
-            and learning_session
-            .concept_code
+            and learning_session.concept_code
         ):
 
             try:
@@ -139,9 +115,7 @@ class TutorService:
                     .get_plan(
                         db=db,
 
-                        student_id=(
-                            student.id
-                        ),
+                        student_id=student.id,
 
                         concept_code=(
                             learning_session
@@ -149,7 +123,6 @@ class TutorService:
                         ),
                     )
                 )
-
 
             except (
                 LookupError,
@@ -159,16 +132,14 @@ class TutorService:
                 adaptive_plan = None
 
 
-        # ----------------------------------
-        # Science
-        # ----------------------------------
+        # ==================================
+        # Science adaptive plan
+        # ==================================
 
         elif (
-            subject
-            == Subject.SCIENCE
+            subject == Subject.SCIENCE
 
-            and learning_session
-            .concept_code
+            and learning_session.concept_code
         ):
 
             try:
@@ -178,9 +149,7 @@ class TutorService:
                     .get_plan(
                         db=db,
 
-                        student_id=(
-                            student.id
-                        ),
+                        student_id=student.id,
 
                         concept_code=(
                             learning_session
@@ -190,13 +159,11 @@ class TutorService:
                 )
 
 
-                learning_session\
-                    .mastery_state = (
-                        adaptive_plan
-                        .mastery_state
-                        .value
-                    )
-
+                learning_session.mastery_state = (
+                    adaptive_plan
+                    .mastery_state
+                    .value
+                )
 
             except (
                 LookupError,
@@ -206,25 +173,64 @@ class TutorService:
                 adaptive_plan = None
 
 
-        mastery_state = (
-            MasteryState(
-                learning_session
-                .mastery_state
-            )
+        # ==================================
+        # English adaptive plan
+        # ==================================
+
+        elif (
+            subject == Subject.ENGLISH
+
+            and learning_session.concept_code
+        ):
+
+            try:
+
+                adaptive_plan = (
+                    EnglishAdaptiveLearningService
+                    .get_plan(
+                        db=db,
+
+                        student_id=student.id,
+
+                        concept_code=(
+                            learning_session
+                            .concept_code
+                        ),
+                    )
+                )
+
+
+                learning_session.mastery_state = (
+                    adaptive_plan
+                    .mastery_state
+                    .value
+                )
+
+            except (
+                LookupError,
+                ValueError,
+            ):
+
+                adaptive_plan = None
+
+
+        mastery_state = MasteryState(
+            learning_session.mastery_state
         )
 
 
         if (
-            adaptive_plan
-            is not None
+            adaptive_plan is not None
 
             and subject
-            == Subject.SCIENCE
+            in {
+                Subject.SCIENCE,
+                Subject.ENGLISH,
+            }
         ):
 
             mastery_state = (
-                adaptive_plan
-                .mastery_state
+                adaptive_plan.mastery_state
             )
 
 
@@ -235,8 +241,7 @@ class TutorService:
                 ),
 
                 student_id=(
-                    learning_session
-                    .student_id
+                    learning_session.student_id
                 ),
 
                 age_group=(
@@ -251,32 +256,26 @@ class TutorService:
                     )
                 ),
 
-                subject=(
-                    subject
-                ),
+                subject=subject,
 
                 topic=(
                     learning_session.topic
                 ),
 
                 concept_code=(
-                    learning_session
-                    .concept_code
+                    learning_session.concept_code
                 ),
 
                 current_problem=(
-                    learning_session
-                    .current_problem
+                    learning_session.current_problem
                 ),
 
                 attempt_count=(
-                    learning_session
-                    .attempt_count
+                    learning_session.attempt_count
                 ),
 
                 hint_level=(
-                    learning_session
-                    .current_hint_level
+                    learning_session.current_hint_level
                 ),
 
                 direct_answer_requests=(
@@ -294,8 +293,7 @@ class TutorService:
                 ),
 
                 adaptive_difficulty=(
-                    adaptive_plan
-                    .difficulty
+                    adaptive_plan.difficulty
 
                     if adaptive_plan
                     is not None
@@ -304,8 +302,7 @@ class TutorService:
                 ),
 
                 adaptive_support=(
-                    adaptive_plan
-                    .support_level
+                    adaptive_plan.support_level
 
                     if adaptive_plan
                     is not None
@@ -327,12 +324,8 @@ class TutorService:
 
 
         result = (
-            cls.policy_engine
-            .decide(
-                state=(
-                    state
-                ),
-
+            cls.policy_engine.decide(
+                state=state,
                 decision_input=(
                     decision_input
                 ),
@@ -349,30 +342,23 @@ class TutorService:
                 decision_input
             ),
 
-            result=(
-                result
-            ),
+            result=result,
         )
 
 
-        (
-            LearningSessionRepository
-            .save(
-                db=db,
+        LearningSessionRepository.save(
+            db=db,
 
-                learning_session=(
-                    learning_session
-                ),
-            )
+            learning_session=(
+                learning_session
+            ),
         )
 
 
         cls._save_decision(
             db=db,
 
-            result=(
-                result
-            ),
+            result=result,
 
             decision_input=(
                 decision_input
@@ -384,80 +370,59 @@ class TutorService:
         )
 
 
-        return (
-            result
-        )
+        return result
 
 
     @staticmethod
     def _update_session_state(
         learning_session,
-        decision_input: (
-            TutorDecisionInput
-        ),
-        result: (
-            TutorDecisionResult
-        ),
+        decision_input: TutorDecisionInput,
+        result: TutorDecisionResult,
     ) -> None:
 
         if (
             decision_input.new_problem
         ):
 
-            learning_session\
-                .attempt_count = 0
+            learning_session.attempt_count = 0
 
-
-            learning_session\
-                .current_hint_level = 0
+            learning_session.current_hint_level = 0
 
 
         else:
 
-            learning_session\
-                .current_hint_level = (
-                    result.hint_level
-                )
-
-
-        if (
-            decision_input.intent
-            == TutorIntent
-            .DIRECT_ANSWER_REQUEST
-        ):
-
-            learning_session\
-                .direct_answer_requests += 1
-
-
-        if (
-            decision_input.intent
-            == TutorIntent
-            .STUDENT_ATTEMPT
-        ):
-
-            learning_session\
-                .attempt_count += 1
-
-
-        learning_session\
-            .last_tutor_action = (
-                result
-                .next_action
-                .value
+            learning_session.current_hint_level = (
+                result.hint_level
             )
+
+
+        if (
+            decision_input.intent
+            == TutorIntent.DIRECT_ANSWER_REQUEST
+        ):
+
+            learning_session.direct_answer_requests += 1
+
+
+        if (
+            decision_input.intent
+            == TutorIntent.STUDENT_ATTEMPT
+        ):
+
+            learning_session.attempt_count += 1
+
+
+        learning_session.last_tutor_action = (
+            result.next_action.value
+        )
 
 
     @staticmethod
     def _save_decision(
         db: Session,
         result: TutorDecisionResult,
-        decision_input: (
-            TutorDecisionInput
-        ),
-        model_used: (
-            str | None
-        ) = None,
+        decision_input: TutorDecisionInput,
+        model_used: str | None = None,
     ) -> None:
 
         decision = (
@@ -490,9 +455,7 @@ class TutorService:
                 ),
 
                 selected_action=(
-                    result
-                    .next_action
-                    .value
+                    result.next_action.value
                 ),
 
                 selected_hint_level=(
@@ -500,28 +463,23 @@ class TutorService:
                 ),
 
                 allow_final_answer=(
-                    result
-                    .allow_final_answer
+                    result.allow_final_answer
                 ),
 
                 requires_rag=(
-                    result
-                    .requires_rag
+                    result.requires_rag
                 ),
 
                 requires_validation=(
-                    result
-                    .requires_validation
+                    result.requires_validation
                 ),
 
                 requires_mastery_check=(
-                    result
-                    .requires_mastery_check
+                    result.requires_mastery_check
                 ),
 
                 policy_bypass_detected=(
-                    result
-                    .policy_bypass_detected
+                    result.policy_bypass_detected
                 ),
 
                 model_used=(
@@ -531,13 +489,7 @@ class TutorService:
         )
 
 
-        (
-            TutorDecisionRepository
-            .create(
-                db=db,
-
-                decision=(
-                    decision
-                ),
-            )
+        TutorDecisionRepository.create(
+            db=db,
+            decision=decision,
         )

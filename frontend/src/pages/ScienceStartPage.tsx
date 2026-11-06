@@ -1,14 +1,14 @@
 import {
   ArrowLeft,
   ArrowRight,
-  Atom,
   BrainCircuit,
   FlaskConical,
   Gauge,
-  Leaf,
-  Network,
+  Lightbulb,
   RefreshCcw,
+  ShieldCheck,
   Sparkles,
+  Target,
 } from "lucide-react";
 
 import {
@@ -21,7 +21,7 @@ import {
 } from "react-router";
 
 import {
-  getScienceTopics,
+  getStudentCurriculumPath,
 } from "../api/curriculum";
 
 import {
@@ -33,135 +33,44 @@ import {
 } from "../api/sessions";
 
 import {
-  ApiError,
-} from "../api/client";
+  getScienceTopic,
+  getScienceTopicForAge,
+} from "../data/scienceTopics";
 
 import type {
-  CurriculumTopic,
+  StudentCurriculumPath,
 } from "../types/curriculum";
 
 import type {
-  ScienceAdaptiveActivity,
   ScienceAdaptivePlan,
 } from "../types/scienceAdaptive";
 
 import {
-  clearStoredStudent,
   getStoredStudent,
 } from "../utils/studentStorage";
 
 
-function topicIcon(
-  conceptCode: string,
-) {
-
-  if (
-    conceptCode.includes(
-      "PHOTO",
-    )
-  ) {
-
-    return Leaf;
-  }
-
-
-  if (
-    conceptCode.includes(
-      "FOODCHAIN",
-    )
-  ) {
-
-    return Network;
-  }
-
-
-  return Atom;
-}
-
-
-function topicDescription(
-  conceptCode: string,
+function readableLabel(
+  value:
+    string,
 ): string {
-
-  if (
-    conceptCode
-    === "SCI_BIO_PHOTO_01"
-  ) {
-
-    return (
-      "Discover how plants use "
-      + "light, water and carbon "
-      + "dioxide to make food."
-    );
-  }
-
-
-  if (
-    conceptCode
-    === "SCI_PHY_MATTER_01"
-  ) {
-
-    return (
-      "Explore solids, liquids, "
-      + "gases and how matter "
-      + "changes state."
-    );
-  }
-
-
-  if (
-    conceptCode
-    === "SCI_BIO_FOODCHAIN_01"
-  ) {
-
-    return (
-      "Learn how energy moves "
-      + "between plants and "
-      + "animals."
-    );
-  }
-
 
   return (
-    "Explore this Science concept "
-    + "with guided questions."
+    value
+      .replace(
+        /_/g,
+        " ",
+      )
+      .toLowerCase()
+      .replace(
+        /\b\w/g,
+        (
+          character,
+        ) =>
+          character
+            .toUpperCase(),
+      )
   );
-}
-
-
-function activityLabel(
-  activity:
-    ScienceAdaptiveActivity,
-): string {
-
-  switch (
-    activity
-  ) {
-
-    case "START_LEARNING":
-
-      return "Start learning";
-
-
-    case "GUIDED_QUESTION":
-
-      return "Guided question";
-
-
-    case "INDEPENDENT_QUESTION":
-
-      return "Independent question";
-
-
-    case "REVIEW_CONCEPT":
-
-      return "Review the concept";
-
-
-    case "CHALLENGE_QUESTION":
-
-      return "Challenge question";
-  }
 }
 
 
@@ -171,20 +80,33 @@ export default function ScienceStartPage() {
     useNavigate();
 
 
-  const [
-    topics,
-    setTopics,
-  ] = useState<
-    CurriculumTopic[]
-  >([]);
+  const student =
+    getStoredStudent();
+
+
+  const studentId =
+    student?.id;
+
+
+  const learnerAge =
+    student?.age
+    ?? 7;
+
+
+  const fallbackTopic =
+    getScienceTopicForAge(
+      learnerAge,
+    );
 
 
   const [
-    selected,
-    setSelected,
+    curriculum,
+    setCurriculum,
   ] = useState<
-    CurriculumTopic | null
-  >(null);
+    StudentCurriculumPath | null
+  >(
+    null,
+  );
 
 
   const [
@@ -192,12 +114,14 @@ export default function ScienceStartPage() {
     setAdaptivePlan,
   ] = useState<
     ScienceAdaptivePlan | null
-  >(null);
+  >(
+    null,
+  );
 
 
   const [
-    loading,
-    setLoading,
+    curriculumLoading,
+    setCurriculumLoading,
   ] = useState(
     true,
   );
@@ -224,17 +148,46 @@ export default function ScienceStartPage() {
     setError,
   ] = useState<
     string | null
-  >(null);
+  >(
+    null,
+  );
+
+
+  const conceptCode =
+    curriculum
+      ?.recommended_concept
+      ?.concept_code
+
+    ?? fallbackTopic
+      .conceptCode;
+
+
+  const selectedTopic =
+    getScienceTopic(
+      conceptCode,
+    );
 
 
   // ======================================
-  // Load curriculum topics
+  // Curriculum
   // ======================================
 
-  const loadTopics =
+  const loadCurriculum =
     async () => {
 
-      setLoading(
+      if (
+        !studentId
+      ) {
+
+        navigate(
+          "/login",
+        );
+
+        return;
+      }
+
+
+      setCurriculumLoading(
         true,
       );
 
@@ -247,55 +200,15 @@ export default function ScienceStartPage() {
       try {
 
         const data =
-          await getScienceTopics();
+          await getStudentCurriculumPath(
+            studentId,
+            "SCIENCE",
+          );
 
 
-        setTopics(
+        setCurriculum(
           data,
         );
-
-
-        if (
-          data.length
-          > 0
-        ) {
-
-          setSelected(
-            (
-              current,
-            ) => {
-
-              if (
-                current
-              ) {
-
-                const stillExists =
-                  data.find(
-                    (
-                      topic,
-                    ) =>
-                      topic
-                        .concept_code
-                      === current
-                        .concept_code,
-                  );
-
-
-                if (
-                  stillExists
-                ) {
-
-                  return stillExists;
-                }
-              }
-
-
-              return (
-                data[0]
-              );
-            },
-          );
-        }
 
 
       } catch (err) {
@@ -304,15 +217,15 @@ export default function ScienceStartPage() {
           err instanceof Error
             ? err.message
             : (
-              "Could not load "
-              + "Science topics."
+              "Could not load your "
+              + "Science curriculum."
             ),
         );
 
 
       } finally {
 
-        setLoading(
+        setCurriculumLoading(
           false,
         );
       }
@@ -322,128 +235,79 @@ export default function ScienceStartPage() {
   useEffect(
     () => {
 
-      void loadTopics();
+      void loadCurriculum();
 
     },
-    [],
+    [
+      studentId,
+    ],
   );
 
 
   // ======================================
   // Adaptive plan
-  //
-  // IMPORTANT:
-  // Failure here NEVER blocks
-  // Start Science.
   // ======================================
+
+  const loadAdaptivePlan =
+    async () => {
+
+      if (
+        !studentId
+      ) {
+
+        return;
+      }
+
+
+      setAdaptiveLoading(
+        true,
+      );
+
+
+      try {
+
+        const data =
+          await getScienceAdaptivePlan(
+            studentId,
+            conceptCode,
+          );
+
+
+        setAdaptivePlan(
+          data,
+        );
+
+
+      } catch {
+
+        setAdaptivePlan(
+          null,
+        );
+
+
+      } finally {
+
+        setAdaptiveLoading(
+          false,
+        );
+      }
+    };
+
 
   useEffect(
     () => {
 
-      if (
-        !selected
-      ) {
-
-        setAdaptivePlan(
-          null,
-        );
-
-        return;
-      }
-
-
-      const student =
-        getStoredStudent();
-
-
-      if (
-        !student
-      ) {
-
-        setAdaptivePlan(
-          null,
-        );
-
-        return;
-      }
-
-
-      let cancelled =
-        false;
-
-
-      const loadAdaptivePlan =
-        async () => {
-
-          setAdaptiveLoading(
-            true,
-          );
-
-
-          try {
-
-            const plan =
-              await getScienceAdaptivePlan(
-                student.id,
-                selected
-                  .concept_code,
-              );
-
-
-            if (
-              !cancelled
-            ) {
-
-              setAdaptivePlan(
-                plan,
-              );
-            }
-
-
-          } catch {
-
-            /*
-            Adaptive Science is helpful,
-            but it must NEVER stop a
-            Science lesson from starting.
-            */
-
-            if (
-              !cancelled
-            ) {
-
-              setAdaptivePlan(
-                null,
-              );
-            }
-
-
-          } finally {
-
-            if (
-              !cancelled
-            ) {
-
-              setAdaptiveLoading(
-                false,
-              );
-            }
-          }
-        };
+      setAdaptivePlan(
+        null,
+      );
 
 
       void loadAdaptivePlan();
 
-
-      return () => {
-
-        cancelled = true;
-      };
-
     },
     [
-      selected
-        ?.concept_code,
+      studentId,
+      conceptCode,
     ],
   );
 
@@ -452,67 +316,15 @@ export default function ScienceStartPage() {
   // Start Science
   // ======================================
 
-  const startLearning =
+  const startScience =
     async () => {
-
-      if (
-        starting
-      ) {
-
-        return;
-      }
-
-
-      setError(
-        null,
-      );
-
-
-      // ----------------------------------
-      // Read student again at click time.
-      //
-      // This prevents a stale render from
-      // using an old localStorage value.
-      // ----------------------------------
-
-      const student =
-        getStoredStudent();
-
 
       if (
         !student
       ) {
 
         navigate(
-          "/setup",
-        );
-
-        return;
-      }
-
-
-      if (
-        !student.id
-      ) {
-
-        clearStoredStudent();
-
-
-        navigate(
-          "/setup",
-        );
-
-        return;
-      }
-
-
-      if (
-        !selected
-      ) {
-
-        setError(
-          "Choose a Science "
-          + "topic first.",
+          "/login",
         );
 
         return;
@@ -524,16 +336,20 @@ export default function ScienceStartPage() {
       );
 
 
+      setError(
+        null,
+      );
+
+
       try {
 
-        /*
-        IMPORTANT:
-        Starting a Science session does
-        NOT depend on the adaptive API.
+        const question =
+          adaptivePlan
+            ?.next_question
+            ?.prompt
 
-        The adaptive engine is applied
-        later by TutorService.
-        */
+          ?? null;
+
 
         const session =
           await createLearningSession({
@@ -548,83 +364,25 @@ export default function ScienceStartPage() {
               "SCIENCE",
 
             topic:
-              selected.title,
+              selectedTopic.title,
 
             concept_code:
-              selected
-                .concept_code,
+              conceptCode,
 
             current_problem:
-              null,
+              question,
           });
-
-
-        if (
-          !session
-          || !session.id
-        ) {
-
-          throw new Error(
-            "The Science session "
-            + "was created without "
-            + "a valid session ID.",
-          );
-        }
 
 
         navigate(
           (
-            "/learn/science/"
-            + "session/"
+            "/learn/science/session/"
             + session.id
           ),
         );
 
 
       } catch (err) {
-
-        console.error(
-          "Start Science failed:",
-          err,
-        );
-
-
-        /*
-        A very common development issue:
-        SQLite/database gets reset but the
-        browser still contains an old
-        student ID in localStorage.
-        */
-
-        if (
-          err instanceof ApiError
-
-          && err.status
-          === 404
-
-          && err.message
-            .toLowerCase()
-            .includes(
-              "student",
-            )
-        ) {
-
-          clearStoredStudent();
-
-
-          setError(
-            "Your saved learner "
-            + "profile is no longer "
-            + "available in the "
-            + "current database. "
-            + "Please create the "
-            + "learner profile again.",
-          );
-
-
-          return;
-        }
-
 
         setError(
           err instanceof Error
@@ -645,9 +403,25 @@ export default function ScienceStartPage() {
     };
 
 
-  // ======================================
-  // UI
-  // ======================================
+  if (
+    curriculumLoading
+  ) {
+
+    return (
+
+      <div className="science-loading surface-card">
+
+        <BrainCircuit
+          size={26}
+        />
+
+        Finding your
+        Science level...
+
+      </div>
+    );
+  }
+
 
   return (
 
@@ -696,23 +470,23 @@ export default function ScienceStartPage() {
               size={15}
             />
 
-            Science learning
+            Age-adaptive Science
 
           </div>
 
 
           <h1>
-            What are you
-            curious about?
+            Your next Science step
           </h1>
 
 
           <p>
-            Choose a topic and
-            LearnFirst will adapt
-            questions, explanations
-            and support to your
-            learning.
+            LearnFirst selects an
+            age-appropriate Science
+            concept and adapts the
+            questions, support and
+            explanations from your
+            learning evidence.
           </p>
 
         </div>
@@ -721,7 +495,7 @@ export default function ScienceStartPage() {
 
 
       {/* =============================
-          Topic heading
+          Curriculum position
       ============================== */}
 
       <div className="science-section-heading">
@@ -729,14 +503,205 @@ export default function ScienceStartPage() {
         <div>
 
           <h2>
-            Choose a topic
+            Your curriculum position
           </h2>
 
 
           <p>
-            Each Science topic
-            develops its own
-            learning profile.
+            Age is the starting point.
+            Demonstrated learning
+            evidence can adjust the path.
+          </p>
+
+        </div>
+
+
+        <button
+          type="button"
+          className="secondary-button"
+
+          onClick={() =>
+            void loadCurriculum()
+          }
+        >
+
+          <RefreshCcw
+            size={16}
+          />
+
+          Refresh
+
+        </button>
+
+      </div>
+
+
+      <div className="adaptive-plan-card surface-card">
+
+        <div className="adaptive-plan-main">
+
+          <div className="adaptive-plan-icon">
+
+            <Target
+              size={27}
+            />
+
+          </div>
+
+
+          <div className="adaptive-plan-copy">
+
+            <span>
+              Current Science concept
+            </span>
+
+
+            <h3>
+              {
+                selectedTopic.title
+              }
+            </h3>
+
+
+            <p>
+              {
+                selectedTopic.description
+              }
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div className="adaptive-profile-grid">
+
+          <div>
+
+            <Target
+              size={18}
+            />
+
+            <span>
+              Age
+            </span>
+
+
+            <strong>
+              {
+                learnerAge
+              }
+            </strong>
+
+          </div>
+
+
+          <div>
+
+            <FlaskConical
+              size={18}
+            />
+
+            <span>
+              Expected level
+            </span>
+
+
+            <strong>
+
+              {
+                curriculum
+                  ?.target_concept
+                  ?.title
+
+                ?? selectedTopic.title
+              }
+
+            </strong>
+
+          </div>
+
+
+          <div>
+
+            <BrainCircuit
+              size={18}
+            />
+
+            <span>
+              Status
+            </span>
+
+
+            <strong>
+
+              {
+                readableLabel(
+                  curriculum
+                    ?.recommended_concept
+                    ?.status
+
+                  ?? "READY",
+                )
+              }
+
+            </strong>
+
+          </div>
+
+        </div>
+
+
+        {curriculum
+          ?.prerequisite_review_concept
+          && (
+
+          <div className="adaptive-score-note">
+
+            <span>
+              Prerequisite review
+            </span>
+
+
+            <strong>
+
+              {
+                curriculum
+                  .prerequisite_review_concept
+                  .title
+              }
+
+            </strong>
+
+          </div>
+
+        )}
+
+
+        <div className="adaptive-plan-footer">
+
+          <p>
+
+            {
+              curriculum
+                ?.prerequisite_review_concept
+
+                ? (
+                  "LearnFirst found "
+                  + "evidence of an earlier "
+                  + "Science concept that "
+                  + "needs review before "
+                  + "continuing."
+                )
+
+                : (
+                  "No demonstrated "
+                  + "prerequisite gap is "
+                  + "blocking this Science "
+                  + "level."
+                )
+            }
+
           </p>
 
         </div>
@@ -745,190 +710,198 @@ export default function ScienceStartPage() {
 
 
       {/* =============================
-          Loading
+          Adaptive plan
       ============================== */}
 
-      {loading && (
+      <div className="science-section-heading">
+
+        <div>
+
+          <h2>
+            Personalized Science plan
+          </h2>
+
+
+          <p>
+            Difficulty and support
+            are adjusted independently
+            from curriculum level.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      {adaptiveLoading && (
 
         <div className="science-loading surface-card">
 
-          <RefreshCcw
-            size={25}
+          <BrainCircuit
+            size={24}
           />
 
-          Loading Science
-          topics...
+          Checking your
+          learning profile...
 
         </div>
 
       )}
 
 
-      {/* =============================
-          Topic load error
-      ============================== */}
-
       {(
-        !loading
-
-        && error
-
-        && topics.length
-        === 0
+        !adaptiveLoading
+        && adaptivePlan
       ) && (
 
-        <div className="science-error surface-card">
+        <div className="adaptive-plan-card surface-card">
 
-          <p>
-            {error}
-          </p>
+          <div className="adaptive-plan-main">
 
+            <div className="adaptive-plan-icon">
 
-          <button
-            type="button"
-            className="secondary-button"
+              <BrainCircuit
+                size={27}
+              />
 
-            onClick={() =>
-              void loadTopics()
-            }
-          >
-
-            <RefreshCcw
-              size={17}
-            />
-
-            Try again
-
-          </button>
-
-        </div>
-
-      )}
+            </div>
 
 
-      {/* =============================
-          Topics
-      ============================== */}
+            <div className="adaptive-plan-copy">
 
-      {(
-        !loading
-
-        && topics.length
-        > 0
-      ) && (
-
-        <div className="science-topic-grid">
-
-          {topics.map(
-            (
-              topic,
-            ) => {
-
-              const Icon =
-                topicIcon(
-                  topic
-                    .concept_code,
-                );
+              <span>
+                Recommended activity
+              </span>
 
 
-              const isSelected =
-                selected
-                  ?.concept_code
-                === topic
-                  .concept_code;
+              <h3>
+
+                {
+                  readableLabel(
+                    adaptivePlan
+                      .next_activity,
+                  )
+                }
+
+              </h3>
 
 
-              return (
+              <p>
+                {
+                  adaptivePlan.summary
+                }
+              </p>
 
-                <button
-                  key={
-                    topic
-                      .concept_code
+            </div>
+
+          </div>
+
+
+          <div className="adaptive-profile-grid">
+
+            <div>
+
+              <Gauge
+                size={18}
+              />
+
+              <span>
+                Difficulty
+              </span>
+
+
+              <strong>
+
+                {
+                  readableLabel(
+                    adaptivePlan
+                      .difficulty,
+                  )
+                }
+
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <Lightbulb
+                size={18}
+              />
+
+              <span>
+                Support
+              </span>
+
+
+              <strong>
+
+                {
+                  readableLabel(
+                    adaptivePlan
+                      .support_level,
+                  )
+                }
+
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <ShieldCheck
+                size={18}
+              />
+
+              <span>
+                Understanding
+              </span>
+
+
+              <strong>
+
+                {
+                  adaptivePlan
+                    .understanding_score_percent
+                }
+                %
+
+              </strong>
+
+            </div>
+
+          </div>
+
+
+          {adaptivePlan
+            .next_question
+            && (
+
+            <div className="adaptive-next-problem">
+
+              <div>
+
+                <span>
+                  First question
+                </span>
+
+
+                <strong>
+
+                  {
+                    adaptivePlan
+                      .next_question
+                      .prompt
                   }
 
-                  type="button"
+                </strong>
 
-                  className={
-                    isSelected
-                      ? (
-                        "science-topic-card "
-                        + "selected"
-                      )
-                      : (
-                        "science-topic-card"
-                      )
-                  }
+              </div>
 
-                  disabled={
-                    starting
-                  }
+            </div>
 
-                  onClick={() => {
-
-                    setSelected(
-                      topic,
-                    );
-
-
-                    setError(
-                      null,
-                    );
-                  }}
-                >
-
-                  <div className="science-topic-icon">
-
-                    <Icon
-                      size={27}
-                    />
-
-                  </div>
-
-
-                  <span className="science-topic-grade">
-
-                    Grade
-                    {" "}
-                    {
-                      topic
-                        .grade_band
-                    }
-
-                  </span>
-
-
-                  <h3>
-                    {
-                      topic.title
-                    }
-                  </h3>
-
-
-                  <p>
-
-                    {
-                      topicDescription(
-                        topic
-                          .concept_code,
-                      )
-                    }
-
-                  </p>
-
-
-                  <div className="science-topic-select">
-
-                    {
-                      isSelected
-                        ? "Selected ✓"
-                        : "Choose topic"
-                    }
-
-                  </div>
-
-                </button>
-              );
-            },
           )}
 
         </div>
@@ -937,140 +910,46 @@ export default function ScienceStartPage() {
 
 
       {/* =============================
-          Adaptive status
+          RAG explanation
       ============================== */}
 
-      {(
-        selected
+      <div className="science-start-actions">
 
-        && adaptiveLoading
-      ) && (
-
-        <div className="science-start-actions">
-
-          <div>
-
-            <strong>
-              Checking your
-              learning profile...
-            </strong>
-
-
-            <span>
-              This does not block
-              the lesson from
-              starting.
-            </span>
-
-          </div>
-
-
-          <BrainCircuit
-            size={24}
-          />
-
-        </div>
-
-      )}
-
-
-      {(
-        selected
-
-        && !adaptiveLoading
-
-        && adaptivePlan
-      ) && (
-
-        <div className="science-start-actions">
-
-          <div>
-
-            <strong>
-
-              Personalized next step:
-              {" "}
-
-              {
-                activityLabel(
-                  adaptivePlan
-                    .next_activity,
-                )
-              }
-
-            </strong>
-
-
-            <span>
-
-              Difficulty:
-              {" "}
-              {
-                adaptivePlan
-                  .difficulty
-              }
-
-              {" · "}
-
-              Support:
-              {" "}
-              {
-                adaptivePlan
-                  .support_level
-              }
-
-            </span>
-
-
-            <span>
-
-              Understanding:
-              {" "}
-              {
-                adaptivePlan
-                  .understanding_score_percent
-              }
-              %
-
-            </span>
-
-          </div>
-
-
-          <Gauge
-            size={25}
-          />
-
-        </div>
-
-      )}
-
-
-      {/* =============================
-          Visible start error
-
-          Keep this immediately above
-          the button so it cannot be
-          missed.
-      ============================== */}
-
-      {(
-        error
-
-        && topics.length
-        > 0
-      ) && (
-
-        <div
-          className="science-error surface-card"
-          style={{
-            marginTop:
-              "20px",
-          }}
-        >
+        <div>
 
           <strong>
-            Could not start Science
+            Curriculum-grounded Science
+          </strong>
+
+
+          <span>
+            Explanations and hints are
+            retrieved from the trusted
+            curriculum knowledge for
+            {
+              " "
+            }
+            {
+              selectedTopic.title
+            }.
+          </span>
+
+        </div>
+
+
+        <ShieldCheck
+          size={25}
+        />
+
+      </div>
+
+
+      {error && (
+
+        <div className="science-error surface-card">
+
+          <strong>
+            Could not prepare Science
           </strong>
 
 
@@ -1078,125 +957,74 @@ export default function ScienceStartPage() {
             {error}
           </p>
 
-
-          {error.includes(
-            "learner profile",
-          ) && (
-
-            <button
-              type="button"
-              className="secondary-button"
-
-              onClick={() =>
-                navigate(
-                  "/setup",
-                )
-              }
-            >
-              Create learner profile
-
-              <ArrowRight
-                size={17}
-              />
-            </button>
-
-          )}
-
         </div>
 
       )}
 
 
       {/* =============================
-          START SCIENCE
-
-          This button depends ONLY on:
-          - topics loaded
-          - a topic selected
-          - no active start request
-
-          It does NOT depend on the
-          adaptive plan.
+          Start
       ============================== */}
 
-      {(
-        !loading
+      <div className="science-start-actions">
 
-        && topics.length
-        > 0
-      ) && (
+        <div>
 
-        <div className="science-start-actions">
-
-          <div>
-
-            <strong>
-              Ready to explore?
-            </strong>
+          <strong>
+            Ready to learn?
+          </strong>
 
 
-            <span>
+          <span>
 
-              {
-                selected
-                  ? (
-                    "Start "
-                    + selected.title
-                    + " with guided "
-                    + "Science learning."
-                  )
-                  : (
-                    "Choose a Science "
-                    + "topic first."
-                  )
-              }
-
-            </span>
-
-          </div>
-
-
-          <button
-            type="button"
-            className="primary-button"
-
-            disabled={
-              selected === null
-              || starting
-            }
-
-            onClick={
-              startLearning
-            }
-          >
-
+            Start your
             {
-              starting
-                ? (
-                  <>
-                    <RefreshCcw
-                      size={18}
-                    />
-
-                    Preparing lesson...
-                  </>
-                )
-                : (
-                  <>
-                    Start Science
-
-                    <ArrowRight
-                      size={18}
-                    />
-                  </>
-                )
+              " "
             }
+            {
+              selectedTopic.title
+            }
+            {
+              " "
+            }
+            lesson.
 
-          </button>
+          </span>
 
         </div>
 
-      )}
+
+        <button
+          type="button"
+          className="primary-button"
+
+          disabled={
+            starting
+          }
+
+          onClick={() =>
+            void startScience()
+          }
+        >
+
+          {
+            starting
+              ? "Preparing..."
+              : "Start Science"
+          }
+
+
+          {!starting && (
+
+            <ArrowRight
+              size={18}
+            />
+
+          )}
+
+        </button>
+
+      </div>
 
     </div>
   );

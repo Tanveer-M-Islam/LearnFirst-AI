@@ -1,6 +1,4 @@
-from dataclasses import (
-    dataclass,
-)
+from dataclasses import dataclass
 
 from app.schemas.enums import (
     AssessmentType,
@@ -8,20 +6,61 @@ from app.schemas.enums import (
 )
 
 
-@dataclass(
-    frozen=True
-)
+@dataclass(frozen=True)
 class AssessmentQuestion:
-
     question_id: str
 
     prompt: str
 
-    difficulty: (
-        DifficultyLevel
-    )
+    difficulty: DifficultyLevel
 
     bloom_level: str
+
+
+E = DifficultyLevel.EASY
+
+M = DifficultyLevel.MODERATE
+
+C = DifficultyLevel.CHALLENGING
+
+
+def _questions(
+    prefix: str,
+    items: tuple[
+        tuple[
+            str,
+            DifficultyLevel,
+        ],
+        ...,
+    ],
+) -> tuple[
+    AssessmentQuestion,
+    ...,
+]:
+
+    return tuple(
+        AssessmentQuestion(
+            question_id=(
+                f"{prefix}-"
+                f"{index:02d}"
+            ),
+
+            prompt=prompt,
+
+            difficulty=difficulty,
+
+            bloom_level="APPLY",
+        )
+
+        for index, (
+            prompt,
+            difficulty,
+        )
+        in enumerate(
+            items,
+            start=1,
+        )
+    )
 
 
 QUESTION_BANK: dict[
@@ -35,442 +74,241 @@ QUESTION_BANK: dict[
     ],
 ] = {
 
-
-    # ======================================================
-    # BASIC ARITHMETIC
-    # ======================================================
+    # ==================================================
+    # AGE 7 — BASIC ARITHMETIC
+    # ==================================================
 
     (
         "MATH_ARITH_BASIC_01",
         AssessmentType.DIAGNOSTIC,
-    ): (
+    ):
+        _questions(
+            "BASIC-D",
 
-        AssessmentQuestion(
-            question_id="BASIC-D-01",
-            prompt="12 + 9",
-            difficulty=(
-                DifficultyLevel.EASY
+            (
+                ("8 + 7", E),
+                ("15 - 6", E),
+                ("23 + 14", M),
+                ("41 - 17", M),
+                ("36 + 19 - 12", C),
             ),
-            bloom_level="APPLY",
         ),
-
-        AssessmentQuestion(
-            question_id="BASIC-D-02",
-            prompt="25 - 8",
-            difficulty=(
-                DifficultyLevel.EASY
-            ),
-            bloom_level="APPLY",
-        ),
-
-        AssessmentQuestion(
-            question_id="BASIC-D-03",
-            prompt="7 * 6",
-            difficulty=(
-                DifficultyLevel.MODERATE
-            ),
-            bloom_level="APPLY",
-        ),
-
-        AssessmentQuestion(
-            question_id="BASIC-D-04",
-            prompt="48 / 6 + 5",
-            difficulty=(
-                DifficultyLevel.MODERATE
-            ),
-            bloom_level="APPLY",
-        ),
-
-        AssessmentQuestion(
-            question_id="BASIC-D-05",
-            prompt="4 * (8 - 3) + 6",
-            difficulty=(
-                DifficultyLevel.CHALLENGING
-            ),
-            bloom_level="APPLY",
-        ),
-    ),
 
 
     (
         "MATH_ARITH_BASIC_01",
         AssessmentType.MASTERY,
-    ): (
+    ):
+        _questions(
+            "BASIC-M",
 
-        AssessmentQuestion(
-            question_id="BASIC-M-01",
-            prompt="16 + 7",
-            difficulty=(
-                DifficultyLevel.EASY
+            (
+                ("9 + 6", E),
+                ("18 - 9", E),
+                ("28 + 17", M),
+                ("53 - 26", M),
+                ("47 - 18 + 21", C),
             ),
-            bloom_level="APPLY",
         ),
 
-        AssessmentQuestion(
-            question_id="BASIC-M-02",
-            prompt="31 - 14",
-            difficulty=(
-                DifficultyLevel.EASY
-            ),
-            bloom_level="APPLY",
-        ),
 
-        AssessmentQuestion(
-            question_id="BASIC-M-03",
-            prompt="8 * 7",
-            difficulty=(
-                DifficultyLevel.MODERATE
-            ),
-            bloom_level="APPLY",
-        ),
-
-        AssessmentQuestion(
-            question_id="BASIC-M-04",
-            prompt="63 / 7 + 8",
-            difficulty=(
-                DifficultyLevel.MODERATE
-            ),
-            bloom_level="APPLY",
-        ),
-
-        AssessmentQuestion(
-            question_id="BASIC-M-05",
-            prompt="3 * (9 + 2) - 7",
-            difficulty=(
-                DifficultyLevel.CHALLENGING
-            ),
-            bloom_level="APPLY",
-        ),
-    ),
-
-
-    # ======================================================
-    # INTEGERS
-    # ======================================================
+    # ==================================================
+    # AGE 8 — MULTIPLICATION / DIVISION
+    # ==================================================
 
     (
-        "MATH_ARITH_INT_01",
+        "MATH_ARITH_MULTDIV_01",
         AssessmentType.DIAGNOSTIC,
-    ): (
+    ):
+        _questions(
+            "MULTDIV-D",
 
-        AssessmentQuestion(
-            question_id="INT-D-01",
-            prompt="-4 + 9",
-            difficulty=(
-                DifficultyLevel.EASY
+            (
+                ("4 * 5", E),
+                ("18 / 3", E),
+                ("7 * 8", M),
+                ("56 / 7", M),
+                ("12 * 6", C),
             ),
-            bloom_level="APPLY",
         ),
-
-        AssessmentQuestion(
-            question_id="INT-D-02",
-            prompt="7 - 12",
-            difficulty=(
-                DifficultyLevel.EASY
-            ),
-            bloom_level="APPLY",
-        ),
-
-        AssessmentQuestion(
-            question_id="INT-D-03",
-            prompt="-5 + 13 - 4",
-            difficulty=(
-                DifficultyLevel.MODERATE
-            ),
-            bloom_level="APPLY",
-        ),
-
-        AssessmentQuestion(
-            question_id="INT-D-04",
-            prompt="-3 * 4 + 18",
-            difficulty=(
-                DifficultyLevel.MODERATE
-            ),
-            bloom_level="APPLY",
-        ),
-
-        AssessmentQuestion(
-            question_id="INT-D-05",
-            prompt="(-7 + 12) * 3",
-            difficulty=(
-                DifficultyLevel.CHALLENGING
-            ),
-            bloom_level="APPLY",
-        ),
-    ),
 
 
     (
-        "MATH_ARITH_INT_01",
+        "MATH_ARITH_MULTDIV_01",
         AssessmentType.MASTERY,
-    ): (
+    ):
+        _questions(
+            "MULTDIV-M",
 
-        AssessmentQuestion(
-            question_id="INT-M-01",
-            prompt="-6 + 10",
-            difficulty=(
-                DifficultyLevel.EASY
+            (
+                ("6 * 4", E),
+                ("35 / 5", E),
+                ("8 * 9", M),
+                ("72 / 8", M),
+                ("14 * 7", C),
             ),
-            bloom_level="APPLY",
         ),
 
-        AssessmentQuestion(
-            question_id="INT-M-02",
-            prompt="5 - 13",
-            difficulty=(
-                DifficultyLevel.EASY
-            ),
-            bloom_level="APPLY",
-        ),
 
-        AssessmentQuestion(
-            question_id="INT-M-03",
-            prompt="8 - (-4)",
-            difficulty=(
-                DifficultyLevel.MODERATE
-            ),
-            bloom_level="APPLY",
-        ),
-
-        AssessmentQuestion(
-            question_id="INT-M-04",
-            prompt="-5 * 3 + 22",
-            difficulty=(
-                DifficultyLevel.MODERATE
-            ),
-            bloom_level="APPLY",
-        ),
-
-        AssessmentQuestion(
-            question_id="INT-M-05",
-            prompt="-4 * (-5) - 8",
-            difficulty=(
-                DifficultyLevel.CHALLENGING
-            ),
-            bloom_level="APPLY",
-        ),
-    ),
-
-
-    # ======================================================
-    # FRACTIONS
-    # ======================================================
+    # ==================================================
+    # AGE 9 — FRACTIONS
+    # ==================================================
 
     (
         "MATH_ARITH_FRAC_01",
         AssessmentType.DIAGNOSTIC,
-    ): (
+    ):
+        _questions(
+            "FRAC-D",
 
-        AssessmentQuestion(
-            question_id="FRAC-D-01",
-            prompt="1/2 + 1/4",
-            difficulty=(
-                DifficultyLevel.EASY
+            (
+                ("1/2 + 1/4", E),
+                ("3/5 - 1/5", E),
+                ("2/3 + 1/6", M),
+                ("3/4 * 2", M),
+                ("(5/6 - 1/3) * 2", C),
             ),
-            bloom_level="APPLY",
         ),
-
-        AssessmentQuestion(
-            question_id="FRAC-D-02",
-            prompt="3/4 - 1/4",
-            difficulty=(
-                DifficultyLevel.EASY
-            ),
-            bloom_level="APPLY",
-        ),
-
-        AssessmentQuestion(
-            question_id="FRAC-D-03",
-            prompt="2/3 + 1/6",
-            difficulty=(
-                DifficultyLevel.MODERATE
-            ),
-            bloom_level="APPLY",
-        ),
-
-        AssessmentQuestion(
-            question_id="FRAC-D-04",
-            prompt="3/5 * 10",
-            difficulty=(
-                DifficultyLevel.MODERATE
-            ),
-            bloom_level="APPLY",
-        ),
-
-        AssessmentQuestion(
-            question_id="FRAC-D-05",
-            prompt="5/6 - 1/4",
-            difficulty=(
-                DifficultyLevel.CHALLENGING
-            ),
-            bloom_level="APPLY",
-        ),
-    ),
 
 
     (
         "MATH_ARITH_FRAC_01",
         AssessmentType.MASTERY,
-    ): (
+    ):
+        _questions(
+            "FRAC-M",
 
-        AssessmentQuestion(
-            question_id="FRAC-M-01",
-            prompt="1/3 + 1/3",
-            difficulty=(
-                DifficultyLevel.EASY
+            (
+                ("1/3 + 1/3", E),
+                ("4/5 - 2/5", E),
+                ("3/4 + 1/8", M),
+                ("2/5 * 10", M),
+                ("(2/3 + 1/6) * 3", C),
             ),
-            bloom_level="APPLY",
         ),
 
-        AssessmentQuestion(
-            question_id="FRAC-M-02",
-            prompt="5/6 - 1/6",
-            difficulty=(
-                DifficultyLevel.EASY
+
+    # ==================================================
+    # AGE 10 — INTEGERS
+    # ==================================================
+
+    (
+        "MATH_ARITH_INT_01",
+        AssessmentType.DIAGNOSTIC,
+    ):
+        _questions(
+            "INT-D",
+
+            (
+                ("-4 + 9", E),
+                ("7 - 12", E),
+                ("-8 + 14 - 3", M),
+                ("5 - (-4)", M),
+                ("-3 * (-6) - 8", C),
             ),
-            bloom_level="APPLY",
         ),
 
-        AssessmentQuestion(
-            question_id="FRAC-M-03",
-            prompt="3/4 + 1/8",
-            difficulty=(
-                DifficultyLevel.MODERATE
+
+    (
+        "MATH_ARITH_INT_01",
+        AssessmentType.MASTERY,
+    ):
+        _questions(
+            "INT-M",
+
+            (
+                ("-6 + 11", E),
+                ("8 - 15", E),
+                ("-9 + 17 - 5", M),
+                ("4 - (-7)", M),
+                ("-5 * (-3) + 4", C),
             ),
-            bloom_level="APPLY",
         ),
 
-        AssessmentQuestion(
-            question_id="FRAC-M-04",
-            prompt="2/5 * 15",
-            difficulty=(
-                DifficultyLevel.MODERATE
-            ),
-            bloom_level="APPLY",
-        ),
 
-        AssessmentQuestion(
-            question_id="FRAC-M-05",
-            prompt="2/3 * 9/4",
-            difficulty=(
-                DifficultyLevel.CHALLENGING
-            ),
-            bloom_level="APPLY",
-        ),
-    ),
-
-
-    # ======================================================
-    # ORDER OF OPERATIONS
-    # ======================================================
+    # ==================================================
+    # AGE 11 — ORDER OF OPERATIONS
+    # ==================================================
 
     (
         "MATH_ARITH_ORDER_01",
         AssessmentType.DIAGNOSTIC,
-    ): (
+    ):
+        _questions(
+            "ORDER-D",
 
-        AssessmentQuestion(
-            question_id="ORDER-D-01",
-            prompt="2 + 3 * 4",
-            difficulty=(
-                DifficultyLevel.EASY
+            (
+                ("3 + 4 * 2", E),
+                ("12 / 3 + 5", E),
+                ("4 * (6 - 2)", M),
+                ("18 - 2 * 5 + 3", M),
+                ("2 * (3 + 4 * 2) - 5", C),
             ),
-            bloom_level="APPLY",
         ),
-
-        AssessmentQuestion(
-            question_id="ORDER-D-02",
-            prompt="18 - 2 * 5",
-            difficulty=(
-                DifficultyLevel.EASY
-            ),
-            bloom_level="APPLY",
-        ),
-
-        AssessmentQuestion(
-            question_id="ORDER-D-03",
-            prompt="4 * (3 + 2)",
-            difficulty=(
-                DifficultyLevel.MODERATE
-            ),
-            bloom_level="APPLY",
-        ),
-
-        AssessmentQuestion(
-            question_id="ORDER-D-04",
-            prompt="24 / (2 * 3) + 6",
-            difficulty=(
-                DifficultyLevel.MODERATE
-            ),
-            bloom_level="APPLY",
-        ),
-
-        AssessmentQuestion(
-            question_id="ORDER-D-05",
-            prompt="3 + 2 * (5 + 4) - 6",
-            difficulty=(
-                DifficultyLevel.CHALLENGING
-            ),
-            bloom_level="APPLY",
-        ),
-    ),
 
 
     (
         "MATH_ARITH_ORDER_01",
         AssessmentType.MASTERY,
-    ): (
+    ):
+        _questions(
+            "ORDER-M",
 
-        AssessmentQuestion(
-            question_id="ORDER-M-01",
-            prompt="4 + 2 * 5",
-            difficulty=(
-                DifficultyLevel.EASY
+            (
+                ("5 + 3 * 2", E),
+                ("16 / 4 + 7", E),
+                ("3 * (7 - 2)", M),
+                ("24 / (2 * 3) + 8", M),
+                ("3 + 2 * (5 + 6) - 4", C),
             ),
-            bloom_level="APPLY",
         ),
 
-        AssessmentQuestion(
-            question_id="ORDER-M-02",
-            prompt="20 - 3 * 4",
-            difficulty=(
-                DifficultyLevel.EASY
+
+    # ==================================================
+    # AGE 12 — PRE-ALGEBRA
+    # ==================================================
+
+    (
+        "MATH_PREALG_EXPR_01",
+        AssessmentType.DIAGNOSTIC,
+    ):
+        _questions(
+            "PREALG-D",
+
+            (
+                ("x + 3 when x = 4", E),
+                ("2x when x = 6", E),
+                ("3x + 2 when x = 5", M),
+                ("4x - 7 when x = 3", M),
+                ("2(x + 4) - x when x = 5", C),
             ),
-            bloom_level="APPLY",
         ),
 
-        AssessmentQuestion(
-            question_id="ORDER-M-03",
-            prompt="5 * (6 - 2) + 3",
-            difficulty=(
-                DifficultyLevel.MODERATE
+
+    (
+        "MATH_PREALG_EXPR_01",
+        AssessmentType.MASTERY,
+    ):
+        _questions(
+            "PREALG-M",
+
+            (
+                ("x + 5 when x = 2", E),
+                ("3x when x = 4", E),
+                ("2x - 3 when x = 7", M),
+                ("5x + 1 when x = -2", M),
+                ("3(x + 2) - x when x = 4", C),
             ),
-            bloom_level="APPLY",
         ),
 
-        AssessmentQuestion(
-            question_id="ORDER-M-04",
-            prompt="36 / (3 * 2) + 8",
-            difficulty=(
-                DifficultyLevel.MODERATE
-            ),
-            bloom_level="APPLY",
-        ),
 
-        AssessmentQuestion(
-            question_id="ORDER-M-05",
-            prompt="2 * (3 + 4 * 2) - 5",
-            difficulty=(
-                DifficultyLevel.CHALLENGING
-            ),
-            bloom_level="APPLY",
-        ),
-    ),
-
-
-    # ======================================================
-    # LINEAR EQUATIONS
-    # ======================================================
+    # ==================================================
+    # AGE 13 — LINEAR EQUATIONS
+    #
+    # Existing IDs are preserved because
+    # existing assessment regression tests
+    # depend on ALG-D-* and ALG-M-*.
+    # ==================================================
 
     (
         "MATH_ALG_LINEAR_01",
@@ -479,46 +317,51 @@ QUESTION_BANK: dict[
 
         AssessmentQuestion(
             question_id="ALG-D-01",
+
             prompt="x + 3 = 7",
-            difficulty=(
-                DifficultyLevel.EASY
-            ),
+
+            difficulty=E,
+
             bloom_level="APPLY",
         ),
 
         AssessmentQuestion(
             question_id="ALG-D-02",
+
             prompt="2x = 10",
-            difficulty=(
-                DifficultyLevel.EASY
-            ),
+
+            difficulty=E,
+
             bloom_level="APPLY",
         ),
 
         AssessmentQuestion(
             question_id="ALG-D-03",
+
             prompt="2x + 3 = 11",
-            difficulty=(
-                DifficultyLevel.MODERATE
-            ),
+
+            difficulty=M,
+
             bloom_level="APPLY",
         ),
 
         AssessmentQuestion(
             question_id="ALG-D-04",
+
             prompt="4x - 5 = 19",
-            difficulty=(
-                DifficultyLevel.MODERATE
-            ),
+
+            difficulty=M,
+
             bloom_level="APPLY",
         ),
 
         AssessmentQuestion(
             question_id="ALG-D-05",
+
             prompt="3(x + 2) = 18",
-            difficulty=(
-                DifficultyLevel.CHALLENGING
-            ),
+
+            difficulty=C,
+
             bloom_level="APPLY",
         ),
     ),
@@ -531,49 +374,130 @@ QUESTION_BANK: dict[
 
         AssessmentQuestion(
             question_id="ALG-M-01",
+
             prompt="x + 4 = 10",
-            difficulty=(
-                DifficultyLevel.EASY
-            ),
+
+            difficulty=E,
+
             bloom_level="APPLY",
         ),
 
         AssessmentQuestion(
             question_id="ALG-M-02",
+
             prompt="5x = 20",
-            difficulty=(
-                DifficultyLevel.EASY
-            ),
+
+            difficulty=E,
+
             bloom_level="APPLY",
         ),
 
         AssessmentQuestion(
             question_id="ALG-M-03",
+
             prompt="3x + 2 = 17",
-            difficulty=(
-                DifficultyLevel.MODERATE
-            ),
+
+            difficulty=M,
+
             bloom_level="APPLY",
         ),
 
         AssessmentQuestion(
             question_id="ALG-M-04",
+
             prompt="6x - 7 = 23",
-            difficulty=(
-                DifficultyLevel.MODERATE
-            ),
+
+            difficulty=M,
+
             bloom_level="APPLY",
         ),
 
         AssessmentQuestion(
             question_id="ALG-M-05",
+
             prompt="2(x + 3) = 14",
-            difficulty=(
-                DifficultyLevel.CHALLENGING
-            ),
+
+            difficulty=C,
+
             bloom_level="APPLY",
         ),
     ),
+
+
+    # ==================================================
+    # AGE 14 — LINEAR GRAPHS
+    # ==================================================
+
+    (
+        "MATH_GRAPH_LINEAR_01",
+        AssessmentType.DIAGNOSTIC,
+    ):
+        _questions(
+            "GRAPH-D",
+
+            (
+                (
+                    "y = x + 2 when x = 3",
+                    E,
+                ),
+
+                (
+                    "y = 2x when x = 4",
+                    E,
+                ),
+
+                (
+                    "y = 2x + 1 when x = 5",
+                    M,
+                ),
+
+                (
+                    "y = 3x - 4 when x = 3",
+                    M,
+                ),
+
+                (
+                    "y = -2x + 5 when x = -3",
+                    C,
+                ),
+            ),
+        ),
+
+
+    (
+        "MATH_GRAPH_LINEAR_01",
+        AssessmentType.MASTERY,
+    ):
+        _questions(
+            "GRAPH-M",
+
+            (
+                (
+                    "y = x + 4 when x = 2",
+                    E,
+                ),
+
+                (
+                    "y = 3x when x = 3",
+                    E,
+                ),
+
+                (
+                    "y = 2x - 3 when x = 6",
+                    M,
+                ),
+
+                (
+                    "y = -x + 7 when x = 4",
+                    M,
+                ),
+
+                (
+                    "y = -3x + 2 when x = -4",
+                    C,
+                ),
+            ),
+        ),
 }
 
 
@@ -591,6 +515,7 @@ def get_assessment_questions(
                 concept_code,
                 assessment_type,
             ),
+
             (),
         )
     )

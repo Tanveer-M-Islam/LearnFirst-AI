@@ -1,24 +1,84 @@
-from dataclasses import (
-    dataclass,
-)
+from dataclasses import dataclass
 
 from app.schemas.enums import (
     DifficultyLevel,
 )
 
 
-@dataclass(
-    frozen=True
-)
+@dataclass(frozen=True)
 class AdaptiveProblem:
-
     problem_id: str
 
     prompt: str
 
-    difficulty: (
-        DifficultyLevel
+    difficulty: DifficultyLevel
+
+
+def _problems(
+    prefix: str,
+    difficulty: DifficultyLevel,
+    prompts: tuple[str, ...],
+) -> tuple[AdaptiveProblem, ...]:
+
+    return tuple(
+        AdaptiveProblem(
+            problem_id=(
+                f"{prefix}-"
+                f"{difficulty.value[0]}-"
+                f"{index:02d}"
+            ),
+
+            prompt=prompt,
+
+            difficulty=difficulty,
+        )
+
+        for index, prompt
+        in enumerate(
+            prompts,
+            start=1,
+        )
     )
+
+
+def _bank(
+    prefix: str,
+    easy: tuple[str, ...],
+    moderate: tuple[str, ...],
+    challenging: tuple[str, ...],
+) -> dict[
+    DifficultyLevel,
+    tuple[AdaptiveProblem, ...],
+]:
+
+    return {
+        DifficultyLevel.EASY:
+            _problems(
+                prefix=prefix,
+                difficulty=(
+                    DifficultyLevel.EASY
+                ),
+                prompts=easy,
+            ),
+
+        DifficultyLevel.MODERATE:
+            _problems(
+                prefix=prefix,
+                difficulty=(
+                    DifficultyLevel.MODERATE
+                ),
+                prompts=moderate,
+            ),
+
+        DifficultyLevel.CHALLENGING:
+            _problems(
+                prefix=prefix,
+                difficulty=(
+                    DifficultyLevel.CHALLENGING
+                ),
+                prompts=challenging,
+            ),
+    }
 
 
 PROBLEM_BANK: dict[
@@ -32,760 +92,236 @@ PROBLEM_BANK: dict[
     ],
 ] = {
 
+    # ==================================================
+    # AGE 7
+    # Basic Arithmetic
+    # ==================================================
 
-    # ======================================================
-    # BASIC ARITHMETIC
-    # ======================================================
+    "MATH_ARITH_BASIC_01":
+        _bank(
+            "BASIC",
 
-    "MATH_ARITH_BASIC_01": {
-
-        DifficultyLevel.EASY: (
-
-            AdaptiveProblem(
-                problem_id=(
-                    "BASIC-A-E-01"
-                ),
-
-                prompt=(
-                    "14 + 8"
-                ),
-
-                difficulty=(
-                    DifficultyLevel.EASY
-                ),
+            (
+                "7 + 5",
+                "14 - 6",
+                "9 + 8",
             ),
 
-            AdaptiveProblem(
-                problem_id=(
-                    "BASIC-A-E-02"
-                ),
-
-                prompt=(
-                    "30 - 12"
-                ),
-
-                difficulty=(
-                    DifficultyLevel.EASY
-                ),
+            (
+                "27 + 16",
+                "42 - 19",
+                "35 + 28",
             ),
 
-            AdaptiveProblem(
-                problem_id=(
-                    "BASIC-A-E-03"
-                ),
-
-                prompt=(
-                    "6 * 4"
-                ),
-
-                difficulty=(
-                    DifficultyLevel.EASY
-                ),
+            (
+                "64 - 27 + 15",
+                "38 + 26 - 19",
+                "75 - 38 + 12",
             ),
         ),
 
 
-        DifficultyLevel.MODERATE: (
+    # ==================================================
+    # AGE 8
+    # Multiplication and Division
+    # ==================================================
 
-            AdaptiveProblem(
-                problem_id=(
-                    "BASIC-A-M-01"
-                ),
+    "MATH_ARITH_MULTDIV_01":
+        _bank(
+            "MULTDIV",
 
-                prompt=(
-                    "48 / 6 + 7"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .MODERATE
-                ),
+            (
+                "4 * 6",
+                "24 / 6",
+                "7 * 5",
             ),
 
-            AdaptiveProblem(
-                problem_id=(
-                    "BASIC-A-M-02"
-                ),
-
-                prompt=(
-                    "25 + 18 - 9"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .MODERATE
-                ),
+            (
+                "8 * 7",
+                "54 / 6",
+                "9 * 6",
             ),
 
-            AdaptiveProblem(
-                problem_id=(
-                    "BASIC-A-M-03"
-                ),
-
-                prompt=(
-                    "7 * 5 - 12"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .MODERATE
-                ),
+            (
+                "12 * 8",
+                "96 / 12",
+                "14 * 6",
             ),
         ),
 
 
-        DifficultyLevel.CHALLENGING: (
+    # ==================================================
+    # AGE 9
+    # Fractions
+    # ==================================================
 
-            AdaptiveProblem(
-                problem_id=(
-                    "BASIC-A-C-01"
-                ),
+    "MATH_ARITH_FRAC_01":
+        _bank(
+            "FRAC",
 
-                prompt=(
-                    "(18 + 6) * 2 - 15"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .CHALLENGING
-                ),
+            (
+                "1/2 + 1/4",
+                "3/5 + 1/5",
+                "3/4 - 1/2",
             ),
 
-            AdaptiveProblem(
-                problem_id=(
-                    "BASIC-A-C-02"
-                ),
-
-                prompt=(
-                    "72 / 8 + 6 * 5"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .CHALLENGING
-                ),
+            (
+                "2/3 + 1/6",
+                "3/5 * 10",
+                "(3/4) / (1/2)",
             ),
 
-            AdaptiveProblem(
-                problem_id=(
-                    "BASIC-A-C-03"
-                ),
-
-                prompt=(
-                    "4 * (9 - 3) + 18 / 3"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .CHALLENGING
-                ),
-            ),
-        ),
-    },
-
-
-    # ======================================================
-    # INTEGERS
-    # ======================================================
-
-    "MATH_ARITH_INT_01": {
-
-        DifficultyLevel.EASY: (
-
-            AdaptiveProblem(
-                problem_id=(
-                    "INT-A-E-01"
-                ),
-
-                prompt=(
-                    "-5 + 12"
-                ),
-
-                difficulty=(
-                    DifficultyLevel.EASY
-                ),
-            ),
-
-            AdaptiveProblem(
-                problem_id=(
-                    "INT-A-E-02"
-                ),
-
-                prompt=(
-                    "9 - 14"
-                ),
-
-                difficulty=(
-                    DifficultyLevel.EASY
-                ),
-            ),
-
-            AdaptiveProblem(
-                problem_id=(
-                    "INT-A-E-03"
-                ),
-
-                prompt=(
-                    "-4 + 7"
-                ),
-
-                difficulty=(
-                    DifficultyLevel.EASY
-                ),
+            (
+                "5/6 - 1/4",
+                "2/3 * 9/4",
+                "(1/2 + 1/3) * 6",
             ),
         ),
 
 
-        DifficultyLevel.MODERATE: (
+    # ==================================================
+    # AGE 10
+    # Integers
+    # ==================================================
 
-            AdaptiveProblem(
-                problem_id=(
-                    "INT-A-M-01"
-                ),
+    "MATH_ARITH_INT_01":
+        _bank(
+            "INT",
 
-                prompt=(
-                    "-8 + 15 - 4"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .MODERATE
-                ),
+            (
+                "-5 + 12",
+                "9 - 14",
+                "-4 + 7",
             ),
 
-            AdaptiveProblem(
-                problem_id=(
-                    "INT-A-M-02"
-                ),
-
-                prompt=(
-                    "6 - (-3)"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .MODERATE
-                ),
+            (
+                "-8 + 15 - 4",
+                "6 - (-3)",
+                "-4 * 5 + 27",
             ),
 
-            AdaptiveProblem(
-                problem_id=(
-                    "INT-A-M-03"
-                ),
-
-                prompt=(
-                    "-4 * 5 + 27"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .MODERATE
-                ),
+            (
+                "(-6 + 14) * 3",
+                "-5 * (-4) - 7",
+                "18 / (-3) + 11",
             ),
         ),
 
 
-        DifficultyLevel.CHALLENGING: (
+    # ==================================================
+    # AGE 11
+    # Order of Operations
+    # ==================================================
 
-            AdaptiveProblem(
-                problem_id=(
-                    "INT-A-C-01"
-                ),
+    "MATH_ARITH_ORDER_01":
+        _bank(
+            "ORDER",
 
-                prompt=(
-                    "(-6 + 14) * 3"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .CHALLENGING
-                ),
+            (
+                "3 + 4 * 2",
+                "(8 + 4) / 3",
+                "18 - 2 * 5",
             ),
 
-            AdaptiveProblem(
-                problem_id=(
-                    "INT-A-C-02"
-                ),
-
-                prompt=(
-                    "-5 * (-4) - 7"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .CHALLENGING
-                ),
+            (
+                "6 + 3 * (8 - 5)",
+                "24 / (2 * 3) + 7",
+                "5 * (4 + 2) - 9",
             ),
 
-            AdaptiveProblem(
-                problem_id=(
-                    "INT-A-C-03"
-                ),
-
-                prompt=(
-                    "18 / (-3) + 11"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .CHALLENGING
-                ),
-            ),
-        ),
-    },
-
-
-    # ======================================================
-    # FRACTIONS
-    # ======================================================
-
-    "MATH_ARITH_FRAC_01": {
-
-        DifficultyLevel.EASY: (
-
-            AdaptiveProblem(
-                problem_id=(
-                    "FRAC-A-E-01"
-                ),
-
-                prompt=(
-                    "1/2 + 1/4"
-                ),
-
-                difficulty=(
-                    DifficultyLevel.EASY
-                ),
-            ),
-
-            AdaptiveProblem(
-                problem_id=(
-                    "FRAC-A-E-02"
-                ),
-
-                prompt=(
-                    "3/5 + 1/5"
-                ),
-
-                difficulty=(
-                    DifficultyLevel.EASY
-                ),
-            ),
-
-            AdaptiveProblem(
-                problem_id=(
-                    "FRAC-A-E-03"
-                ),
-
-                prompt=(
-                    "3/4 - 1/2"
-                ),
-
-                difficulty=(
-                    DifficultyLevel.EASY
-                ),
+            (
+                "3 + 2 * (5 + 7) - 4",
+                "(18 - 6) / 3 + 5 * 2",
+                "2 * (3 + 4 * 2) - 5",
             ),
         ),
 
 
-        DifficultyLevel.MODERATE: (
+    # ==================================================
+    # AGE 12
+    # Pre-Algebra
+    # ==================================================
 
-            AdaptiveProblem(
-                problem_id=(
-                    "FRAC-A-M-01"
-                ),
+    "MATH_PREALG_EXPR_01":
+        _bank(
+            "PREALG",
 
-                prompt=(
-                    "2/3 + 1/6"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .MODERATE
-                ),
+            (
+                "x + 4 when x = 3",
+                "2x when x = 5",
+                "x - 6 when x = 10",
             ),
 
-            AdaptiveProblem(
-                problem_id=(
-                    "FRAC-A-M-02"
-                ),
-
-                prompt=(
-                    "3/5 * 10"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .MODERATE
-                ),
+            (
+                "3x + 2 when x = 4",
+                "5x - 7 when x = 3",
+                "2x + 8 when x = -2",
             ),
 
-            AdaptiveProblem(
-                problem_id=(
-                    "FRAC-A-M-03"
-                ),
-
-                prompt=(
-                    "(3/4) / (1/2)"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .MODERATE
-                ),
+            (
+                "4(x + 2) when x = 3",
+                "3x - 2(x - 1) when x = 5",
+                "2(x + 3) - x when x = -4",
             ),
         ),
 
 
-        DifficultyLevel.CHALLENGING: (
+    # ==================================================
+    # AGE 13
+    # Linear Equations
+    # ==================================================
 
-            AdaptiveProblem(
-                problem_id=(
-                    "FRAC-A-C-01"
-                ),
+    "MATH_ALG_LINEAR_01":
+        _bank(
+            "ALG",
 
-                prompt=(
-                    "5/6 - 1/4"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .CHALLENGING
-                ),
+            (
+                "x + 5 = 9",
+                "3x = 15",
+                "x - 7 = 4",
             ),
 
-            AdaptiveProblem(
-                problem_id=(
-                    "FRAC-A-C-02"
-                ),
-
-                prompt=(
-                    "2/3 * 9/4"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .CHALLENGING
-                ),
+            (
+                "2x + 5 = 17",
+                "4x - 3 = 21",
+                "5x + 7 = 32",
             ),
 
-            AdaptiveProblem(
-                problem_id=(
-                    "FRAC-A-C-03"
-                ),
-
-                prompt=(
-                    "(1/2 + 1/3) * 6"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .CHALLENGING
-                ),
-            ),
-        ),
-    },
-
-
-    # ======================================================
-    # ORDER OF OPERATIONS
-    # ======================================================
-
-    "MATH_ARITH_ORDER_01": {
-
-        DifficultyLevel.EASY: (
-
-            AdaptiveProblem(
-                problem_id=(
-                    "ORDER-A-E-01"
-                ),
-
-                prompt=(
-                    "3 + 4 * 2"
-                ),
-
-                difficulty=(
-                    DifficultyLevel.EASY
-                ),
-            ),
-
-            AdaptiveProblem(
-                problem_id=(
-                    "ORDER-A-E-02"
-                ),
-
-                prompt=(
-                    "(8 + 4) / 3"
-                ),
-
-                difficulty=(
-                    DifficultyLevel.EASY
-                ),
-            ),
-
-            AdaptiveProblem(
-                problem_id=(
-                    "ORDER-A-E-03"
-                ),
-
-                prompt=(
-                    "18 - 2 * 5"
-                ),
-
-                difficulty=(
-                    DifficultyLevel.EASY
-                ),
+            (
+                "3(x + 2) = 24",
+                "2(x + 4) = 20",
+                "5(x - 2) = 25",
             ),
         ),
 
 
-        DifficultyLevel.MODERATE: (
+    # ==================================================
+    # AGE 14
+    # Linear Graphs
+    # ==================================================
 
-            AdaptiveProblem(
-                problem_id=(
-                    "ORDER-A-M-01"
-                ),
+    "MATH_GRAPH_LINEAR_01":
+        _bank(
+            "GRAPH",
 
-                prompt=(
-                    "6 + 3 * (8 - 5)"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .MODERATE
-                ),
+            (
+                "y = x + 2 when x = 3",
+                "y = 2x when x = 4",
+                "y = x - 1 when x = 5",
             ),
 
-            AdaptiveProblem(
-                problem_id=(
-                    "ORDER-A-M-02"
-                ),
-
-                prompt=(
-                    "24 / (2 * 3) + 7"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .MODERATE
-                ),
+            (
+                "y = 2x + 3 when x = 4",
+                "y = 3x - 2 when x = 5",
+                "y = -x + 6 when x = 2",
             ),
 
-            AdaptiveProblem(
-                problem_id=(
-                    "ORDER-A-M-03"
-                ),
-
-                prompt=(
-                    "5 * (4 + 2) - 9"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .MODERATE
-                ),
+            (
+                "y = -3x + 5 when x = -2",
+                "y = 4x - 7 when x = -3",
+                "y = 5 - 2x when x = 6",
             ),
         ),
-
-
-        DifficultyLevel.CHALLENGING: (
-
-            AdaptiveProblem(
-                problem_id=(
-                    "ORDER-A-C-01"
-                ),
-
-                prompt=(
-                    "3 + 2 * (5 + 7) - 4"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .CHALLENGING
-                ),
-            ),
-
-            AdaptiveProblem(
-                problem_id=(
-                    "ORDER-A-C-02"
-                ),
-
-                prompt=(
-                    "(18 - 6) / 3 + 5 * 2"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .CHALLENGING
-                ),
-            ),
-
-            AdaptiveProblem(
-                problem_id=(
-                    "ORDER-A-C-03"
-                ),
-
-                prompt=(
-                    "2 * (3 + 4 * 2) - 5"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .CHALLENGING
-                ),
-            ),
-        ),
-    },
-
-
-    # ======================================================
-    # LINEAR EQUATIONS
-    # ======================================================
-
-    "MATH_ALG_LINEAR_01": {
-
-        DifficultyLevel.EASY: (
-
-            AdaptiveProblem(
-                problem_id=(
-                    "ALG-A-E-01"
-                ),
-
-                prompt=(
-                    "x + 5 = 9"
-                ),
-
-                difficulty=(
-                    DifficultyLevel.EASY
-                ),
-            ),
-
-            AdaptiveProblem(
-                problem_id=(
-                    "ALG-A-E-02"
-                ),
-
-                prompt=(
-                    "3x = 15"
-                ),
-
-                difficulty=(
-                    DifficultyLevel.EASY
-                ),
-            ),
-
-            AdaptiveProblem(
-                problem_id=(
-                    "ALG-A-E-03"
-                ),
-
-                prompt=(
-                    "x - 7 = 4"
-                ),
-
-                difficulty=(
-                    DifficultyLevel.EASY
-                ),
-            ),
-        ),
-
-
-        DifficultyLevel.MODERATE: (
-
-            AdaptiveProblem(
-                problem_id=(
-                    "ALG-A-M-01"
-                ),
-
-                prompt=(
-                    "2x + 5 = 17"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .MODERATE
-                ),
-            ),
-
-            AdaptiveProblem(
-                problem_id=(
-                    "ALG-A-M-02"
-                ),
-
-                prompt=(
-                    "4x - 3 = 21"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .MODERATE
-                ),
-            ),
-
-            AdaptiveProblem(
-                problem_id=(
-                    "ALG-A-M-03"
-                ),
-
-                prompt=(
-                    "5x + 7 = 32"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .MODERATE
-                ),
-            ),
-        ),
-
-
-        DifficultyLevel.CHALLENGING: (
-
-            AdaptiveProblem(
-                problem_id=(
-                    "ALG-A-C-01"
-                ),
-
-                prompt=(
-                    "3(x + 2) = 24"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .CHALLENGING
-                ),
-            ),
-
-            AdaptiveProblem(
-                problem_id=(
-                    "ALG-A-C-02"
-                ),
-
-                prompt=(
-                    "2(x + 4) = 20"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .CHALLENGING
-                ),
-            ),
-
-            AdaptiveProblem(
-                problem_id=(
-                    "ALG-A-C-03"
-                ),
-
-                prompt=(
-                    "5(x - 2) = 25"
-                ),
-
-                difficulty=(
-                    DifficultyLevel
-                    .CHALLENGING
-                ),
-            ),
-        ),
-    },
 }
 
 
@@ -803,8 +339,7 @@ def get_adaptive_problem(
 
 
     if (
-        concept_bank
-        is None
+        concept_bank is None
     ):
 
         return None
@@ -833,8 +368,6 @@ def get_adaptive_problem(
     )
 
 
-    return (
-        problems[
-            index
-        ]
-    )
+    return problems[
+        index
+    ]

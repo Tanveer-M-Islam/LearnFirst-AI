@@ -1,6 +1,9 @@
 from app.core.config import (
     get_settings,
 )
+from app.english.models import (
+    EnglishValidationResult,
+)
 from app.llm.models import (
     LLMMessage,
     LLMRequest,
@@ -253,15 +256,17 @@ class TutorPromptBuilder:
             ScienceValidationResult
             | None
         ) = None,
+        english_validation: (
+            EnglishValidationResult
+            | None
+        ) = None,
         rag_context: (
             RAGContext
             | None
         ) = None,
     ) -> LLMRequest:
 
-        settings = (
-            get_settings()
-        )
+        settings = get_settings()
 
 
         age_instruction = (
@@ -272,15 +277,13 @@ class TutorPromptBuilder:
 
 
         adaptive_support = (
-            decision
-            .adaptive_support
+            decision.adaptive_support
         )
 
 
         support_instruction = (
             cls.SUPPORT_STYLE.get(
                 adaptive_support,
-
                 (
                     "Use normal progressive "
                     "guided tutoring."
@@ -290,15 +293,13 @@ class TutorPromptBuilder:
 
 
         explanation_depth = (
-            decision
-            .explanation_depth
+            decision.explanation_depth
         )
 
 
         explanation_instruction = (
             cls.EXPLANATION_STYLE.get(
                 explanation_depth,
-
                 (
                     "Use a clear, concise "
                     "school-level explanation."
@@ -341,39 +342,34 @@ class TutorPromptBuilder:
 
 
         action_instruction = (
-            cls.ACTION_INSTRUCTIONS
-            .get(
+            cls.ACTION_INSTRUCTIONS.get(
                 decision.next_action,
-
                 (
-                    "Respond as a "
-                    "patient guided "
-                    "tutor."
+                    "Respond as a patient "
+                    "guided tutor."
                 ),
             )
         )
 
 
         if (
-            decision
-            .allow_final_answer
+            decision.allow_final_answer
         ):
 
             final_answer_rule = (
-                "A final answer may "
-                "be included only when "
+                "A final answer may be "
+                "included only when "
                 "educationally useful "
-                "and consistent with "
-                "the required action."
+                "and consistent with the "
+                "required action."
             )
 
         else:
 
             final_answer_rule = (
-                "DO NOT reveal the "
-                "complete answer to "
-                "the learner's active "
-                "problem or question."
+                "DO NOT reveal the complete "
+                "answer to the learner's "
+                "active problem or question."
             )
 
 
@@ -391,12 +387,17 @@ class TutorPromptBuilder:
         )
 
 
-        rag_text = (
-            rag_context
-            .as_prompt_text()
+        english_context = (
+            cls._build_english_context(
+                english_validation
+            )
+        )
 
-            if rag_context
-            is not None
+
+        rag_text = (
+            rag_context.as_prompt_text()
+
+            if rag_context is not None
 
             else (
                 "No curriculum RAG "
@@ -410,24 +411,20 @@ class TutorPromptBuilder:
         ):
 
             grounding_rule = (
-                "For factual or "
-                "curriculum claims, "
-                "use only the trusted "
-                "curriculum context "
-                "provided below. "
-                "If that context does "
-                "not contain enough "
-                "information, say that "
-                "you do not have enough "
-                "verified curriculum "
-                "material rather than "
-                "inventing facts."
+                "For factual or curriculum "
+                "claims, use only the trusted "
+                "curriculum context provided "
+                "below. If that context does"
+                "not contain enough information, "
+                "say that you do not have enough "
+                "verified curriculum material "
+                "rather than inventing facts."
             )
 
         else:
 
             grounding_rule = (
-                "Curriculum grounding "
+                "Curriculum RAG grounding "
                 "was not required for "
                 "this response."
             )
@@ -487,6 +484,9 @@ MATH ATTEMPT ANALYSIS:
 SCIENCE UNDERSTANDING ANALYSIS:
 {science_context}
 
+ENGLISH ATTEMPT ANALYSIS:
+{english_context}
+
 TRUSTED CURRICULUM CONTEXT:
 {rag_text}
 
@@ -511,43 +511,53 @@ IMPORTANT RULES:
 - Do not reveal an internal expected Math answer.
 - Do not override deterministic Math validation.
 - Do not override structured Science evaluation.
+- Do not override structured English evaluation.
 - Do not invent curriculum facts.
-- When RAG grounding is required, use only the
-  trusted curriculum context for factual claims.
+- When RAG grounding is required, use only trusted
+  curriculum context for factual claims.
 - Do not mention vector search, chunks, embeddings,
   or internal source identifiers.
-- Keep the response focused and age-appropriate.
+- Keep responses focused and age-appropriate.
 - Ask at most one main question unless the required
   action specifically requires more.
-- Do not shame the learner for mistakes.
+- Do not shame learners for mistakes.
 - Avoid excessive praise.
 - Prefer guidance over answer disclosure.
 
 SCIENCE EVALUATION RULES:
-- The structured Science analysis is an internal
-  rubric signal, not a school grade.
-- If the Science status is PARTIALLY_CORRECT,
-  acknowledge one correct idea and guide the
-  learner toward ONE missing idea.
-- Do not dump the complete missing-idea list.
-- If a misconception is detected, address it
-  gently using the trusted curriculum context.
-- If the status is INCORRECT, provide a small
-  conceptual clue and ask the learner to retry.
-- If the status is UNCLEAR, ask the learner to
-  explain a little more.
-- If the status is CORRECT, reinforce the reasoning
-  rather than simply saying "correct."
+- Structured Science evaluation is an internal
+  tutoring signal, not a school grade.
+- For PARTIALLY_CORRECT, acknowledge one correct
+  idea and guide toward one missing idea.
+- For INCORRECT, provide a small conceptual clue.
+- For UNCLEAR, ask the learner to explain more.
+- For CORRECT, reinforce reasoning rather than
+  simply saying correct.
+
+ENGLISH EVALUATION RULES:
+- Structured English evaluation is authoritative
+  for the current English task.
+- Do not change CORRECT to INCORRECT or vice versa.
+- For PARTIALLY_CORRECT sentence responses, mention
+  only one useful improvement at a time.
+- Rule feedback may identify capitalization,
+  punctuation, length, or required content.
+- For reading tasks, guide the learner toward
+  evidence from the passage.
+- For grammar and vocabulary tasks, explain the
+  relevant rule without simply revealing the
+  answer when final-answer disclosure is blocked.
+- Never present the internal score as an official
+  school grade.
 
 ADAPTIVE LEARNING RULES:
-- Adaptive support never overrides the final-answer
-  policy or required Tutor Action.
+- Adaptive support never overrides final-answer
+  protection or the required Tutor Action.
 - Strong support means more scaffolding, not
   immediate answer disclosure.
-- Guided support means moderate help while keeping
-  the learner responsible for the next step.
-- Gentle support means the learner should do more
-  of the reasoning independently.
+- Guided support means moderate help.
+- Gentle support means the learner should perform
+  more of the reasoning independently.
 - Explanation depth controls detail, not whether
   an answer may be disclosed.
 """.strip()
@@ -564,12 +574,13 @@ Learner message:
 
 
         if (
-            science_validation
-            is not None
+            science_validation is not None
 
-            and science_validation
-            .misconception_code
-            is not None
+            and (
+                science_validation
+                .misconception_code
+                is not None
+            )
         ):
 
             misconception_code = (
@@ -579,12 +590,13 @@ Learner message:
 
 
         elif (
-            math_validation
-            is not None
+            math_validation is not None
 
-            and math_validation
-            .misconception_code
-            is not None
+            and (
+                math_validation
+                .misconception_code
+                is not None
+            )
         ):
 
             misconception_code = (
@@ -599,55 +611,39 @@ Learner message:
 
                     LLMMessage(
                         role="system",
-
-                        content=(
-                            system_message
-                        ),
+                        content=system_message,
                     ),
 
                     LLMMessage(
                         role="user",
-
-                        content=(
-                            user_message
-                        ),
+                        content=user_message,
                     ),
                 ],
 
                 temperature=(
-                    settings
-                    .llm_temperature
+                    settings.llm_temperature
                 ),
 
                 max_tokens=(
-                    settings
-                    .llm_max_tokens
+                    settings.llm_max_tokens
                 ),
 
                 metadata={
 
                     "action": (
-                        decision
-                        .next_action
-                        .value
+                        decision.next_action.value
                     ),
 
                     "subject": (
-                        state
-                        .subject
-                        .value
+                        state.subject.value
                     ),
 
                     "mode": (
-                        state
-                        .mode
-                        .value
+                        state.mode.value
                     ),
 
                     "age_group": (
-                        state
-                        .age_group
-                        .value
+                        state.age_group.value
                     ),
 
                     "topic": (
@@ -655,20 +651,16 @@ Learner message:
                     ),
 
                     "concept_code": (
-                        state
-                        .concept_code
+                        state.concept_code
                     ),
 
                     "misconception_code": (
                         misconception_code
                     ),
 
-                    "rag_used": (
-                        bool(
-                            rag_context
-                            and rag_context
-                            .has_context
-                        )
+                    "rag_used": bool(
+                        rag_context
+                        and rag_context.has_context
                     ),
 
                     "adaptive_difficulty": (
@@ -696,19 +688,16 @@ Learner message:
     ) -> str:
 
         if (
-            validation
-            is None
+            validation is None
         ):
 
             return (
-                "No deterministic "
-                "Math validation "
-                "was required."
+                "No deterministic Math "
+                "validation was required."
             )
 
 
         lines = [
-
             (
                 "Attempt status: "
                 f"{validation.status.value}"
@@ -728,8 +717,7 @@ Learner message:
             lines.append(
                 (
                     "Student answer: "
-                    + validation
-                    .student_answer
+                    + validation.student_answer
                 )
             )
 
@@ -742,8 +730,7 @@ Learner message:
                 (
                     "Correct steps: "
                     + " | ".join(
-                        validation
-                        .correct_steps
+                        validation.correct_steps
                     )
                 )
             )
@@ -756,15 +743,13 @@ Learner message:
             lines.append(
                 (
                     "First detected error: "
-                    + validation
-                    .first_error_step
+                    + validation.first_error_step
                 )
             )
 
 
         if (
-            validation
-            .misconception_code
+            validation.misconception_code
         ):
 
             lines.append(
@@ -779,16 +764,13 @@ Learner message:
         lines.append(
             (
                 "Validator note: "
-                + validation
-                .feedback_summary
+                + validation.feedback_summary
             )
         )
 
 
-        return (
-            "\n".join(
-                lines
-            )
+        return "\n".join(
+            lines
         )
 
 
@@ -801,8 +783,7 @@ Learner message:
     ) -> str:
 
         if (
-            validation
-            is None
+            validation is None
         ):
 
             return (
@@ -813,11 +794,9 @@ Learner message:
 
 
         lines = [
-
             (
                 "Attempt status: "
-                + validation
-                .status.value
+                + validation.status.value
             ),
 
             (
@@ -830,8 +809,7 @@ Learner message:
             (
                 "Idea coverage: "
                 + str(
-                    validation
-                    .coverage_score
+                    validation.coverage_score
                 )
                 + "%"
             ),
@@ -839,40 +817,35 @@ Learner message:
 
 
         if (
-            validation
-            .matched_ideas
+            validation.matched_ideas
         ):
 
             lines.append(
                 (
                     "Ideas recognized: "
                     + ", ".join(
-                        validation
-                        .matched_ideas
+                        validation.matched_ideas
                     )
                 )
             )
 
 
         if (
-            validation
-            .missing_ideas
+            validation.missing_ideas
         ):
 
             lines.append(
                 (
                     "Ideas still missing: "
                     + ", ".join(
-                        validation
-                        .missing_ideas
+                        validation.missing_ideas
                     )
                 )
             )
 
 
         if (
-            validation
-            .misconception_code
+            validation.misconception_code
         ):
 
             lines.append(
@@ -887,14 +860,107 @@ Learner message:
         lines.append(
             (
                 "Evaluator note: "
-                + validation
-                .feedback_summary
+                + validation.feedback_summary
             )
         )
 
 
-        return (
-            "\n".join(
-                lines
+        return "\n".join(
+            lines
+        )
+
+
+    @staticmethod
+    def _build_english_context(
+        validation: (
+            EnglishValidationResult
+            | None
+        ),
+    ) -> str:
+
+        if (
+            validation is None
+        ):
+
+            return (
+                "No structured English "
+                "evaluation was required."
             )
+
+
+        lines = [
+            (
+                "Attempt status: "
+                + validation.status.value
+            ),
+
+            (
+                "Evaluator supported: "
+                + str(
+                    validation.supported
+                )
+            ),
+
+            (
+                "Internal evidence score: "
+                + str(
+                    validation.score_percent
+                )
+                + "%"
+            ),
+        ]
+
+
+        if (
+            validation.matched_ideas
+        ):
+
+            lines.append(
+                (
+                    "Recognized ideas: "
+                    + ", ".join(
+                        validation.matched_ideas
+                    )
+                )
+            )
+
+
+        if (
+            validation.missing_ideas
+        ):
+
+            lines.append(
+                (
+                    "Missing ideas: "
+                    + ", ".join(
+                        validation.missing_ideas
+                    )
+                )
+            )
+
+
+        if (
+            validation.rule_feedback
+        ):
+
+            lines.append(
+                (
+                    "Rule feedback: "
+                    + " | ".join(
+                        validation.rule_feedback
+                    )
+                )
+            )
+
+
+        lines.append(
+            (
+                "Evaluator note: "
+                + validation.feedback_summary
+            )
+        )
+
+
+        return "\n".join(
+            lines
         )

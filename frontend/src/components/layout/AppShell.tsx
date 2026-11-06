@@ -4,6 +4,7 @@ import {
 } from "react-router";
 
 import Sidebar from "./Sidebar";
+
 import TopBar from "./TopBar";
 
 import {
@@ -12,29 +13,58 @@ import {
 
 
 export default function AppShell() {
+
   const student =
     getStoredStudent();
 
-  if (!student) {
+
+  // ======================================
+  // No active learner session
+  //
+  // After logout the stored student
+  // is removed, so protected routes
+  // return the learner to /login.
+  // ======================================
+
+  if (
+    !student
+  ) {
+
     return (
+
       <Navigate
-        to="/setup"
+        to="/login"
         replace
       />
+
     );
   }
 
+
+  // ======================================
+  // Authenticated application shell
+  // ======================================
+
   return (
+
     <div className="app-shell">
+
       <Sidebar />
 
+
       <div className="app-main">
+
         <TopBar />
 
+
         <main className="app-content">
+
           <Outlet />
+
         </main>
+
       </div>
+
     </div>
   );
 }

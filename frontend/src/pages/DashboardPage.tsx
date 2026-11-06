@@ -22,8 +22,21 @@ import {
 } from "../api/assessments";
 
 import {
+  getEnglishProgress,
+  type EnglishProgress,
+} from "../api/englishProgress";
+
+import {
   getScienceAdaptivePlan,
 } from "../api/scienceAdaptive";
+
+import {
+  ENGLISH_TOPICS,
+} from "../data/englishTopics";
+
+import {
+  MATH_TOPICS,
+} from "../data/mathTopics";
 
 import {
   SCIENCE_TOPICS,
@@ -40,15 +53,6 @@ import type {
 import {
   getStoredStudent,
 } from "../utils/studentStorage";
-
-
-const MATH_CONCEPT_CODES = [
-  "MATH_ARITH_BASIC_01",
-  "MATH_ARITH_INT_01",
-  "MATH_ARITH_FRAC_01",
-  "MATH_ARITH_ORDER_01",
-  "MATH_ALG_LINEAR_01",
-];
 
 
 export default function DashboardPage() {
@@ -78,6 +82,14 @@ export default function DashboardPage() {
     setScienceProgress,
   ] = useState<
     ScienceAdaptivePlan[]
+  >([]);
+
+
+  const [
+    englishProgress,
+    setEnglishProgress,
+  ] = useState<
+    EnglishProgress[]
   >([]);
 
 
@@ -121,16 +133,17 @@ export default function DashboardPage() {
             const [
               mathResults,
               scienceResults,
+              englishResults,
             ] = await Promise.all([
 
               Promise.allSettled(
-                MATH_CONCEPT_CODES.map(
+                MATH_TOPICS.map(
                   (
-                    conceptCode,
+                    topic,
                   ) =>
                     getConceptProgress(
                       studentId,
-                      conceptCode,
+                      topic.conceptCode,
                     ),
                 ),
               ),
@@ -142,8 +155,19 @@ export default function DashboardPage() {
                   ) =>
                     getScienceAdaptivePlan(
                       studentId,
-                      topic
-                        .conceptCode,
+                      topic.conceptCode,
+                    ),
+                ),
+              ),
+
+              Promise.allSettled(
+                ENGLISH_TOPICS.map(
+                  (
+                    topic,
+                  ) =>
+                    getEnglishProgress(
+                      studentId,
+                      topic.conceptCode,
                     ),
                 ),
               ),
@@ -158,7 +182,8 @@ export default function DashboardPage() {
             }
 
 
-            const validMath =
+            setMathProgress(
+
               mathResults
                 .filter(
                   (
@@ -174,10 +199,12 @@ export default function DashboardPage() {
                     result,
                   ) =>
                     result.value,
-                );
+                ),
+            );
 
 
-            const validScience =
+            setScienceProgress(
+
               scienceResults
                 .filter(
                   (
@@ -193,16 +220,28 @@ export default function DashboardPage() {
                     result,
                   ) =>
                     result.value,
-                );
-
-
-            setMathProgress(
-              validMath,
+                ),
             );
 
 
-            setScienceProgress(
-              validScience,
+            setEnglishProgress(
+
+              englishResults
+                .filter(
+                  (
+                    result,
+                  ): result is PromiseFulfilledResult<
+                    EnglishProgress
+                  > =>
+                    result.status
+                    === "fulfilled",
+                )
+                .map(
+                  (
+                    result,
+                  ) =>
+                    result.value,
+                ),
             );
 
 
@@ -225,7 +264,8 @@ export default function DashboardPage() {
 
       return () => {
 
-        cancelled = true;
+        cancelled =
+          true;
       };
 
     },
@@ -236,21 +276,19 @@ export default function DashboardPage() {
 
 
   const name =
-    student
-      ?.display_name
+    student?.display_name
     ?? "Learner";
 
 
   const ageGroupLabel =
-    student
-      ?.age_group
+
+    student?.age_group
     === "FOUNDATION"
 
       ? "Foundation Learner"
 
-      : student
-        ?.age_group
-      === "INDEPENDENT"
+      : student?.age_group
+        === "INDEPENDENT"
 
         ? "Independent Learner"
 
@@ -258,104 +296,143 @@ export default function DashboardPage() {
 
 
   // ======================================
-  // Math aggregate
+  // Math
   // ======================================
 
   const mathTopicsPracticed =
-    mathProgress
-      .filter(
-        (
-          progress,
-        ) =>
-          Boolean(
-            progress.diagnostic
 
-            || progress.mastery
+    mathProgress.filter(
+      (
+        progress,
+      ) =>
+        Boolean(
+          progress.diagnostic
 
-            || progress
-              .learning_metrics
-              .total_attempts
-              > 0
-          ),
-      )
-      .length;
+          || progress.mastery
+
+          || progress
+            .learning_metrics
+            .total_attempts
+            > 0
+        ),
+    ).length;
 
 
   const mathIndependentTries =
-    mathProgress
-      .reduce(
-        (
-          total,
-          progress,
-        ) =>
-          total
-          + progress
-            .learning_metrics
-            .independent_attempts,
 
-        0,
-      );
+    mathProgress.reduce(
+      (
+        total,
+        progress,
+      ) =>
+        total
+        + progress
+          .learning_metrics
+          .independent_attempts,
+
+      0,
+    );
 
 
   const mathMastered =
-    mathProgress
-      .filter(
-        (
-          progress,
-        ) =>
-          progress
-            .current_mastery_state
-          === "STRONG",
-      )
-      .length;
+
+    mathProgress.filter(
+      (
+        progress,
+      ) =>
+        progress
+          .current_mastery_state
+        === "STRONG",
+    ).length;
 
 
   // ======================================
-  // Science aggregate
+  // Science
   // ======================================
 
   const scienceTopicsPracticed =
-    scienceProgress
-      .filter(
-        (
-          plan,
-        ) =>
-          plan.total_attempts
-          > 0,
-      )
-      .length;
+
+    scienceProgress.filter(
+      (
+        plan,
+      ) =>
+        plan.total_attempts
+        > 0,
+    ).length;
 
 
   const scienceIndependentTries =
-    scienceProgress
-      .reduce(
-        (
-          total,
-          plan,
-        ) =>
-          total
-          + plan
-            .independent_attempts,
 
-        0,
-      );
+    scienceProgress.reduce(
+      (
+        total,
+        plan,
+      ) =>
+        total
+        + plan.independent_attempts,
+
+      0,
+    );
 
 
   const scienceMastered =
-    scienceProgress
-      .filter(
-        (
-          plan,
-        ) =>
-          plan.mastery_state
-          === "STRONG",
-      )
-      .length;
+
+    scienceProgress.filter(
+      (
+        plan,
+      ) =>
+        plan.mastery_state
+        === "STRONG",
+    ).length;
+
+
+  // ======================================
+  // English
+  // ======================================
+
+  const englishTopicsPracticed =
+
+    englishProgress.filter(
+      (
+        item,
+      ) =>
+        item.total_attempts
+        > 0,
+    ).length;
+
+
+  const englishIndependentTries =
+
+    englishProgress.reduce(
+      (
+        total,
+        item,
+      ) =>
+        total
+        + item.independent_attempts,
+
+      0,
+    );
+
+
+  const englishMastered =
+
+    englishProgress.filter(
+      (
+        item,
+      ) =>
+        item.mastery_state
+        === "STRONG",
+    ).length;
 
 
   return (
 
     <div className="dashboard-page">
+
+      {/* =========================
+          Hero
+      ========================== */}
 
       <section className="dashboard-hero">
 
@@ -398,9 +475,9 @@ export default function DashboardPage() {
       </section>
 
 
-      {/* =============================
+      {/* =========================
           Subjects
-      ============================== */}
+      ========================== */}
 
       <section className="dashboard-section">
 
@@ -415,8 +492,7 @@ export default function DashboardPage() {
 
             <p>
               Pick something you
-              want to learn or
-              practice.
+              want to learn or practice.
             </p>
 
           </div>
@@ -425,6 +501,8 @@ export default function DashboardPage() {
 
 
         <div className="subject-grid">
+
+          {/* Math */}
 
           <article
             className={
@@ -462,8 +540,9 @@ export default function DashboardPage() {
 
 
               <p>
-                Learn across multiple
-                Math topics with
+                Learn across eight
+                age-adaptive Math concepts
+                with assessments and
                 adaptive practice.
               </p>
 
@@ -476,15 +555,14 @@ export default function DashboardPage() {
 
               onClick={(event) => {
 
-                event
-                  .stopPropagation();
-
+                event.stopPropagation();
 
                 navigate(
                   "/learn/math",
                 );
               }}
             >
+
               Start Math
 
               <ArrowRight
@@ -495,6 +573,8 @@ export default function DashboardPage() {
 
           </article>
 
+
+          {/* Science */}
 
           <article
             className={
@@ -547,15 +627,14 @@ export default function DashboardPage() {
 
               onClick={(event) => {
 
-                event
-                  .stopPropagation();
-
+                event.stopPropagation();
 
                 navigate(
                   "/learn/science",
                 );
               }}
             >
+
               Start Science
 
               <ArrowRight
@@ -567,10 +646,19 @@ export default function DashboardPage() {
           </article>
 
 
+          {/* English */}
+
           <article
             className={
               "subject-card "
-              + "subject-english"
+              + "subject-english "
+              + "clickable-subject-card"
+            }
+
+            onClick={() =>
+              navigate(
+                "/learn/english",
+              )
             }
           >
 
@@ -591,15 +679,15 @@ export default function DashboardPage() {
 
 
               <h3>
-                Practice with
-                confidence
+                Read, write and understand
               </h3>
 
 
               <p>
-                Improve grammar,
-                vocabulary and
-                expression.
+                Build vocabulary,
+                grammar, sentence skills
+                and reading comprehension
+                with adaptive guidance.
               </p>
 
             </div>
@@ -607,14 +695,24 @@ export default function DashboardPage() {
 
             <button
               type="button"
-              className={
-                "subject-action "
-                + "subject-action-disabled"
-              }
+              className="subject-action"
 
-              disabled
+              onClick={(event) => {
+
+                event.stopPropagation();
+
+                navigate(
+                  "/learn/english",
+                );
+              }}
             >
-              Coming next
+
+              Start English
+
+              <ArrowRight
+                size={18}
+              />
+
             </button>
 
           </article>
@@ -624,11 +722,13 @@ export default function DashboardPage() {
       </section>
 
 
-      {/* =============================
-          Math + Science progress
-      ============================== */}
+      {/* =========================
+          Progress
+      ========================== */}
 
       <section className="dashboard-bottom-grid">
+
+        {/* Math */}
 
         <div className="surface-card progress-card">
 
@@ -729,6 +829,7 @@ export default function DashboardPage() {
               )
             }
           >
+
             View Math progress
 
             <ArrowRight
@@ -739,6 +840,8 @@ export default function DashboardPage() {
 
         </div>
 
+
+        {/* Science */}
 
         <div className="surface-card progress-card">
 
@@ -839,7 +942,121 @@ export default function DashboardPage() {
               )
             }
           >
+
             View Science progress
+
+            <ArrowRight
+              size={17}
+            />
+
+          </button>
+
+        </div>
+
+
+        {/* English */}
+
+        <div className="surface-card progress-card">
+
+          <div className="progress-card-heading">
+
+            <div>
+
+              <span className="small-label">
+                English progress
+              </span>
+
+
+              <h2>
+                Build language confidence
+              </h2>
+
+            </div>
+
+
+            <BookOpen
+              size={28}
+            />
+
+          </div>
+
+
+          <div className="progress-stats">
+
+            <div>
+
+              <strong>
+
+                {
+                  progressLoading
+                    ? "…"
+                    : englishTopicsPracticed
+                }
+
+              </strong>
+
+
+              <span>
+                Topics practiced
+              </span>
+
+            </div>
+
+
+            <div>
+
+              <strong>
+
+                {
+                  progressLoading
+                    ? "…"
+                    : englishIndependentTries
+                }
+
+              </strong>
+
+
+              <span>
+                Independent tries
+              </span>
+
+            </div>
+
+
+            <div>
+
+              <strong>
+
+                {
+                  progressLoading
+                    ? "…"
+                    : englishMastered
+                }
+
+              </strong>
+
+
+              <span>
+                Strong mastery
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <button
+            type="button"
+            className="dashboard-progress-link"
+
+            onClick={() =>
+              navigate(
+                "/progress/english",
+              )
+            }
+          >
+
+            View English progress
 
             <ArrowRight
               size={17}
@@ -852,12 +1069,13 @@ export default function DashboardPage() {
       </section>
 
 
-      {/* =============================
-          Habit
-      ============================== */}
+      {/* =========================
+          Learning habit
+      ========================== */}
 
       <div
         className="surface-card habit-card"
+
         style={{
           marginTop:
             "18px",
@@ -886,16 +1104,19 @@ export default function DashboardPage() {
 
         <p>
           In Math, show your steps.
-          In Science, explain what
-          you understand in your
-          own words.
+          In Science, explain your
+          understanding. In English,
+          try the answer yourself
+          before asking for help.
         </p>
 
 
         <div className="habit-tip">
+
           💡 LearnFirst adapts
           support separately for
           each concept.
+
         </div>
 
       </div>

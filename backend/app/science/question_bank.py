@@ -1,17 +1,12 @@
-from dataclasses import (
-    dataclass,
-)
+from dataclasses import dataclass
 
 from app.schemas.enums import (
     DifficultyLevel,
 )
 
 
-@dataclass(
-    frozen=True
-)
+@dataclass(frozen=True)
 class ScienceIdea:
-
     code: str
 
     label: str
@@ -22,11 +17,8 @@ class ScienceIdea:
     ]
 
 
-@dataclass(
-    frozen=True
-)
+@dataclass(frozen=True)
 class ScienceMisconception:
-
     code: str
 
     patterns: tuple[
@@ -35,18 +27,13 @@ class ScienceMisconception:
     ]
 
 
-@dataclass(
-    frozen=True
-)
+@dataclass(frozen=True)
 class ScienceQuestion:
-
     question_id: str
 
     prompt: str
 
-    difficulty: (
-        DifficultyLevel
-    )
+    difficulty: DifficultyLevel
 
     required_ideas: tuple[
         ScienceIdea,
@@ -61,6 +48,13 @@ class ScienceQuestion:
     ] = ()
 
 
+E = DifficultyLevel.EASY
+
+M = DifficultyLevel.MODERATE
+
+C = DifficultyLevel.CHALLENGING
+
+
 SCIENCE_QUESTION_BANK: dict[
     str,
     tuple[
@@ -69,251 +63,49 @@ SCIENCE_QUESTION_BANK: dict[
     ],
 ] = {
 
+    # ==================================================
+    # AGE 7 — LIVING THINGS
+    # ==================================================
 
-    # ======================================================
-    # PHOTOSYNTHESIS
-    # ======================================================
-
-    "SCI_BIO_PHOTO_01": (
-
-        # --------------------------------------------------
-        # EASY 1
-        # --------------------------------------------------
+    "SCI_LIFE_BASIC_01": (
 
         ScienceQuestion(
-            question_id=(
-                "PHOTO-E-01"
-            ),
+            question_id="LIFE-E-01",
 
             prompt=(
-                "What does a plant need "
-                "for photosynthesis, and "
-                "what does it make?"
+                "What are three things "
+                "living things need "
+                "to survive?"
             ),
 
-            difficulty=(
-                DifficultyLevel.EASY
-            ),
+            difficulty=E,
 
             required_ideas=(
-
-                ScienceIdea(
-                    code="LIGHT",
-
-                    label="light",
-
-                    alternatives=(
-                        "sunlight",
-                        "light energy",
-                        "light",
-                    ),
-                ),
 
                 ScienceIdea(
                     code="WATER",
-
                     label="water",
-
                     alternatives=(
                         "water",
-                        "h2o",
                     ),
                 ),
 
                 ScienceIdea(
-                    code="CARBON_DIOXIDE",
-
-                    label=(
-                        "carbon dioxide"
-                    ),
-
+                    code="AIR",
+                    label="air",
                     alternatives=(
-                        "carbon dioxide",
-                        "co2",
-                    ),
-                ),
-
-                ScienceIdea(
-                    code="GLUCOSE",
-
-                    label=(
-                        "glucose or food"
-                    ),
-
-                    alternatives=(
-                        "glucose",
-                        "sugar",
-
-                        "make food",
-                        "makes food",
-                        "making food",
-
-                        "produce food",
-                        "produces food",
-
-                        "make glucose",
-                        "makes glucose",
-
-                        "produce glucose",
-                        "produces glucose",
-                    ),
-                ),
-
-                ScienceIdea(
-                    code="OXYGEN",
-
-                    label="oxygen",
-
-                    alternatives=(
+                        "air",
                         "oxygen",
-                        "o2",
-                    ),
-                ),
-            ),
-
-            minimum_correct_ideas=4,
-
-            misconceptions=(
-
-                ScienceMisconception(
-                    code=(
-                        "SCI_PHOTO_FOOD_FROM_SOIL"
-                    ),
-
-                    patterns=(
-                        "food comes from soil",
-
-                        (
-                            "food comes from "
-                            "the soil"
-                        ),
-
-                        "food from soil",
-
-                        "food from the soil",
-
-                        "get food from soil",
-
-                        (
-                            "get food from "
-                            "the soil"
-                        ),
-
-                        "gets food from soil",
-
-                        (
-                            "gets food from "
-                            "the soil"
-                        ),
-
-                        (
-                            "get their food "
-                            "from soil"
-                        ),
-
-                        (
-                            "get their food "
-                            "from the soil"
-                        ),
-
-                        (
-                            "gets their food "
-                            "from soil"
-                        ),
-
-                        (
-                            "gets their food "
-                            "from the soil"
-                        ),
-
-                        (
-                            "gets its food "
-                            "from soil"
-                        ),
-
-                        (
-                            "gets its food "
-                            "from the soil"
-                        ),
-
-                        (
-                            "plants get their "
-                            "food from soil"
-                        ),
-
-                        (
-                            "plants get their "
-                            "food from the soil"
-                        ),
-
-                        "soil gives food",
-                    ),
-                ),
-
-                ScienceMisconception(
-                    code=(
-                        "SCI_PHOTO_SUNLIGHT_IS_FOOD"
-                    ),
-
-                    patterns=(
-                        "sunlight is food",
-                        "light is food",
-                    ),
-                ),
-            ),
-        ),
-
-
-        # --------------------------------------------------
-        # EASY 2
-        # --------------------------------------------------
-
-        ScienceQuestion(
-            question_id=(
-                "PHOTO-E-02"
-            ),
-
-            prompt=(
-                "Why are green leaves "
-                "important for "
-                "photosynthesis?"
-            ),
-
-            difficulty=(
-                DifficultyLevel.EASY
-            ),
-
-            required_ideas=(
-
-                ScienceIdea(
-                    code="CHLOROPHYLL",
-
-                    label="chlorophyll",
-
-                    alternatives=(
-                        "chlorophyll",
-                        "green pigment",
                     ),
                 ),
 
                 ScienceIdea(
-                    code="ABSORB_LIGHT",
-
-                    label=(
-                        "absorbing light"
-                    ),
-
+                    code="FOOD",
+                    label="food or energy",
                     alternatives=(
-                        "absorb sunlight",
-                        "absorbs sunlight",
-                        "absorbing sunlight",
-
-                        "absorb light",
-                        "absorbs light",
-                        "absorbing light",
-
-                        "capture sunlight",
-                        "captures sunlight",
+                        "food",
+                        "energy",
+                        "nutrients",
                     ),
                 ),
             ),
@@ -322,179 +114,48 @@ SCIENCE_QUESTION_BANK: dict[
         ),
 
 
-        # --------------------------------------------------
-        # MODERATE 1
-        # --------------------------------------------------
-
         ScienceQuestion(
-            question_id=(
-                "PHOTO-M-01"
-            ),
+            question_id="LIFE-E-02",
 
             prompt=(
-                "Where does the carbon "
-                "used to make plant food "
-                "come from?"
+                "Name two signs that "
+                "something is alive."
             ),
 
-            difficulty=(
-                DifficultyLevel
-                .MODERATE
-            ),
+            difficulty=E,
 
             required_ideas=(
 
                 ScienceIdea(
-                    code="CO2_FROM_AIR",
-
-                    label=(
-                        "carbon dioxide "
-                        "from the air"
-                    ),
-
+                    code="GROW",
+                    label="grows",
                     alternatives=(
-                        (
-                            "carbon dioxide "
-                            "from air"
-                        ),
-
-                        (
-                            "carbon dioxide "
-                            "from the air"
-                        ),
-
-                        (
-                            "carbon dioxide "
-                            "in air"
-                        ),
-
-                        (
-                            "carbon dioxide "
-                            "in the air"
-                        ),
-
-                        "co2 from air",
-
-                        "co2 from the air",
+                        "grow",
+                        "grows",
+                        "growth",
                     ),
                 ),
 
                 ScienceIdea(
-                    code="CARBON_TO_FOOD",
-
+                    code="RESPOND",
                     label=(
-                        "carbon helps build "
-                        "glucose or food"
+                        "responds to surroundings"
                     ),
-
                     alternatives=(
-                        "make glucose",
-                        "makes glucose",
-
-                        "build glucose",
-                        "builds glucose",
-
-                        "make sugar",
-                        "makes sugar",
-
-                        "make food",
-                        "makes food",
-                    ),
-                ),
-            ),
-
-            minimum_correct_ideas=2,
-
-            misconceptions=(
-
-                ScienceMisconception(
-                    code=(
-                        "SCI_PHOTO_CARBON_FROM_SOIL"
-                    ),
-
-                    patterns=(
-                        (
-                            "carbon comes "
-                            "from soil"
-                        ),
-
-                        (
-                            "carbon comes "
-                            "from the soil"
-                        ),
-
-                        "carbon from soil",
-
-                        "carbon from the soil",
-
-                        (
-                            "gets carbon "
-                            "from soil"
-                        ),
-
-                        (
-                            "gets carbon "
-                            "from the soil"
-                        ),
-                    ),
-                ),
-            ),
-        ),
-
-
-        # --------------------------------------------------
-        # MODERATE 2
-        # --------------------------------------------------
-
-        ScienceQuestion(
-            question_id=(
-                "PHOTO-M-02"
-            ),
-
-            prompt=(
-                "What role does "
-                "chlorophyll play during "
-                "photosynthesis?"
-            ),
-
-            difficulty=(
-                DifficultyLevel
-                .MODERATE
-            ),
-
-            required_ideas=(
-
-                ScienceIdea(
-                    code="CHLOROPHYLL",
-
-                    label="chlorophyll",
-
-                    alternatives=(
-                        "chlorophyll",
-                        "green pigment",
+                        "respond",
+                        "responds",
+                        "reacts",
+                        "react",
                     ),
                 ),
 
                 ScienceIdea(
-                    code="LIGHT_CAPTURE",
-
-                    label=(
-                        "capturing or "
-                        "absorbing light"
-                    ),
-
+                    code="REPRODUCE",
+                    label="reproduces",
                     alternatives=(
-                        "absorbs light",
-                        "absorb light",
-
-                        "absorbs sunlight",
-                        "absorb sunlight",
-
-                        "captures light",
-                        "capture light",
-
-                        "captures sunlight",
-                        "capture sunlight",
+                        "reproduce",
+                        "reproduces",
+                        "have babies",
                     ),
                 ),
             ),
@@ -503,66 +164,52 @@ SCIENCE_QUESTION_BANK: dict[
         ),
 
 
-        # --------------------------------------------------
-        # CHALLENGING 1
-        # --------------------------------------------------
-
         ScienceQuestion(
-            question_id=(
-                "PHOTO-C-01"
-            ),
+            question_id="LIFE-M-01",
 
             prompt=(
-                "A plant has water and "
-                "carbon dioxide but is "
-                "kept in darkness. Why "
-                "would photosynthesis "
-                "slow down or stop?"
+                "How can you tell that "
+                "a plant is a living thing?"
             ),
 
-            difficulty=(
-                DifficultyLevel
-                .CHALLENGING
-            ),
+            difficulty=M,
 
             required_ideas=(
 
                 ScienceIdea(
-                    code="LIGHT_REQUIRED",
-
-                    label=(
-                        "photosynthesis "
-                        "requires light"
-                    ),
-
+                    code="PLANT_GROWS",
+                    label="plant grows",
                     alternatives=(
-                        "needs light",
-                        "requires light",
+                        "plant grows",
+                        "it grows",
+                        "grows",
+                    ),
+                ),
 
+                ScienceIdea(
+                    code="PLANT_NEEDS",
+                    label=(
+                        "plant needs water "
+                        "or light"
+                    ),
+                    alternatives=(
+                        "needs water",
                         "needs sunlight",
-                        "requires sunlight",
-
-                        "no light",
-                        "without light",
+                        "needs light",
+                        "needs nutrients",
                     ),
                 ),
 
                 ScienceIdea(
-                    code="LIGHT_ENERGY",
-
+                    code="PLANT_RESPONDS",
                     label=(
-                        "light provides "
-                        "energy"
+                        "plant responds "
+                        "to surroundings"
                     ),
-
                     alternatives=(
-                        "light energy",
-                        "energy from light",
-
-                        "sunlight provides energy",
-                        "light provides energy",
-
-                        "energy from sunlight",
+                        "responds",
+                        "respond",
+                        "grows toward light",
                     ),
                 ),
             ),
@@ -571,110 +218,411 @@ SCIENCE_QUESTION_BANK: dict[
         ),
 
 
-        # --------------------------------------------------
-        # CHALLENGING 2
-        # --------------------------------------------------
-
         ScienceQuestion(
-            question_id=(
-                "PHOTO-C-02"
-            ),
+            question_id="LIFE-M-02",
 
             prompt=(
-                "Explain how matter "
-                "enters and leaves a "
-                "plant during "
-                "photosynthesis."
+                "Why does an animal "
+                "need food?"
             ),
 
-            difficulty=(
-                DifficultyLevel
-                .CHALLENGING
-            ),
+            difficulty=M,
 
             required_ideas=(
 
                 ScienceIdea(
-                    code="CO2_ENTER",
-
-                    label=(
-                        "carbon dioxide "
-                        "comes from air"
-                    ),
-
+                    code="ENERGY",
+                    label="food provides energy",
                     alternatives=(
-                        "carbon dioxide from air",
-                        "carbon dioxide enters",
-                        "co2 from air",
+                        "provides energy",
+                        "gives energy",
+                        "for energy",
                     ),
                 ),
 
                 ScienceIdea(
-                    code="WATER_ENTER",
-
+                    code="GROWTH",
                     label=(
-                        "water enters "
-                        "the plant"
+                        "energy supports growth "
+                        "and life processes"
                     ),
-
                     alternatives=(
-                        "water from roots",
-                        "roots absorb water",
-                        "water enters",
-                        "takes in water",
-                    ),
-                ),
-
-                ScienceIdea(
-                    code="GLUCOSE_MADE",
-
-                    label=(
-                        "glucose or food "
-                        "is made"
-                    ),
-
-                    alternatives=(
-                        "glucose is made",
-                        "makes glucose",
-
-                        "food is made",
-                        "makes food",
-
-                        "sugar is made",
-                    ),
-                ),
-
-                ScienceIdea(
-                    code="OXYGEN_RELEASE",
-
-                    label=(
-                        "oxygen is released"
-                    ),
-
-                    alternatives=(
-                        "oxygen is released",
-                        "releases oxygen",
-                        "oxygen leaves",
-                        "gives off oxygen",
+                        "grow",
+                        "growth",
+                        "stay alive",
+                        "life processes",
                     ),
                 ),
             ),
 
-            minimum_correct_ideas=3,
+            minimum_correct_ideas=1,
+        ),
+
+
+        ScienceQuestion(
+            question_id="LIFE-C-01",
+
+            prompt=(
+                "Why is a toy car "
+                "not alive even though "
+                "it can move?"
+            ),
+
+            difficulty=C,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="NO_GROWTH",
+                    label=(
+                        "it does not grow"
+                    ),
+                    alternatives=(
+                        "does not grow",
+                        "cannot grow",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="NO_LIFE_PROCESS",
+                    label=(
+                        "it does not perform "
+                        "life processes"
+                    ),
+                    alternatives=(
+                        "does not reproduce",
+                        "does not need food",
+                        "does not breathe",
+                        "not living",
+                        "not alive",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=1,
+        ),
+
+
+        ScienceQuestion(
+            question_id="LIFE-C-02",
+
+            prompt=(
+                "A seed looks inactive. "
+                "Why is it still considered "
+                "living?"
+            ),
+
+            difficulty=C,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="CAN_GROW",
+                    label=(
+                        "it can grow into "
+                        "a plant"
+                    ),
+                    alternatives=(
+                        "can grow",
+                        "grows into a plant",
+                        "can germinate",
+                        "germinate",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="LIFE_INSIDE",
+                    label=(
+                        "living processes can "
+                        "begin under the right "
+                        "conditions"
+                    ),
+                    alternatives=(
+                        "right conditions",
+                        "water and warmth",
+                        "start growing",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=1,
         ),
     ),
 
 
-    # ======================================================
-    # STATES OF MATTER
-    # ======================================================
+    # ==================================================
+    # AGE 8 — EVERYDAY MATERIALS
+    # ==================================================
+
+    "SCI_MATERIAL_BASIC_01": (
+
+        ScienceQuestion(
+            question_id="MATERIAL-E-01",
+
+            prompt=(
+                "Name two properties "
+                "that can describe "
+                "a material."
+            ),
+
+            difficulty=E,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="HARDNESS",
+                    label="hard or soft",
+                    alternatives=(
+                        "hard",
+                        "soft",
+                        "hardness",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="FLEXIBILITY",
+                    label=(
+                        "flexible or rigid"
+                    ),
+                    alternatives=(
+                        "flexible",
+                        "rigid",
+                        "bendable",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="TRANSPARENCY",
+                    label=(
+                        "transparent "
+                        "or opaque"
+                    ),
+                    alternatives=(
+                        "transparent",
+                        "opaque",
+                        "see through",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=2,
+        ),
+
+
+        ScienceQuestion(
+            question_id="MATERIAL-E-02",
+
+            prompt=(
+                "Why is glass useful "
+                "for making windows?"
+            ),
+
+            difficulty=E,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="TRANSPARENT",
+                    label="glass is transparent",
+                    alternatives=(
+                        "transparent",
+                        "see through",
+                        "lets light through",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="SOLID",
+                    label="glass is solid",
+                    alternatives=(
+                        "solid",
+                        "hard",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=1,
+        ),
+
+
+        ScienceQuestion(
+            question_id="MATERIAL-M-01",
+
+            prompt=(
+                "Why is rubber useful "
+                "for making some "
+                "shoe soles?"
+            ),
+
+            difficulty=M,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="FLEXIBLE",
+                    label="rubber is flexible",
+                    alternatives=(
+                        "flexible",
+                        "bendable",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="GRIP",
+                    label=(
+                        "rubber can provide grip"
+                    ),
+                    alternatives=(
+                        "grip",
+                        "friction",
+                        "not slippery",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=1,
+        ),
+
+
+        ScienceQuestion(
+            question_id="MATERIAL-M-02",
+
+            prompt=(
+                "Why are raincoats often "
+                "made from waterproof "
+                "materials?"
+            ),
+
+            difficulty=M,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="REPEL_WATER",
+                    label=(
+                        "water does not pass "
+                        "through easily"
+                    ),
+                    alternatives=(
+                        "waterproof",
+                        "does not absorb water",
+                        "water cannot pass",
+                        "keeps water out",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="KEEP_DRY",
+                    label=(
+                        "keeps the person dry"
+                    ),
+                    alternatives=(
+                        "keeps dry",
+                        "stay dry",
+                        "keeps person dry",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=1,
+        ),
+
+
+        ScienceQuestion(
+            question_id="MATERIAL-C-01",
+
+            prompt=(
+                "Why might metal be "
+                "better than paper for "
+                "making a cooking pot?"
+            ),
+
+            difficulty=C,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="STRONG",
+                    label="metal is strong",
+                    alternatives=(
+                        "strong",
+                        "stronger",
+                        "durable",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="HEAT",
+                    label=(
+                        "metal can transfer "
+                        "or handle heat"
+                    ),
+                    alternatives=(
+                        "conduct heat",
+                        "conducts heat",
+                        "handle heat",
+                        "handles heat",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=2,
+        ),
+
+
+        ScienceQuestion(
+            question_id="MATERIAL-C-02",
+
+            prompt=(
+                "How would you choose "
+                "a material for making "
+                "an umbrella?"
+            ),
+
+            difficulty=C,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="WATERPROOF",
+                    label=(
+                        "material should "
+                        "be waterproof"
+                    ),
+                    alternatives=(
+                        "waterproof",
+                        "water resistant",
+                        "keeps water out",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="LIGHTWEIGHT",
+                    label=(
+                        "material should "
+                        "be lightweight"
+                    ),
+                    alternatives=(
+                        "light",
+                        "lightweight",
+                        "not heavy",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=1,
+        ),
+    ),
+
+
+    # ==================================================
+    # AGE 9 — STATES OF MATTER
+    # ==================================================
 
     "SCI_PHY_MATTER_01": (
 
         ScienceQuestion(
-            question_id=(
-                "MATTER-E-01"
-            ),
+            question_id="MATTER-E-01",
 
             prompt=(
                 "How are particles "
@@ -682,58 +630,32 @@ SCIENCE_QUESTION_BANK: dict[
                 "liquids and gases?"
             ),
 
-            difficulty=(
-                DifficultyLevel.EASY
-            ),
+            difficulty=E,
 
             required_ideas=(
 
                 ScienceIdea(
                     code="SOLID_PARTICLES",
-
                     label=(
                         "solid particles "
-                        "are close"
+                        "are close together"
                     ),
-
                     alternatives=(
-                        (
-                            "solid particles "
-                            "are close"
-                        ),
-
-                        (
-                            "particles in solids "
-                            "are close"
-                        ),
-
-                        (
-                            "tightly packed"
-                        ),
-
-                        "particles vibrate",
+                        "solid particles are close",
+                        "particles in solids are close",
+                        "tightly packed",
                     ),
                 ),
 
                 ScienceIdea(
                     code="LIQUID_PARTICLES",
-
                     label=(
                         "liquid particles "
-                        "can move"
+                        "can move past "
+                        "each other"
                     ),
-
                     alternatives=(
-                        (
-                            "liquid particles "
-                            "move"
-                        ),
-
-                        (
-                            "particles in liquids "
-                            "move"
-                        ),
-
+                        "liquid particles move",
                         "move past each other",
                         "slide past each other",
                     ),
@@ -741,27 +663,14 @@ SCIENCE_QUESTION_BANK: dict[
 
                 ScienceIdea(
                     code="GAS_PARTICLES",
-
                     label=(
                         "gas particles are "
                         "far apart"
                     ),
-
                     alternatives=(
-                        (
-                            "gas particles are "
-                            "far apart"
-                        ),
-
-                        (
-                            "particles in gases "
-                            "are far apart"
-                        ),
-
-                        (
-                            "gas particles "
-                            "move freely"
-                        ),
+                        "gas particles are far apart",
+                        "far apart",
+                        "move freely",
                     ),
                 ),
             ),
@@ -774,19 +683,9 @@ SCIENCE_QUESTION_BANK: dict[
                     code=(
                         "SCI_MATTER_PARTICLES_STOP"
                     ),
-
                     patterns=(
                         "particles stop moving",
-
-                        (
-                            "solid particles "
-                            "do not move"
-                        ),
-
-                        (
-                            "particles in solids "
-                            "do not move"
-                        ),
+                        "solid particles do not move",
                     ),
                 ),
             ),
@@ -794,30 +693,23 @@ SCIENCE_QUESTION_BANK: dict[
 
 
         ScienceQuestion(
-            question_id=(
-                "MATTER-E-02"
-            ),
+            question_id="MATTER-E-02",
 
             prompt=(
                 "What happens when ice "
-                "melts and when water "
-                "boils?"
+                "melts and when water boils?"
             ),
 
-            difficulty=(
-                DifficultyLevel.EASY
-            ),
+            difficulty=E,
 
             required_ideas=(
 
                 ScienceIdea(
                     code="MELTING",
-
                     label=(
                         "solid changes "
                         "to liquid"
                     ),
-
                     alternatives=(
                         "solid to liquid",
                         "ice becomes water",
@@ -827,12 +719,10 @@ SCIENCE_QUESTION_BANK: dict[
 
                 ScienceIdea(
                     code="BOILING",
-
                     label=(
                         "liquid changes "
                         "to gas"
                     ),
-
                     alternatives=(
                         "liquid to gas",
                         "water becomes gas",
@@ -847,52 +737,40 @@ SCIENCE_QUESTION_BANK: dict[
 
 
         ScienceQuestion(
-            question_id=(
-                "MATTER-M-01"
-            ),
+            question_id="MATTER-M-01",
 
             prompt=(
-                "What happens when a "
-                "gas cools enough to "
-                "condense?"
+                "What happens when "
+                "a gas cools enough "
+                "to condense?"
             ),
 
-            difficulty=(
-                DifficultyLevel
-                .MODERATE
-            ),
+            difficulty=M,
 
             required_ideas=(
 
                 ScienceIdea(
                     code="CONDENSATION",
-
                     label=(
                         "gas changes "
                         "to liquid"
                     ),
-
                     alternatives=(
                         "gas to liquid",
                         "gas becomes liquid",
-                        "gas turns into liquid",
                         "condenses into liquid",
                     ),
                 ),
 
                 ScienceIdea(
-                    code="ENERGY_LOSS",
-
+                    code="LOSE_ENERGY",
                     label=(
-                        "particles lose "
-                        "energy"
+                        "particles lose energy"
                     ),
-
                     alternatives=(
                         "lose energy",
                         "loses energy",
                         "less energy",
-                        "cooling",
                         "cools",
                     ),
                 ),
@@ -903,51 +781,36 @@ SCIENCE_QUESTION_BANK: dict[
 
 
         ScienceQuestion(
-            question_id=(
-                "MATTER-M-02"
-            ),
+            question_id="MATTER-M-02",
 
             prompt=(
                 "How does heating affect "
-                "the movement of "
-                "particles?"
+                "particle movement?"
             ),
 
-            difficulty=(
-                DifficultyLevel
-                .MODERATE
-            ),
+            difficulty=M,
 
             required_ideas=(
 
                 ScienceIdea(
                     code="GAIN_ENERGY",
-
                     label=(
-                        "particles gain "
-                        "energy"
+                        "particles gain energy"
                     ),
-
                     alternatives=(
                         "gain energy",
-                        "gains energy",
                         "more energy",
                     ),
                 ),
 
                 ScienceIdea(
                     code="MOVE_FASTER",
-
                     label=(
-                        "particles move "
-                        "faster"
+                        "particles move faster"
                     ),
-
                     alternatives=(
                         "move faster",
-                        "moves faster",
                         "move more quickly",
-                        "move quicker",
                     ),
                 ),
             ),
@@ -957,50 +820,37 @@ SCIENCE_QUESTION_BANK: dict[
 
 
         ScienceQuestion(
-            question_id=(
-                "MATTER-C-01"
-            ),
+            question_id="MATTER-C-01",
 
             prompt=(
                 "Why can a gas spread "
-                "out and fill the "
-                "whole container?"
+                "out and fill an "
+                "entire container?"
             ),
 
-            difficulty=(
-                DifficultyLevel
-                .CHALLENGING
-            ),
+            difficulty=C,
 
             required_ideas=(
 
                 ScienceIdea(
                     code="FAR_APART",
-
                     label=(
-                        "gas particles "
-                        "are far apart"
+                        "particles are far apart"
                     ),
-
                     alternatives=(
                         "far apart",
-                        "spaces between particles",
                         "large spaces",
                     ),
                 ),
 
                 ScienceIdea(
                     code="MOVE_FREELY",
-
                     label=(
-                        "gas particles "
-                        "move freely"
+                        "particles move freely"
                     ),
-
                     alternatives=(
                         "move freely",
                         "move in all directions",
-                        "move around freely",
                     ),
                 ),
             ),
@@ -1010,67 +860,39 @@ SCIENCE_QUESTION_BANK: dict[
 
 
         ScienceQuestion(
-            question_id=(
-                "MATTER-C-02"
-            ),
+            question_id="MATTER-C-02",
 
             prompt=(
                 "Compare melting and "
-                "freezing. What changes "
-                "in each process?"
+                "freezing."
             ),
 
-            difficulty=(
-                DifficultyLevel
-                .CHALLENGING
-            ),
+            difficulty=C,
 
             required_ideas=(
 
                 ScienceIdea(
                     code="MELTING_CHANGE",
-
                     label=(
-                        "melting is "
+                        "melting changes "
                         "solid to liquid"
                     ),
-
                     alternatives=(
                         "solid to liquid",
-                        "melting changes solid",
+                        "melting",
                     ),
                 ),
 
                 ScienceIdea(
                     code="FREEZING_CHANGE",
-
                     label=(
-                        "freezing is "
+                        "freezing changes "
                         "liquid to solid"
                     ),
-
                     alternatives=(
                         "liquid to solid",
-                        "freezing changes liquid",
+                        "freezing",
                         "water becomes ice",
-                    ),
-                ),
-
-                ScienceIdea(
-                    code="ENERGY_CHANGE",
-
-                    label=(
-                        "energy changes "
-                        "during the processes"
-                    ),
-
-                    alternatives=(
-                        "gain energy",
-                        "gains energy",
-                        "lose energy",
-                        "loses energy",
-                        "heat added",
-                        "heat removed",
                     ),
                 ),
             ),
@@ -1080,16 +902,14 @@ SCIENCE_QUESTION_BANK: dict[
     ),
 
 
-    # ======================================================
-    # FOOD CHAINS
-    # ======================================================
+    # ==================================================
+    # AGE 10 — FOOD CHAINS
+    # ==================================================
 
     "SCI_BIO_FOODCHAIN_01": (
 
         ScienceQuestion(
-            question_id=(
-                "FOOD-E-01"
-            ),
+            question_id="FOOD-E-01",
 
             prompt=(
                 "What is a food chain, "
@@ -1097,48 +917,26 @@ SCIENCE_QUESTION_BANK: dict[
                 "energy usually begin?"
             ),
 
-            difficulty=(
-                DifficultyLevel.EASY
-            ),
+            difficulty=E,
 
             required_ideas=(
 
                 ScienceIdea(
                     code="ENERGY_TRANSFER",
-
                     label=(
                         "energy moves "
                         "between organisms"
                     ),
-
                     alternatives=(
                         "energy moves",
                         "energy passes",
                         "energy flows",
-                        "energy transfer",
-                    ),
-                ),
-
-                ScienceIdea(
-                    code="PRODUCER",
-
-                    label=(
-                        "producer or plant"
-                    ),
-
-                    alternatives=(
-                        "producer",
-                        "producers",
-                        "plant",
-                        "plants",
                     ),
                 ),
 
                 ScienceIdea(
                     code="SUN",
-
-                    label="the Sun",
-
+                    label="Sun",
                     alternatives=(
                         "sun",
                         "sunlight",
@@ -1152,9 +950,7 @@ SCIENCE_QUESTION_BANK: dict[
 
 
         ScienceQuestion(
-            question_id=(
-                "FOOD-E-02"
-            ),
+            question_id="FOOD-E-02",
 
             prompt=(
                 "Why are green plants "
@@ -1162,23 +958,18 @@ SCIENCE_QUESTION_BANK: dict[
                 "a food chain?"
             ),
 
-            difficulty=(
-                DifficultyLevel.EASY
-            ),
+            difficulty=E,
 
             required_ideas=(
 
                 ScienceIdea(
                     code="MAKE_FOOD",
-
                     label=(
                         "plants make "
                         "their own food"
                     ),
-
                     alternatives=(
                         "make their own food",
-                        "makes its own food",
                         "produce their own food",
                         "produce food",
                     ),
@@ -1186,11 +977,7 @@ SCIENCE_QUESTION_BANK: dict[
 
                 ScienceIdea(
                     code="PHOTOSYNTHESIS",
-
-                    label=(
-                        "photosynthesis"
-                    ),
-
+                    label="photosynthesis",
                     alternatives=(
                         "photosynthesis",
                         "using sunlight",
@@ -1207,7 +994,6 @@ SCIENCE_QUESTION_BANK: dict[
                     code=(
                         "SCI_FOODCHAIN_PLANT_CONSUMER"
                     ),
-
                     patterns=(
                         "plants are consumers",
                         "plant is a consumer",
@@ -1218,59 +1004,42 @@ SCIENCE_QUESTION_BANK: dict[
 
 
         ScienceQuestion(
-            question_id=(
-                "FOOD-M-01"
-            ),
+            question_id="FOOD-M-01",
 
             prompt=(
                 "What do the arrows "
                 "in a food chain show?"
             ),
 
-            difficulty=(
-                DifficultyLevel
-                .MODERATE
-            ),
+            difficulty=M,
 
             required_ideas=(
 
                 ScienceIdea(
                     code="ENERGY_DIRECTION",
-
                     label=(
                         "direction of "
                         "energy flow"
                     ),
-
                     alternatives=(
                         "direction of energy",
-                        "energy direction",
-                        "energy flows",
                         "energy flow",
                         "energy moves",
-                        "energy passes",
                     ),
                 ),
 
                 ScienceIdea(
                     code="TO_CONSUMER",
-
                     label=(
                         "energy moves to "
                         "the organism "
                         "that eats it"
                     ),
-
                     alternatives=(
-                        "from food to consumer",
-                        "from prey to predator",
-                        "from plant to animal",
-                        "from eaten to eater",
-
-                        (
-                            "to the organism "
-                            "that eats it"
-                        ),
+                        "food to consumer",
+                        "prey to predator",
+                        "plant to animal",
+                        "eaten to eater",
                     ),
                 ),
             ),
@@ -1280,9 +1049,7 @@ SCIENCE_QUESTION_BANK: dict[
 
 
         ScienceQuestion(
-            question_id=(
-                "FOOD-M-02"
-            ),
+            question_id="FOOD-M-02",
 
             prompt=(
                 "In the chain "
@@ -1290,37 +1057,15 @@ SCIENCE_QUESTION_BANK: dict[
                 "how does energy move?"
             ),
 
-            difficulty=(
-                DifficultyLevel
-                .MODERATE
-            ),
+            difficulty=M,
 
             required_ideas=(
 
                 ScienceIdea(
-                    code="SUN_TO_GRASS",
-
-                    label=(
-                        "energy begins with "
-                        "the Sun and grass"
-                    ),
-
-                    alternatives=(
-                        "sun to grass",
-                        "sunlight to grass",
-                        "grass gets energy from sun",
-                        "grass gets energy from sunlight",
-                    ),
-                ),
-
-                ScienceIdea(
                     code="GRASS_TO_RABBIT",
-
                     label=(
-                        "energy moves from "
                         "grass to rabbit"
                     ),
-
                     alternatives=(
                         "grass to rabbit",
                         "rabbit eats grass",
@@ -1329,12 +1074,9 @@ SCIENCE_QUESTION_BANK: dict[
 
                 ScienceIdea(
                     code="RABBIT_TO_FOX",
-
                     label=(
-                        "energy moves from "
                         "rabbit to fox"
                     ),
-
                     alternatives=(
                         "rabbit to fox",
                         "fox eats rabbit",
@@ -1347,69 +1089,51 @@ SCIENCE_QUESTION_BANK: dict[
 
 
         ScienceQuestion(
-            question_id=(
-                "FOOD-C-01"
-            ),
+            question_id="FOOD-C-01",
 
             prompt=(
-                "If the amount of grass "
-                "in a grass → rabbit → "
-                "fox food chain became "
-                "very low, how could this "
-                "affect the rabbits "
-                "and foxes?"
+                "If grass became very "
+                "scarce, how could this "
+                "affect rabbits and foxes?"
             ),
 
-            difficulty=(
-                DifficultyLevel
-                .CHALLENGING
-            ),
+            difficulty=C,
 
             required_ideas=(
 
                 ScienceIdea(
-                    code="LESS_RABBIT_FOOD",
-
+                    code="RABBIT_FOOD",
                     label=(
                         "rabbits have "
                         "less food"
                     ),
-
                     alternatives=(
                         "less food for rabbits",
                         "rabbits have less food",
-                        "rabbits get less food",
                     ),
                 ),
 
                 ScienceIdea(
-                    code="RABBIT_DECREASE",
-
+                    code="RABBIT_DROP",
                     label=(
                         "rabbit population "
                         "may decrease"
                     ),
-
                     alternatives=(
                         "fewer rabbits",
-                        "rabbit population decreases",
                         "rabbits decrease",
                     ),
                 ),
 
                 ScienceIdea(
-                    code="FOX_EFFECT",
-
+                    code="FOX_DROP",
                     label=(
-                        "foxes receive "
-                        "less food or energy"
+                        "foxes may decrease"
                     ),
-
                     alternatives=(
-                        "less food for foxes",
                         "fewer foxes",
-                        "fox population decreases",
-                        "foxes get less energy",
+                        "foxes decrease",
+                        "less food for foxes",
                     ),
                 ),
             ),
@@ -1419,55 +1143,1154 @@ SCIENCE_QUESTION_BANK: dict[
 
 
         ScienceQuestion(
-            question_id=(
-                "FOOD-C-02"
-            ),
+            question_id="FOOD-C-02",
 
             prompt=(
                 "Why do food-chain "
-                "arrows point from the "
-                "organism being eaten "
-                "toward the organism "
-                "that eats it?"
+                "arrows point from "
+                "food toward the "
+                "organism eating it?"
             ),
 
-            difficulty=(
-                DifficultyLevel
-                .CHALLENGING
-            ),
+            difficulty=C,
 
             required_ideas=(
 
                 ScienceIdea(
                     code="ENERGY_FLOW",
-
                     label=(
                         "arrows show "
                         "energy flow"
                     ),
-
                     alternatives=(
                         "energy flow",
                         "energy moves",
                         "energy passes",
-                        "shows energy",
                     ),
                 ),
 
                 ScienceIdea(
                     code="SOURCE_TO_CONSUMER",
-
                     label=(
                         "energy moves from "
-                        "food source to "
-                        "consumer"
+                        "food source to consumer"
                     ),
-
                     alternatives=(
                         "food to consumer",
                         "prey to predator",
                         "plant to animal",
-                        "eaten organism to eater",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=2,
+        ),
+    ),
+
+
+    # ==================================================
+    # AGE 11 — ECOSYSTEMS
+    # ==================================================
+
+    "SCI_ECO_SYSTEMS_01": (
+
+        ScienceQuestion(
+            question_id="ECO-E-01",
+
+            prompt=(
+                "What is an ecosystem?"
+            ),
+
+            difficulty=E,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="LIVING",
+                    label="living organisms",
+                    alternatives=(
+                        "living things",
+                        "organisms",
+                        "plants and animals",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="ENVIRONMENT",
+                    label="environment",
+                    alternatives=(
+                        "environment",
+                        "surroundings",
+                        "habitat",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=2,
+        ),
+
+
+        ScienceQuestion(
+            question_id="ECO-E-02",
+
+            prompt=(
+                "Give one living and "
+                "one non-living part "
+                "of an ecosystem."
+            ),
+
+            difficulty=E,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="BIOTIC",
+                    label="living component",
+                    alternatives=(
+                        "plant",
+                        "animal",
+                        "organism",
+                        "tree",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="ABIOTIC",
+                    label=(
+                        "non-living component"
+                    ),
+                    alternatives=(
+                        "water",
+                        "air",
+                        "soil",
+                        "sunlight",
+                        "rock",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=2,
+        ),
+
+
+        ScienceQuestion(
+            question_id="ECO-M-01",
+
+            prompt=(
+                "How can removing one "
+                "species affect an "
+                "ecosystem?"
+            ),
+
+            difficulty=M,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="DEPENDENCE",
+                    label=(
+                        "organisms depend "
+                        "on each other"
+                    ),
+                    alternatives=(
+                        "depend on each other",
+                        "connected",
+                        "interact",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="POPULATION_CHANGE",
+                    label=(
+                        "other populations "
+                        "can change"
+                    ),
+                    alternatives=(
+                        "population changes",
+                        "increase",
+                        "decrease",
+                        "fewer animals",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=1,
+        ),
+
+
+        ScienceQuestion(
+            question_id="ECO-M-02",
+
+            prompt=(
+                "How do non-living "
+                "factors affect organisms "
+                "in an ecosystem?"
+            ),
+
+            difficulty=M,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="RESOURCE",
+                    label=(
+                        "organisms depend "
+                        "on resources"
+                    ),
+                    alternatives=(
+                        "need water",
+                        "need sunlight",
+                        "need air",
+                        "resources",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="SURVIVAL",
+                    label=(
+                        "conditions affect "
+                        "survival or growth"
+                    ),
+                    alternatives=(
+                        "survival",
+                        "grow",
+                        "growth",
+                        "population",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=1,
+        ),
+
+
+        ScienceQuestion(
+            question_id="ECO-C-01",
+
+            prompt=(
+                "Why can pollution "
+                "affect several species "
+                "in one ecosystem?"
+            ),
+
+            difficulty=C,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="SHARED_ENVIRONMENT",
+                    label=(
+                        "species share "
+                        "the environment"
+                    ),
+                    alternatives=(
+                        "share environment",
+                        "same environment",
+                        "same habitat",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="CONNECTED",
+                    label=(
+                        "species are connected"
+                    ),
+                    alternatives=(
+                        "connected",
+                        "food web",
+                        "food chain",
+                        "depend on each other",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=2,
+        ),
+
+
+        ScienceQuestion(
+            question_id="ECO-C-02",
+
+            prompt=(
+                "Why can introducing "
+                "a new predator change "
+                "an ecosystem?"
+            ),
+
+            difficulty=C,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="PREY_CHANGE",
+                    label=(
+                        "prey populations "
+                        "may decrease"
+                    ),
+                    alternatives=(
+                        "prey decrease",
+                        "fewer prey",
+                        "prey population falls",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="CHAIN_EFFECT",
+                    label=(
+                        "other populations "
+                        "can also change"
+                    ),
+                    alternatives=(
+                        "other populations change",
+                        "food web changes",
+                        "affects other species",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=1,
+        ),
+    ),
+
+
+    # ==================================================
+    # AGE 12 — PHOTOSYNTHESIS
+    # ==================================================
+
+    "SCI_BIO_PHOTO_01": (
+
+        ScienceQuestion(
+            question_id="PHOTO-E-01",
+
+            prompt=(
+                "What does a plant need "
+                "for photosynthesis, and "
+                "what does it make?"
+            ),
+
+            difficulty=E,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="LIGHT",
+                    label="light",
+                    alternatives=(
+                        "sunlight",
+                        "light energy",
+                        "light",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="WATER",
+                    label="water",
+                    alternatives=(
+                        "water",
+                        "h2o",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="CO2",
+                    label="carbon dioxide",
+                    alternatives=(
+                        "carbon dioxide",
+                        "co2",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="GLUCOSE",
+                    label="glucose or food",
+                    alternatives=(
+                        "glucose",
+                        "sugar",
+                        "make food",
+                        "makes food",
+                        "produce food",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="OXYGEN",
+                    label="oxygen",
+                    alternatives=(
+                        "oxygen",
+                        "o2",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=4,
+
+            misconceptions=(
+
+                ScienceMisconception(
+                    code=(
+                        "SCI_PHOTO_FOOD_FROM_SOIL"
+                    ),
+                    patterns=(
+                        "food comes from soil",
+                        "food from soil",
+                        "get food from soil",
+                        "gets food from soil",
+                        "get their food from soil",
+                        "plants get their food from soil",
+                    ),
+                ),
+
+                ScienceMisconception(
+                    code=(
+                        "SCI_PHOTO_SUNLIGHT_IS_FOOD"
+                    ),
+                    patterns=(
+                        "sunlight is food",
+                        "light is food",
+                    ),
+                ),
+            ),
+        ),
+
+
+        ScienceQuestion(
+            question_id="PHOTO-E-02",
+
+            prompt=(
+                "Why is sunlight "
+                "important for "
+                "photosynthesis?"
+            ),
+
+            difficulty=E,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="ENERGY",
+                    label=(
+                        "sunlight provides energy"
+                    ),
+                    alternatives=(
+                        "provides energy",
+                        "light energy",
+                        "energy from sunlight",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="FOOD",
+                    label=(
+                        "energy helps make "
+                        "glucose or food"
+                    ),
+                    alternatives=(
+                        "make glucose",
+                        "make food",
+                        "produce glucose",
+                        "produce food",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=2,
+        ),
+
+
+        ScienceQuestion(
+            question_id="PHOTO-M-01",
+
+            prompt=(
+                "What roles do water "
+                "and carbon dioxide play "
+                "in photosynthesis?"
+            ),
+
+            difficulty=M,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="WATER_INPUT",
+                    label="water is an input",
+                    alternatives=(
+                        "water is used",
+                        "uses water",
+                        "water",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="CO2_INPUT",
+                    label=(
+                        "carbon dioxide "
+                        "is an input"
+                    ),
+                    alternatives=(
+                        "carbon dioxide is used",
+                        "uses carbon dioxide",
+                        "co2",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="GLUCOSE_OUTPUT",
+                    label=(
+                        "used to produce glucose"
+                    ),
+                    alternatives=(
+                        "make glucose",
+                        "produce glucose",
+                        "make food",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=2,
+        ),
+
+
+        ScienceQuestion(
+            question_id="PHOTO-M-02",
+
+            prompt=(
+                "Why is chlorophyll "
+                "important in green plants?"
+            ),
+
+            difficulty=M,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="ABSORB_LIGHT",
+                    label=(
+                        "chlorophyll absorbs light"
+                    ),
+                    alternatives=(
+                        "absorbs light",
+                        "absorbs sunlight",
+                        "captures light",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="PHOTOSYNTHESIS",
+                    label=(
+                        "light supports "
+                        "photosynthesis"
+                    ),
+                    alternatives=(
+                        "photosynthesis",
+                        "make food",
+                        "make glucose",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=2,
+        ),
+
+
+        ScienceQuestion(
+            question_id="PHOTO-C-01",
+
+            prompt=(
+                "What might happen to "
+                "photosynthesis if a "
+                "plant receives very "
+                "little light?"
+            ),
+
+            difficulty=C,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="LESS_LIGHT",
+                    label=(
+                        "less light energy "
+                        "is available"
+                    ),
+                    alternatives=(
+                        "less light",
+                        "less light energy",
+                        "not enough sunlight",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="LESS_PHOTO",
+                    label=(
+                        "photosynthesis slows"
+                    ),
+                    alternatives=(
+                        "photosynthesis slows",
+                        "less photosynthesis",
+                        "lower photosynthesis",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="LESS_GLUCOSE",
+                    label=(
+                        "less glucose or "
+                        "food is produced"
+                    ),
+                    alternatives=(
+                        "less glucose",
+                        "less food",
+                        "makes less food",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=2,
+        ),
+
+
+        ScienceQuestion(
+            question_id="PHOTO-C-02",
+
+            prompt=(
+                "Why is photosynthesis "
+                "important to both plants "
+                "and animals?"
+            ),
+
+            difficulty=C,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="PLANT_FOOD",
+                    label=(
+                        "plants produce glucose"
+                    ),
+                    alternatives=(
+                        "plants make food",
+                        "plants make glucose",
+                        "produce glucose",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="OXYGEN",
+                    label=(
+                        "oxygen is released"
+                    ),
+                    alternatives=(
+                        "oxygen is released",
+                        "releases oxygen",
+                        "oxygen",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="FOOD_CHAIN",
+                    label=(
+                        "plants support "
+                        "food chains"
+                    ),
+                    alternatives=(
+                        "food chain",
+                        "animals eat plants",
+                        "energy for animals",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=2,
+        ),
+    ),
+
+
+    # ==================================================
+    # AGE 13 — ENERGY TRANSFER
+    # ==================================================
+
+    "SCI_ENERGY_TRANSFER_01": (
+
+        ScienceQuestion(
+            question_id="ENERGY-E-01",
+
+            prompt=(
+                "What does energy "
+                "transfer mean?"
+            ),
+
+            difficulty=E,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="MOVE",
+                    label=(
+                        "energy moves from "
+                        "one object or system "
+                        "to another"
+                    ),
+                    alternatives=(
+                        "energy moves",
+                        "energy passes",
+                        "energy transferred",
+                        "transfer of energy",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=1,
+        ),
+
+
+        ScienceQuestion(
+            question_id="ENERGY-E-02",
+
+            prompt=(
+                "Give one example "
+                "of energy transfer."
+            ),
+
+            difficulty=E,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="EXAMPLE",
+                    label=(
+                        "valid energy-transfer "
+                        "example"
+                    ),
+                    alternatives=(
+                        "sun to plant",
+                        "sunlight to plant",
+                        "food to animal",
+                        "heat from",
+                        "electricity",
+                        "light energy",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=1,
+        ),
+
+
+        ScienceQuestion(
+            question_id="ENERGY-M-01",
+
+            prompt=(
+                "How does energy move "
+                "from the Sun to an "
+                "animal through a plant?"
+            ),
+
+            difficulty=M,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="SUN",
+                    label=(
+                        "energy begins "
+                        "with sunlight"
+                    ),
+                    alternatives=(
+                        "sun",
+                        "sunlight",
+                        "solar energy",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="PLANT",
+                    label=(
+                        "plant captures "
+                        "light energy"
+                    ),
+                    alternatives=(
+                        "plant captures",
+                        "photosynthesis",
+                        "plant stores energy",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="ANIMAL",
+                    label=(
+                        "animal gains energy "
+                        "by eating"
+                    ),
+                    alternatives=(
+                        "animal eats plant",
+                        "eats the plant",
+                        "consumer eats",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=2,
+        ),
+
+
+        ScienceQuestion(
+            question_id="ENERGY-M-02",
+
+            prompt=(
+                "How can electrical "
+                "energy change in "
+                "a light bulb?"
+            ),
+
+            difficulty=M,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="ELECTRICAL",
+                    label="electrical energy",
+                    alternatives=(
+                        "electrical energy",
+                        "electricity",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="LIGHT",
+                    label="light energy",
+                    alternatives=(
+                        "light",
+                        "light energy",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="HEAT",
+                    label="thermal energy",
+                    alternatives=(
+                        "heat",
+                        "thermal energy",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=2,
+        ),
+
+
+        ScienceQuestion(
+            question_id="ENERGY-C-01",
+
+            prompt=(
+                "Why is less usable "
+                "energy available at "
+                "higher levels of "
+                "a food chain?"
+            ),
+
+            difficulty=C,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="USED",
+                    label=(
+                        "organisms use energy"
+                    ),
+                    alternatives=(
+                        "use energy",
+                        "energy is used",
+                        "life processes",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="HEAT",
+                    label=(
+                        "some energy is "
+                        "released as heat"
+                    ),
+                    alternatives=(
+                        "heat",
+                        "lost as heat",
+                        "released as heat",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=2,
+        ),
+
+
+        ScienceQuestion(
+            question_id="ENERGY-C-02",
+
+            prompt=(
+                "Why can energy change "
+                "form while the total "
+                "energy is still conserved?"
+            ),
+
+            difficulty=C,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="CHANGE_FORM",
+                    label=(
+                        "energy changes form"
+                    ),
+                    alternatives=(
+                        "changes form",
+                        "different form",
+                        "transformed",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="NOT_CREATED",
+                    label=(
+                        "energy is not "
+                        "created or destroyed"
+                    ),
+                    alternatives=(
+                        "not created or destroyed",
+                        "cannot be created",
+                        "cannot be destroyed",
+                        "energy conserved",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=2,
+        ),
+    ),
+
+
+    # ==================================================
+    # AGE 14 — CELLS & BIOLOGICAL SYSTEMS
+    # ==================================================
+
+    "SCI_CELL_SYSTEMS_01": (
+
+        ScienceQuestion(
+            question_id="CELL-E-01",
+
+            prompt=(
+                "What is a cell?"
+            ),
+
+            difficulty=E,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="BASIC_UNIT",
+                    label=(
+                        "basic unit of life"
+                    ),
+                    alternatives=(
+                        "basic unit of life",
+                        "smallest unit of life",
+                        "unit of living things",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=1,
+        ),
+
+
+        ScienceQuestion(
+            question_id="CELL-E-02",
+
+            prompt=(
+                "What is a tissue?"
+            ),
+
+            difficulty=E,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="GROUP_CELLS",
+                    label=(
+                        "group of similar "
+                        "cells working together"
+                    ),
+                    alternatives=(
+                        "group of cells",
+                        "similar cells",
+                        "cells working together",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=1,
+        ),
+
+
+        ScienceQuestion(
+            question_id="CELL-M-01",
+
+            prompt=(
+                "How are cells, tissues "
+                "and organs related?"
+            ),
+
+            difficulty=M,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="CELL_TISSUE",
+                    label=(
+                        "cells form tissues"
+                    ),
+                    alternatives=(
+                        "cells form tissues",
+                        "cells make tissues",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="TISSUE_ORGAN",
+                    label=(
+                        "tissues form organs"
+                    ),
+                    alternatives=(
+                        "tissues form organs",
+                        "tissues make organs",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=2,
+        ),
+
+
+        ScienceQuestion(
+            question_id="CELL-M-02",
+
+            prompt=(
+                "What is the difference "
+                "between an organ and "
+                "an organ system?"
+            ),
+
+            difficulty=M,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="ORGAN",
+                    label=(
+                        "organ contains "
+                        "different tissues"
+                    ),
+                    alternatives=(
+                        "organ has tissues",
+                        "organ contains tissues",
+                        "made of tissues",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="SYSTEM",
+                    label=(
+                        "organ system contains "
+                        "organs working together"
+                    ),
+                    alternatives=(
+                        "organs working together",
+                        "group of organs",
+                        "organ system",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=2,
+        ),
+
+
+        ScienceQuestion(
+            question_id="CELL-C-01",
+
+            prompt=(
+                "Why do multicellular "
+                "organisms need different "
+                "specialized cells?"
+            ),
+
+            difficulty=C,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="SPECIALIZED",
+                    label=(
+                        "different cells have "
+                        "different functions"
+                    ),
+                    alternatives=(
+                        "different functions",
+                        "different jobs",
+                        "specialized jobs",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="WORK_TOGETHER",
+                    label=(
+                        "cells work together"
+                    ),
+                    alternatives=(
+                        "work together",
+                        "cooperate",
+                        "form tissues",
+                    ),
+                ),
+            ),
+
+            minimum_correct_ideas=2,
+        ),
+
+
+        ScienceQuestion(
+            question_id="CELL-C-02",
+
+            prompt=(
+                "How can damage to one "
+                "organ affect an entire "
+                "organ system?"
+            ),
+
+            difficulty=C,
+
+            required_ideas=(
+
+                ScienceIdea(
+                    code="CONNECTED",
+                    label=(
+                        "organs work together"
+                    ),
+                    alternatives=(
+                        "organs work together",
+                        "connected",
+                        "depend on each other",
+                    ),
+                ),
+
+                ScienceIdea(
+                    code="SYSTEM_FUNCTION",
+                    label=(
+                        "system function "
+                        "can be disrupted"
+                    ),
+                    alternatives=(
+                        "system cannot work properly",
+                        "system function",
+                        "affects whole system",
                     ),
                 ),
             ),
@@ -1486,8 +2309,7 @@ def get_science_questions(
 ]:
 
     return (
-        SCIENCE_QUESTION_BANK
-        .get(
+        SCIENCE_QUESTION_BANK.get(
             concept_code,
             (),
         )
@@ -1541,14 +2363,14 @@ def get_science_question(
     )
 
 
-    if difficulty is not None:
+    if (
+        difficulty is not None
+    ):
 
         questions = [
             question
-
             for question
             in questions
-
             if (
                 question.difficulty
                 == difficulty
@@ -1571,8 +2393,6 @@ def get_science_question(
     )
 
 
-    return (
-        questions[
-            index
-        ]
-    )
+    return questions[
+        index
+    ]

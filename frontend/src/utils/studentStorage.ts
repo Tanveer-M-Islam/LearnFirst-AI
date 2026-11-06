@@ -1,4 +1,6 @@
-import type { Student } from "../types/student";
+import type {
+  Student,
+} from "../types/student";
 
 
 const STORAGE_KEY =
@@ -8,29 +10,42 @@ const STORAGE_KEY =
 export function saveStudent(
   student: Student,
 ): void {
+
   localStorage.setItem(
     STORAGE_KEY,
-    JSON.stringify(student),
+    JSON.stringify(
+      student,
+    ),
   );
 }
 
 
 export function getStoredStudent():
   Student | null {
+
   const stored =
     localStorage.getItem(
       STORAGE_KEY,
     );
 
-  if (!stored) {
+
+  if (
+    !stored
+  ) {
+
     return null;
   }
 
+
   try {
+
     return JSON.parse(
       stored,
     ) as Student;
+
+
   } catch {
+
     localStorage.removeItem(
       STORAGE_KEY,
     );
@@ -42,6 +57,7 @@ export function getStoredStudent():
 
 export function clearStoredStudent():
   void {
+
   localStorage.removeItem(
     STORAGE_KEY,
   );

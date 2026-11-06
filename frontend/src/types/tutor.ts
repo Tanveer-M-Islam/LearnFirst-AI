@@ -19,6 +19,7 @@ export type AttemptStatus =
 export type MathProblemType =
   | "LINEAR_EQUATION"
   | "ARITHMETIC"
+  | "SUBSTITUTION"
   | "UNSUPPORTED";
 
 
@@ -62,49 +63,68 @@ export type TutorAction =
 
 
 export interface TutorDecision {
-  session_id: string;
+  session_id:
+    string;
 
-  student_id: string;
+  student_id:
+    string;
 
-  subject: Subject;
+  subject:
+    Subject;
 
-  mode: LearningMode;
+  mode:
+    LearningMode;
 
-  age_group: AgeGroup;
+  age_group:
+    AgeGroup;
 
-  intent: TutorIntent;
+  intent:
+    TutorIntent;
 
-  next_action: TutorAction;
+  next_action:
+    TutorAction;
 
-  hint_level: number;
+  hint_level:
+    number;
 
-  allow_final_answer: boolean;
+  allow_final_answer:
+    boolean;
 
-  requires_rag: boolean;
+  requires_rag:
+    boolean;
 
-  requires_validation: boolean;
+  requires_validation:
+    boolean;
 
-  requires_mastery_check: boolean;
+  requires_mastery_check:
+    boolean;
 
-  policy_bypass_detected: boolean;
+  policy_bypass_detected:
+    boolean;
 
-  reason: string;
+  reason:
+    string;
 }
 
 
 export interface MathValidation {
-  supported: boolean;
+  supported:
+    boolean;
 
-  problem_type: MathProblemType;
+  problem_type:
+    MathProblemType;
 
-  status: AttemptStatus;
+  status:
+    AttemptStatus;
 
-  is_correct: boolean;
+  is_correct:
+    boolean;
 
   student_answer:
     string | null;
 
-  correct_steps: string[];
+  correct_steps:
+    string[];
 
   first_error_step:
     string | null;
@@ -112,14 +132,17 @@ export interface MathValidation {
   misconception_code:
     string | null;
 
-  feedback_summary: string;
+  feedback_summary:
+    string;
 }
 
 
 export interface ScienceValidation {
-  supported: boolean;
+  supported:
+    boolean;
 
-  concept_code: string;
+  concept_code:
+    string;
 
   question_id:
     string | null;
@@ -141,23 +164,60 @@ export interface ScienceValidation {
 }
 
 
+export interface EnglishValidation {
+  supported:
+    boolean;
+
+  concept_code:
+    string;
+
+  question_id:
+    string | null;
+
+  evaluation_mode:
+    string | null;
+
+  status:
+    AttemptStatus;
+
+  score_percent:
+    number;
+
+  matched_ideas:
+    string[];
+
+  rule_feedback:
+    string[];
+
+  feedback_summary:
+    string;
+}
+
+
 export interface RAGSource {
-  source_id: string;
+  source_id:
+    string;
 
-  title: string;
+  title:
+    string;
 
-  subject: string;
+  subject:
+    string;
 
-  concept_code: string;
+  concept_code:
+    string;
 
-  score: number;
+  score:
+    number;
 }
 
 
 export interface TutorMessageResponse {
-  session_id: string;
+  session_id:
+    string;
 
-  student_message: string;
+  student_message:
+    string;
 
   detected_intent:
     TutorIntent;
@@ -171,18 +231,26 @@ export interface TutorMessageResponse {
   science_validation:
     ScienceValidation | null;
 
-  rag_used: boolean;
+  english_validation:
+    EnglishValidation | null;
+
+  rag_used:
+    boolean;
 
   rag_sources:
     RAGSource[];
 
-  reply: string;
+  reply:
+    string;
 
-  provider: string;
+  provider:
+    string;
 
-  model: string;
+  model:
+    string;
 
-  latency_ms: number;
+  latency_ms:
+    number;
 }
 
 
@@ -192,11 +260,14 @@ export type ChatRole =
 
 
 export interface ChatMessage {
-  id: string;
+  id:
+    string;
 
-  role: ChatRole;
+  role:
+    ChatRole;
 
-  text: string;
+  text:
+    string;
 
   validation?:
     MathValidation | null;
@@ -204,13 +275,18 @@ export interface ChatMessage {
   scienceValidation?:
     ScienceValidation | null;
 
+  englishValidation?:
+    EnglishValidation | null;
+
   decision?:
     TutorDecision | null;
 
-  ragUsed?: boolean;
+  ragUsed?:
+    boolean;
 
   ragSources?:
     RAGSource[];
 
-  createdAt: number;
+  createdAt:
+    number;
 }

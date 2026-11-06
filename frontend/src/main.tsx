@@ -20,6 +20,7 @@ import "./styles/assessment.css";
 import "./styles/progress.css";
 import "./styles/science.css";
 import "./styles/adaptive.css";
+import "./styles/profile.css";
 
 
 createRoot(
@@ -28,8 +29,12 @@ createRoot(
   )!,
 ).render(
   <StrictMode>
+
     <BrowserRouter>
+
       <App />
+
     </BrowserRouter>
+
   </StrictMode>,
 );

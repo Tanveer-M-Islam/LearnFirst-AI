@@ -6,6 +6,7 @@ from app.science.models import (
 from app.science.question_bank import (
     ScienceIdea,
     ScienceMisconception,
+    ScienceQuestion,
     find_science_question,
 )
 from app.schemas.enums import (
@@ -73,6 +74,31 @@ class ScienceUnderstandingEvaluator:
                 )
             )
 
+
+        return (
+            cls.evaluate_question(
+                concept_code=(
+                    concept_code
+                ),
+
+                question=(
+                    question
+                ),
+
+                student_message=(
+                    student_message
+                ),
+            )
+        )
+
+
+    @classmethod
+    def evaluate_question(
+        cls,
+        concept_code: str,
+        question: ScienceQuestion,
+        student_message: str,
+    ) -> ScienceValidationResult:
 
         normalized = (
             cls._normalize(
@@ -145,7 +171,9 @@ class ScienceUnderstandingEvaluator:
                     / total_ideas
                     * 100
                 )
+
                 if total_ideas
+
                 else 0.0,
 
                 1,
@@ -159,10 +187,6 @@ class ScienceUnderstandingEvaluator:
             )
         )
 
-
-        # ==================================
-        # Status
-        # ==================================
 
         if (
             matched_count == 0
@@ -209,8 +233,7 @@ class ScienceUnderstandingEvaluator:
 
 
         elif (
-            matched_count
-            > 0
+            matched_count > 0
         ):
 
             status = (
@@ -288,10 +311,6 @@ class ScienceUnderstandingEvaluator:
         )
 
 
-    # ======================================================
-    # Natural-language answer detection
-    # ======================================================
-
     @classmethod
     def looks_like_answer(
         cls,
@@ -320,14 +339,9 @@ class ScienceUnderstandingEvaluator:
             return False
 
 
-        words = (
-            normalized.split()
-        )
-
-
         if (
             len(
-                words
+                normalized.split()
             )
             < 2
         ):
@@ -368,10 +382,6 @@ class ScienceUnderstandingEvaluator:
 
         return True
 
-
-    # ======================================================
-    # Idea matching
-    # ======================================================
 
     @classmethod
     def _idea_matches(
@@ -424,10 +434,6 @@ class ScienceUnderstandingEvaluator:
 
         return None
 
-
-    # ======================================================
-    # Text helpers
-    # ======================================================
 
     @staticmethod
     def _normalize(
@@ -521,10 +527,6 @@ class ScienceUnderstandingEvaluator:
         )
 
 
-    # ======================================================
-    # Feedback
-    # ======================================================
-
     @staticmethod
     def _feedback_summary(
         status: AttemptStatus,
@@ -561,8 +563,7 @@ class ScienceUnderstandingEvaluator:
                 return (
                     "The explanation contains "
                     "useful ideas, but it also "
-                    "contains a misconception "
-                    "that should be corrected."
+                    "contains a misconception."
                 )
 
 
@@ -570,8 +571,7 @@ class ScienceUnderstandingEvaluator:
                 "The explanation contains "
                 f"{matched_count} of "
                 f"{total_ideas} expected "
-                "concept ideas. More reasoning "
-                "is needed."
+                "concept ideas."
             )
 
 
@@ -588,8 +588,7 @@ class ScienceUnderstandingEvaluator:
                 return (
                     "The explanation currently "
                     "contains a scientific "
-                    "misconception and needs "
-                    "another look."
+                    "misconception."
                 )
 
 

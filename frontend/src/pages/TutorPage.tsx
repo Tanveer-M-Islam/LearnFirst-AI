@@ -741,7 +741,7 @@ export default function TutorPage() {
             className="page-back-button"
             onClick={() =>
               navigate(
-                "/dashboard",
+                "/learn/math",
               )
             }
           >
@@ -749,7 +749,7 @@ export default function TutorPage() {
               size={18}
             />
 
-            Dashboard
+            Math
           </button>
 
 

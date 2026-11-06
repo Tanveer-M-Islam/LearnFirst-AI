@@ -1,6 +1,4 @@
-from sqlalchemy.orm import (
-    Session,
-)
+from sqlalchemy.orm import Session
 
 from app.adaptive.problem_bank import (
     get_adaptive_problem,
@@ -13,6 +11,19 @@ from app.database.repositories.student_attempt_repository import (
 )
 from app.database.repositories.student_repository import (
     StudentRepository,
+)
+from app.english.attempt_service import (
+    EnglishAttemptService,
+)
+from app.english.evaluator import (
+    EnglishEvaluator,
+)
+from app.english.models import (
+    EnglishValidationResult,
+    create_public_english_validation,
+)
+from app.english.question_bank import (
+    get_english_question,
 )
 from app.intent.router import (
     IntentRouter,
@@ -65,6 +76,9 @@ from app.schemas.enums import (
 from app.services.adaptive_learning_service import (
     AdaptiveLearningService,
 )
+from app.services.english_adaptive_learning_service import (
+    EnglishAdaptiveLearningService,
+)
 from app.services.science_adaptive_learning_service import (
     ScienceAdaptiveLearningService,
 )
@@ -93,152 +107,130 @@ class TutorChatService:
     ) -> TutorMessageResponse:
 
         learning_session = (
-            LearningSessionRepository
-            .get_by_id(
+            LearningSessionRepository.get_by_id(
                 db=db,
-
-                session_id=(
-                    session_id
-                ),
+                session_id=session_id,
             )
         )
 
 
         if (
-            learning_session
-            is None
+            learning_session is None
         ):
-
             raise ValueError(
-                "Learning session "
-                "not found."
+                "Learning session not found."
             )
 
 
         student = (
-            StudentRepository
-            .get_by_id(
+            StudentRepository.get_by_id(
                 db=db,
 
                 student_id=(
-                    learning_session
-                    .student_id
+                    learning_session.student_id
                 ),
             )
         )
 
 
         if (
-            student
-            is None
+            student is None
         ):
-
             raise ValueError(
                 "Student not found."
             )
 
 
-        subject = (
-            Subject(
-                learning_session
-                .subject
-            )
+        subject = Subject(
+            learning_session.subject
         )
 
 
-        mode = (
-            LearningMode(
-                learning_session
-                .mode
-            )
+        mode = LearningMode(
+            learning_session.mode
         )
 
 
         intent = (
-            IntentRouter
-            .classify(
+            IntentRouter.classify(
                 student_message
             )
         )
 
 
         # ==================================
-        # Math practice request
+        # New practice request
         # ==================================
 
         if (
-            subject
-            == Subject.MATH
-
-            and mode
-            in {
-                LearningMode.PRACTICE,
-                LearningMode.LEARN,
-            }
-
-            and intent
-            == TutorIntent
-            .PRACTICE_REQUEST
+            intent
+            == TutorIntent.PRACTICE_REQUEST
         ):
 
-            learning_session = (
-                cls
-                ._assign_next_math_problem(
-                    db=db,
+            if (
+                subject == Subject.MATH
 
-                    learning_session=(
-                        learning_session
-                    ),
+                and mode
+                in {
+                    LearningMode.PRACTICE,
+                    LearningMode.LEARN,
+                }
+            ):
+
+                learning_session = (
+                    cls._assign_next_math_problem(
+                        db=db,
+
+                        learning_session=(
+                            learning_session
+                        ),
+                    )
                 )
-            )
+
+
+            elif (
+                subject == Subject.SCIENCE
+            ):
+
+                learning_session = (
+                    cls._assign_next_science_question(
+                        db=db,
+
+                        learning_session=(
+                            learning_session
+                        ),
+                    )
+                )
+
+
+            elif (
+                subject == Subject.ENGLISH
+            ):
+
+                learning_session = (
+                    cls._assign_next_english_question(
+                        db=db,
+
+                        learning_session=(
+                            learning_session
+                        ),
+                    )
+                )
 
 
         # ==================================
-        # Science quiz request
+        # Natural Science response
         # ==================================
 
         if (
-            subject
-            == Subject.SCIENCE
+            subject == Subject.SCIENCE
 
-            and intent
-            == TutorIntent
-            .PRACTICE_REQUEST
-        ):
+            and learning_session.current_problem
 
-            learning_session = (
-                cls
-                ._assign_next_science_question(
-                    db=db,
-
-                    learning_session=(
-                        learning_session
-                    ),
-                )
+            and (
+                intent
+                == TutorIntent.LEARN_CONCEPT
             )
-
-
-        # ==================================
-        # Science natural explanation
-        #
-        # Natural Science answers usually
-        # do not look like Math answers.
-        #
-        # If an active Science question
-        # exists, normal explanatory text
-        # can be treated as an attempt.
-        # ==================================
-
-        if (
-            subject
-            == Subject.SCIENCE
-
-            and learning_session
-            .current_problem
-
-            and intent
-            == TutorIntent
-            .LEARN_CONCEPT
 
             and (
                 ScienceUnderstandingEvaluator
@@ -249,8 +241,37 @@ class TutorChatService:
         ):
 
             intent = (
-                TutorIntent
-                .STUDENT_ATTEMPT
+                TutorIntent.STUDENT_ATTEMPT
+            )
+
+
+        # ==================================
+        # Natural English response
+        #
+        # "goes", "dog", complete sentences,
+        # reading explanations, etc. should
+        # count as attempts.
+        # ==================================
+
+        if (
+            subject == Subject.ENGLISH
+
+            and learning_session.current_problem
+
+            and (
+                intent
+                == TutorIntent.LEARN_CONCEPT
+            )
+
+            and (
+                EnglishEvaluator.looks_like_answer(
+                    student_message
+                )
+            )
+        ):
+
+            intent = (
+                TutorIntent.STUDENT_ATTEMPT
             )
 
 
@@ -270,6 +291,12 @@ class TutorChatService:
         ) = None
 
 
+        english_validation: (
+            EnglishValidationResult
+            | None
+        ) = None
+
+
         attempt_status: (
             AttemptStatus
             | None
@@ -277,32 +304,22 @@ class TutorChatService:
 
 
         hint_level_before = (
-            learning_session
-            .current_hint_level
+            learning_session.current_hint_level
         )
 
 
         if (
-            intent
-            == TutorIntent
-            .STUDENT_ATTEMPT
+            intent == TutorIntent.STUDENT_ATTEMPT
         ):
 
-            # ------------------------------
-            # Math
-            # ------------------------------
-
             if (
-                subject
-                == Subject.MATH
+                subject == Subject.MATH
 
-                and learning_session
-                .current_problem
+                and learning_session.current_problem
             ):
 
                 math_validation = (
-                    MathAttemptService
-                    .analyze(
+                    MathAttemptService.analyze(
                         problem=(
                             learning_session
                             .current_problem
@@ -316,29 +333,20 @@ class TutorChatService:
 
 
                 attempt_status = (
-                    math_validation
-                    .status
+                    math_validation.status
                 )
 
 
-            # ------------------------------
-            # Science
-            # ------------------------------
-
             elif (
-                subject
-                == Subject.SCIENCE
+                subject == Subject.SCIENCE
 
-                and learning_session
-                .current_problem
+                and learning_session.current_problem
 
-                and learning_session
-                .concept_code
+                and learning_session.concept_code
             ):
 
                 science_validation = (
-                    ScienceAttemptService
-                    .analyze(
+                    ScienceAttemptService.analyze(
                         concept_code=(
                             learning_session
                             .concept_code
@@ -357,28 +365,56 @@ class TutorChatService:
 
 
                 attempt_status = (
-                    science_validation
-                    .status
+                    science_validation.status
+                )
+
+
+            elif (
+                subject == Subject.ENGLISH
+
+                and learning_session.current_problem
+
+                and learning_session.concept_code
+            ):
+
+                english_validation = (
+                    EnglishAttemptService.analyze(
+                        concept_code=(
+                            learning_session
+                            .concept_code
+                        ),
+
+                        question_prompt=(
+                            learning_session
+                            .current_problem
+                        ),
+
+                        student_message=(
+                            student_message
+                        ),
+                    )
+                )
+
+
+                attempt_status = (
+                    english_validation.status
                 )
 
 
             else:
 
                 attempt_status = (
-                    AttemptStatus
-                    .UNCLEAR
+                    AttemptStatus.UNCLEAR
                 )
 
 
         # ==================================
-        # Tutor decision
+        # Tutor policy decision
         # ==================================
 
         decision_input = (
             TutorDecisionInput(
-                intent=(
-                    intent
-                ),
+                intent=intent,
 
                 attempt_status=(
                     attempt_status
@@ -387,63 +423,50 @@ class TutorChatService:
         )
 
 
-        gateway = (
-            LLMGateway()
-        )
+        gateway = LLMGateway()
 
 
         decision = (
-            TutorService
-            .make_decision(
+            TutorService.make_decision(
                 db=db,
 
-                session_id=(
-                    session_id
-                ),
+                session_id=session_id,
 
                 decision_input=(
                     decision_input
                 ),
 
                 model_used=(
-                    gateway
-                    .model_name
+                    gateway.model_name
                 ),
             )
         )
 
 
         refreshed_session = (
-            LearningSessionRepository
-            .get_by_id(
+            LearningSessionRepository.get_by_id(
                 db=db,
-
-                session_id=(
-                    session_id
-                ),
+                session_id=session_id,
             )
         )
 
 
         if (
-            refreshed_session
-            is None
+            refreshed_session is None
         ):
 
             raise ValueError(
-                "Learning session "
-                "could not be "
-                "reloaded."
+                "Learning session could "
+                "not be reloaded."
             )
 
 
         # ==================================
-        # Record Math attempt
+        # Record Math
         # ==================================
 
         if (
-            math_validation
-            is not None
+            math_validation is not None
         ):
 
             MathAttemptService.record(
@@ -467,25 +490,12 @@ class TutorChatService:
             )
 
 
-            refreshed_session = (
-                LearningSessionRepository
-                .get_by_id(
-                    db=db,
-
-                    session_id=(
-                        session_id
-                    ),
-                )
-            )
-
-
         # ==================================
-        # Record Science attempt
+        # Record Science
         # ==================================
 
         if (
-            science_validation
-            is not None
+            science_validation is not None
         ):
 
             ScienceAttemptService.record(
@@ -509,62 +519,86 @@ class TutorChatService:
             )
 
 
-            refreshed_session = (
-                LearningSessionRepository
-                .get_by_id(
-                    db=db,
+        # ==================================
+        # Record English
+        # ==================================
 
-                    session_id=(
-                        session_id
-                    ),
-                )
+        if (
+            english_validation is not None
+        ):
+
+            EnglishAttemptService.record(
+                db=db,
+
+                learning_session=(
+                    refreshed_session
+                ),
+
+                student_message=(
+                    student_message
+                ),
+
+                validation=(
+                    english_validation
+                ),
+
+                hint_level_before=(
+                    hint_level_before
+                ),
             )
 
 
+        refreshed_session = (
+            LearningSessionRepository.get_by_id(
+                db=db,
+                session_id=session_id,
+            )
+        )
+
+
         if (
-            refreshed_session
-            is None
+            refreshed_session is None
         ):
 
             raise ValueError(
-                "Learning session "
-                "could not be "
-                "reloaded."
+                "Learning session could "
+                "not be reloaded."
             )
 
 
         # ==================================
-        # Automatic Math next problem
+        # Automatic next Math problem
         # ==================================
 
         next_math_problem = None
 
 
         if (
-            math_validation
-            is not None
+            math_validation is not None
 
-            and math_validation.status
-            == AttemptStatus.CORRECT
-
-            and LearningMode(
-                refreshed_session.mode
+            and (
+                math_validation.status
+                == AttemptStatus.CORRECT
             )
-            in {
-                LearningMode.PRACTICE,
-                LearningMode.LEARN,
-            }
+
+            and (
+                LearningMode(
+                    refreshed_session.mode
+                )
+                in {
+                    LearningMode.PRACTICE,
+                    LearningMode.LEARN,
+                }
+            )
         ):
 
             previous_problem = (
-                refreshed_session
-                .current_problem
+                refreshed_session.current_problem
             )
 
 
             refreshed_session = (
-                cls
-                ._assign_next_math_problem(
+                cls._assign_next_math_problem(
                     db=db,
 
                     learning_session=(
@@ -575,12 +609,13 @@ class TutorChatService:
 
 
             if (
-                refreshed_session
-                .current_problem
+                refreshed_session.current_problem
 
-                and refreshed_session
-                .current_problem
-                != previous_problem
+                and (
+                    refreshed_session
+                    .current_problem
+                    != previous_problem
+                )
             ):
 
                 next_math_problem = (
@@ -590,29 +625,28 @@ class TutorChatService:
 
 
         # ==================================
-        # Automatic Science next question
+        # Automatic next Science question
         # ==================================
 
         next_science_question = None
 
 
         if (
-            science_validation
-            is not None
+            science_validation is not None
 
-            and science_validation.status
-            == AttemptStatus.CORRECT
+            and (
+                science_validation.status
+                == AttemptStatus.CORRECT
+            )
         ):
 
             previous_question = (
-                refreshed_session
-                .current_problem
+                refreshed_session.current_problem
             )
 
 
             refreshed_session = (
-                cls
-                ._assign_next_science_question(
+                cls._assign_next_science_question(
                     db=db,
 
                     learning_session=(
@@ -623,12 +657,13 @@ class TutorChatService:
 
 
             if (
-                refreshed_session
-                .current_problem
+                refreshed_session.current_problem
 
-                and refreshed_session
-                .current_problem
-                != previous_question
+                and (
+                    refreshed_session
+                    .current_problem
+                    != previous_question
+                )
             ):
 
                 next_science_question = (
@@ -638,7 +673,55 @@ class TutorChatService:
 
 
         # ==================================
-        # State
+        # Automatic next English question
+        # ==================================
+
+        next_english_question = None
+
+
+        if (
+            english_validation is not None
+
+            and (
+                english_validation.status
+                == AttemptStatus.CORRECT
+            )
+        ):
+
+            previous_question = (
+                refreshed_session.current_problem
+            )
+
+
+            refreshed_session = (
+                cls._assign_next_english_question(
+                    db=db,
+
+                    learning_session=(
+                        refreshed_session
+                    ),
+                )
+            )
+
+
+            if (
+                refreshed_session.current_problem
+
+                and (
+                    refreshed_session
+                    .current_problem
+                    != previous_question
+                )
+            ):
+
+                next_english_question = (
+                    refreshed_session
+                    .current_problem
+                )
+
+
+        # ==================================
+        # Tutor state
         # ==================================
 
         state = (
@@ -648,8 +731,7 @@ class TutorChatService:
                 ),
 
                 student_id=(
-                    refreshed_session
-                    .student_id
+                    refreshed_session.student_id
                 ),
 
                 age_group=(
@@ -675,23 +757,19 @@ class TutorChatService:
                 ),
 
                 concept_code=(
-                    refreshed_session
-                    .concept_code
+                    refreshed_session.concept_code
                 ),
 
                 current_problem=(
-                    refreshed_session
-                    .current_problem
+                    refreshed_session.current_problem
                 ),
 
                 attempt_count=(
-                    refreshed_session
-                    .attempt_count
+                    refreshed_session.attempt_count
                 ),
 
                 hint_level=(
-                    refreshed_session
-                    .current_hint_level
+                    refreshed_session.current_hint_level
                 ),
 
                 direct_answer_requests=(
@@ -706,24 +784,20 @@ class TutorChatService:
 
                 mastery_state=(
                     MasteryState(
-                        refreshed_session
-                        .mastery_state
+                        refreshed_session.mastery_state
                     )
                 ),
 
                 adaptive_difficulty=(
-                    decision
-                    .adaptive_difficulty
+                    decision.adaptive_difficulty
                 ),
 
                 adaptive_support=(
-                    decision
-                    .adaptive_support
+                    decision.adaptive_support
                 ),
 
                 explanation_depth=(
-                    decision
-                    .explanation_depth
+                    decision.explanation_depth
                 ),
             )
         )
@@ -734,8 +808,7 @@ class TutorChatService:
                 math_validation
             )
 
-            if math_validation
-            is not None
+            if math_validation is not None
 
             else None
         )
@@ -746,64 +819,49 @@ class TutorChatService:
                 science_validation
             )
 
-            if science_validation
-            is not None
+            if science_validation is not None
+
+            else None
+        )
+
+
+        public_english_validation = (
+            create_public_english_validation(
+                english_validation
+            )
+
+            if english_validation is not None
 
             else None
         )
 
 
         # ==================================
-        # Math correct response
+        # Correct Math → next problem
         # ==================================
 
         if (
-            next_math_problem
-            is not None
+            next_math_problem is not None
         ):
 
-            if (
-                state.mode
-                == LearningMode.PRACTICE
-            ):
-
-                reply = (
-                    "Correct — nice work. "
-                    "Let's keep practicing. "
-                    "Try this next problem: "
-                    f"{next_math_problem}. "
-                    "Try it independently first."
-                )
-
-
-            else:
-
-                reply = (
-                    "Correct. Now let's "
-                    "check that the idea "
-                    "is becoming independent. "
-                    "Try this next problem: "
-                    f"{next_math_problem}."
-                )
+            reply = (
+                "Correct. Now try this "
+                "next problem: "
+                f"{next_math_problem}"
+            )
 
 
             return (
                 TutorMessageResponse(
-                    session_id=(
-                        session_id
-                    ),
+                    session_id=session_id,
 
                     student_message=(
                         student_message
                     ),
 
-                    detected_intent=(
-                        intent
-                    ),
+                    detected_intent=intent,
 
-                    decision=(
-                        decision
-                    ),
+                    decision=decision,
 
                     math_validation=(
                         public_math_validation
@@ -811,19 +869,17 @@ class TutorChatService:
 
                     science_validation=None,
 
+                    english_validation=None,
+
                     rag_used=False,
 
                     rag_sources=[],
 
-                    reply=(
-                        reply
-                    ),
+                    reply=reply,
 
                     provider="system",
 
-                    model=(
-                        "adaptive-practice"
-                    ),
+                    model="adaptive-practice",
 
                     latency_ms=0.0,
                 )
@@ -831,24 +887,19 @@ class TutorChatService:
 
 
         # ==================================
-        # Science correct response
+        # Correct Science → next question
         # ==================================
 
         if (
-            next_science_question
-            is not None
+            next_science_question is not None
 
-            and science_validation
-            is not None
+            and science_validation is not None
         ):
 
-            recognized = (
-                ", ".join(
-                    science_validation
-                    .matched_ideas[
-                        :3
-                    ]
-                )
+            recognized = ", ".join(
+                science_validation.matched_ideas[
+                    :3
+                ]
             )
 
 
@@ -862,7 +913,6 @@ class TutorChatService:
                     f"{next_science_question}"
                 )
 
-
             else:
 
                 reply = (
@@ -875,21 +925,15 @@ class TutorChatService:
 
             return (
                 TutorMessageResponse(
-                    session_id=(
-                        session_id
-                    ),
+                    session_id=session_id,
 
                     student_message=(
                         student_message
                     ),
 
-                    detected_intent=(
-                        intent
-                    ),
+                    detected_intent=intent,
 
-                    decision=(
-                        decision
-                    ),
+                    decision=decision,
 
                     math_validation=None,
 
@@ -897,19 +941,17 @@ class TutorChatService:
                         public_science_validation
                     ),
 
+                    english_validation=None,
+
                     rag_used=False,
 
                     rag_sources=[],
 
-                    reply=(
-                        reply
-                    ),
+                    reply=reply,
 
                     provider="system",
 
-                    model=(
-                        "science-rubric"
-                    ),
+                    model="science-rubric",
 
                     latency_ms=0.0,
                 )
@@ -917,46 +959,108 @@ class TutorChatService:
 
 
         # ==================================
-        # Deterministic responses
+        # Correct English → next question
         # ==================================
 
-        deterministic_reply = (
-            cls
-            ._deterministic_response(
-                action=(
-                    decision
-                    .next_action
-                ),
-
-                state=(
-                    state
-                ),
-            )
-        )
-
-
         if (
-            deterministic_reply
-            is not None
+            next_english_question is not None
+
+            and english_validation is not None
         ):
+
+            recognized = ", ".join(
+                english_validation.matched_ideas[
+                    :2
+                ]
+            )
+
+
+            if recognized:
+
+                reply = (
+                    "Good. Your response "
+                    "included "
+                    f"{recognized}. "
+                    "Now try this next "
+                    "English question: "
+                    f"{next_english_question}"
+                )
+
+            else:
+
+                reply = (
+                    "That response is correct. "
+                    "Now try this next "
+                    "English question: "
+                    f"{next_english_question}"
+                )
+
 
             return (
                 TutorMessageResponse(
-                    session_id=(
-                        session_id
-                    ),
+                    session_id=session_id,
 
                     student_message=(
                         student_message
                     ),
 
-                    detected_intent=(
-                        intent
+                    detected_intent=intent,
+
+                    decision=decision,
+
+                    math_validation=None,
+
+                    science_validation=None,
+
+                    english_validation=(
+                        public_english_validation
                     ),
 
-                    decision=(
-                        decision
+                    rag_used=False,
+
+                    rag_sources=[],
+
+                    reply=reply,
+
+                    provider="system",
+
+                    model="english-rubric",
+
+                    latency_ms=0.0,
+                )
+            )
+
+
+        # ==================================
+        # Deterministic system responses
+        # ==================================
+
+        deterministic_reply = (
+            cls._deterministic_response(
+                action=(
+                    decision.next_action
+                ),
+
+                state=state,
+            )
+        )
+
+
+        if (
+            deterministic_reply is not None
+        ):
+
+            return (
+                TutorMessageResponse(
+                    session_id=session_id,
+
+                    student_message=(
+                        student_message
                     ),
+
+                    detected_intent=intent,
+
+                    decision=decision,
 
                     math_validation=(
                         public_math_validation
@@ -964,6 +1068,10 @@ class TutorChatService:
 
                     science_validation=(
                         public_science_validation
+                    ),
+
+                    english_validation=(
+                        public_english_validation
                     ),
 
                     rag_used=False,
@@ -985,6 +1093,11 @@ class TutorChatService:
 
         # ==================================
         # RAG
+        #
+        # Currently used for Science.
+        # English RAG will be a future
+        # extension if we need curriculum
+        # passages/documents.
         # ==================================
 
         rag_context: (
@@ -997,24 +1110,11 @@ class TutorChatService:
             decision.requires_rag
         ):
 
-            rag_service = (
-                RAGService()
-            )
+            rag_service = RAGService()
 
-
-            # ==================================
-            # PHASE 15.1 FIX
-            #
-            # Do NOT send generic messages like
-            # "Give me a hint" directly into
-            # vector search.
-            #
-            # Attach current Science context.
-            # ==================================
 
             rag_query = (
-                RAGQueryBuilder
-                .build(
+                RAGQueryBuilder.build(
                     student_message=(
                         student_message
                     ),
@@ -1039,48 +1139,35 @@ class TutorChatService:
 
 
             rag_context = (
-                rag_service
-                .retrieve(
-                    query=(
-                        rag_query
-                    ),
+                rag_service.retrieve(
+                    query=rag_query,
 
                     subject=(
-                        state
-                        .subject
-                        .value
+                        state.subject.value
                     ),
 
                     concept_code=(
-                        state
-                        .concept_code
+                        state.concept_code
                     ),
                 )
             )
 
 
             if (
-                not rag_context
-                .has_context
+                not rag_context.has_context
             ):
 
                 return (
                     TutorMessageResponse(
-                        session_id=(
-                            session_id
-                        ),
+                        session_id=session_id,
 
                         student_message=(
                             student_message
                         ),
 
-                        detected_intent=(
-                            intent
-                        ),
+                        detected_intent=intent,
 
-                        decision=(
-                            decision
-                        ),
+                        decision=decision,
 
                         math_validation=(
                             public_math_validation
@@ -1088,6 +1175,10 @@ class TutorChatService:
 
                         science_validation=(
                             public_science_validation
+                        ),
+
+                        english_validation=(
+                            public_english_validation
                         ),
 
                         rag_used=False,
@@ -1098,11 +1189,7 @@ class TutorChatService:
                             "I don't have enough "
                             "verified curriculum "
                             "material for this "
-                            "question yet. Let's "
-                            "choose another topic "
-                            "or ask a trusted "
-                            "teacher or learning "
-                            "resource."
+                            "question yet."
                         ),
 
                         provider="system",
@@ -1117,23 +1204,18 @@ class TutorChatService:
 
 
         # ==================================
-        # LLM response
+        # LLM Tutor
         # ==================================
 
         request = (
-            TutorPromptBuilder
-            .build(
+            TutorPromptBuilder.build(
                 student_message=(
                     student_message
                 ),
 
-                state=(
-                    state
-                ),
+                state=state,
 
-                decision=(
-                    decision
-                ),
+                decision=decision,
 
                 math_validation=(
                     math_validation
@@ -1141,6 +1223,10 @@ class TutorChatService:
 
                 science_validation=(
                     science_validation
+                ),
+
+                english_validation=(
+                    english_validation
                 ),
 
                 rag_context=(
@@ -1159,21 +1245,15 @@ class TutorChatService:
 
         return (
             TutorMessageResponse(
-                session_id=(
-                    session_id
-                ),
+                session_id=session_id,
 
                 student_message=(
                     student_message
                 ),
 
-                detected_intent=(
-                    intent
-                ),
+                detected_intent=intent,
 
-                decision=(
-                    decision
-                ),
+                decision=decision,
 
                 math_validation=(
                     public_math_validation
@@ -1183,18 +1263,19 @@ class TutorChatService:
                     public_science_validation
                 ),
 
+                english_validation=(
+                    public_english_validation
+                ),
+
                 rag_used=bool(
                     rag_context
-                    and rag_context
-                    .has_context
+                    and rag_context.has_context
                 ),
 
                 rag_sources=(
-                    rag_context
-                    .public_sources()
+                    rag_context.public_sources()
 
-                    if rag_context
-                    is not None
+                    if rag_context is not None
 
                     else []
                 ),
@@ -1218,9 +1299,9 @@ class TutorChatService:
         )
 
 
-    # ======================================================
-    # Math adaptive problem
-    # ======================================================
+    # ======================================
+    # Math next problem
+    # ======================================
 
     @classmethod
     def _assign_next_math_problem(
@@ -1230,19 +1311,14 @@ class TutorChatService:
     ):
 
         concept_code = (
-            learning_session
-            .concept_code
+            learning_session.concept_code
         )
 
 
         if (
-            concept_code
-            is None
+            concept_code is None
         ):
-
-            return (
-                learning_session
-            )
+            return learning_session
 
 
         difficulty = (
@@ -1253,39 +1329,29 @@ class TutorChatService:
         try:
 
             plan = (
-                AdaptiveLearningService
-                .get_plan(
+                AdaptiveLearningService.get_plan(
                     db=db,
 
                     student_id=(
-                        learning_session
-                        .student_id
+                        learning_session.student_id
                     ),
 
-                    concept_code=(
-                        concept_code
-                    ),
+                    concept_code=concept_code,
                 )
             )
 
 
-            difficulty = (
-                plan.difficulty
-            )
-
+            difficulty = plan.difficulty
 
         except (
             LookupError,
             ValueError,
         ):
 
-            difficulty = (
-                DifficultyLevel.EASY
-            )
+            pass
 
 
         attempts = [
-
             attempt
 
             for attempt
@@ -1295,8 +1361,7 @@ class TutorChatService:
                     db=db,
 
                     student_id=(
-                        learning_session
-                        .student_id
+                        learning_session.student_id
                     ),
                 )
             )
@@ -1308,89 +1373,61 @@ class TutorChatService:
         ]
 
 
-        offset = (
-            len(
-                attempts
-            )
+        offset = len(
+            attempts
         )
 
 
         problem = (
             get_adaptive_problem(
-                concept_code=(
-                    concept_code
-                ),
+                concept_code=concept_code,
 
-                difficulty=(
-                    difficulty
-                ),
+                difficulty=difficulty,
 
-                offset=(
-                    offset
-                ),
+                offset=offset,
             )
         )
 
 
         if (
-            problem
-            is not None
+            problem is not None
 
-            and problem.prompt
-            == learning_session
-            .current_problem
+            and (
+                problem.prompt
+                == learning_session.current_problem
+            )
         ):
 
             problem = (
                 get_adaptive_problem(
-                    concept_code=(
-                        concept_code
-                    ),
+                    concept_code=concept_code,
 
-                    difficulty=(
-                        difficulty
-                    ),
+                    difficulty=difficulty,
 
-                    offset=(
-                        offset + 1
-                    ),
+                    offset=offset + 1,
                 )
             )
 
 
         if (
-            problem
-            is None
+            problem is None
         ):
-
-            return (
-                learning_session
-            )
+            return learning_session
 
 
-        learning_session\
-            .current_problem = (
-                problem.prompt
-            )
+        learning_session.current_problem = (
+            problem.prompt
+        )
 
+        learning_session.current_hint_level = 0
 
-        learning_session\
-            .current_hint_level = 0
+        learning_session.attempt_count = 0
 
-
-        learning_session\
-            .attempt_count = 0
-
-
-        learning_session\
-            .current_misconception = (
-                None
-            )
+        learning_session.current_misconception = None
 
 
         return (
-            LearningSessionRepository
-            .save(
+            LearningSessionRepository.save(
                 db=db,
 
                 learning_session=(
@@ -1400,9 +1437,9 @@ class TutorChatService:
         )
 
 
-    # ======================================================
-    # Science adaptive question
-    # ======================================================
+    # ======================================
+    # Science next question
+    # ======================================
 
     @classmethod
     def _assign_next_science_question(
@@ -1412,19 +1449,14 @@ class TutorChatService:
     ):
 
         concept_code = (
-            learning_session
-            .concept_code
+            learning_session.concept_code
         )
 
 
         if (
-            concept_code
-            is None
+            concept_code is None
         ):
-
-            return (
-                learning_session
-            )
+            return learning_session
 
 
         difficulty = (
@@ -1440,34 +1472,25 @@ class TutorChatService:
                     db=db,
 
                     student_id=(
-                        learning_session
-                        .student_id
+                        learning_session.student_id
                     ),
 
-                    concept_code=(
-                        concept_code
-                    ),
+                    concept_code=concept_code,
                 )
             )
 
 
-            difficulty = (
-                plan.difficulty
-            )
-
+            difficulty = plan.difficulty
 
         except (
             LookupError,
             ValueError,
         ):
 
-            difficulty = (
-                DifficultyLevel.EASY
-            )
+            pass
 
 
         attempts = [
-
             attempt
 
             for attempt
@@ -1477,8 +1500,7 @@ class TutorChatService:
                     db=db,
 
                     student_id=(
-                        learning_session
-                        .student_id
+                        learning_session.student_id
                     ),
                 )
             )
@@ -1490,89 +1512,61 @@ class TutorChatService:
         ]
 
 
-        offset = (
-            len(
-                attempts
-            )
+        offset = len(
+            attempts
         )
 
 
         question = (
             get_science_question(
-                concept_code=(
-                    concept_code
-                ),
+                concept_code=concept_code,
 
-                offset=(
-                    offset
-                ),
+                offset=offset,
 
-                difficulty=(
-                    difficulty
-                ),
+                difficulty=difficulty,
             )
         )
 
 
         if (
-            question
-            is not None
+            question is not None
 
-            and question.prompt
-            == learning_session
-            .current_problem
+            and (
+                question.prompt
+                == learning_session.current_problem
+            )
         ):
 
             question = (
                 get_science_question(
-                    concept_code=(
-                        concept_code
-                    ),
+                    concept_code=concept_code,
 
-                    offset=(
-                        offset + 1
-                    ),
+                    offset=offset + 1,
 
-                    difficulty=(
-                        difficulty
-                    ),
+                    difficulty=difficulty,
                 )
             )
 
 
         if (
-            question
-            is None
+            question is None
         ):
-
-            return (
-                learning_session
-            )
+            return learning_session
 
 
-        learning_session\
-            .current_problem = (
-                question.prompt
-            )
+        learning_session.current_problem = (
+            question.prompt
+        )
 
+        learning_session.current_hint_level = 0
 
-        learning_session\
-            .current_hint_level = 0
+        learning_session.attempt_count = 0
 
-
-        learning_session\
-            .attempt_count = 0
-
-
-        learning_session\
-            .current_misconception = (
-                None
-            )
+        learning_session.current_misconception = None
 
 
         return (
-            LearningSessionRepository
-            .save(
+            LearningSessionRepository.save(
                 db=db,
 
                 learning_session=(
@@ -1582,9 +1576,148 @@ class TutorChatService:
         )
 
 
-    # ======================================================
+    # ======================================
+    # English next question
+    # ======================================
+
+    @classmethod
+    def _assign_next_english_question(
+        cls,
+        db: Session,
+        learning_session,
+    ):
+
+        concept_code = (
+            learning_session.concept_code
+        )
+
+
+        if (
+            concept_code is None
+        ):
+            return learning_session
+
+
+        difficulty = (
+            DifficultyLevel.EASY
+        )
+
+
+        try:
+
+            plan = (
+                EnglishAdaptiveLearningService
+                .get_plan(
+                    db=db,
+
+                    student_id=(
+                        learning_session.student_id
+                    ),
+
+                    concept_code=concept_code,
+                )
+            )
+
+
+            difficulty = plan.difficulty
+
+        except (
+            LookupError,
+            ValueError,
+        ):
+
+            pass
+
+
+        attempts = [
+            attempt
+
+            for attempt
+            in (
+                StudentAttemptRepository
+                .list_by_student(
+                    db=db,
+
+                    student_id=(
+                        learning_session.student_id
+                    ),
+                )
+            )
+
+            if (
+                attempt.problem_ref
+                == concept_code
+            )
+        ]
+
+
+        offset = len(
+            attempts
+        )
+
+
+        question = (
+            get_english_question(
+                concept_code=concept_code,
+
+                offset=offset,
+
+                difficulty=difficulty,
+            )
+        )
+
+
+        if (
+            question is not None
+
+            and (
+                question.prompt
+                == learning_session.current_problem
+            )
+        ):
+
+            question = (
+                get_english_question(
+                    concept_code=concept_code,
+
+                    offset=offset + 1,
+
+                    difficulty=difficulty,
+                )
+            )
+
+
+        if (
+            question is None
+        ):
+            return learning_session
+
+
+        learning_session.current_problem = (
+            question.prompt
+        )
+
+        learning_session.current_hint_level = 0
+
+        learning_session.attempt_count = 0
+
+        learning_session.current_misconception = None
+
+
+        return (
+            LearningSessionRepository.save(
+                db=db,
+
+                learning_session=(
+                    learning_session
+                ),
+            )
+        )
+
+
+    # ======================================
     # Deterministic responses
-    # ======================================================
+    # ======================================
 
     @staticmethod
     def _deterministic_response(
@@ -1594,8 +1727,7 @@ class TutorChatService:
 
         if (
             action
-            == TutorAction
-            .GENERATE_PRACTICE_QUESTION
+            == TutorAction.GENERATE_PRACTICE_QUESTION
 
             and state.current_problem
         ):
@@ -1614,57 +1746,66 @@ class TutorChatService:
                 )
 
 
+            if (
+                state.subject
+                == Subject.ENGLISH
+            ):
+
+                return (
+                    "Here is your English "
+                    "question: "
+                    f"{state.current_problem} "
+                    "Try it independently first."
+                )
+
+
             return (
                 "Here is your practice "
                 "problem: "
                 f"{state.current_problem}. "
                 "Try it first and show "
-                "me your answer or "
-                "next step."
+                "me your answer or next step."
             )
 
 
         if (
             action
-            == TutorAction
-            .REFUSE_POLICY_BYPASS
+            == TutorAction.REFUSE_POLICY_BYPASS
         ):
 
             return (
                 "I can help you work "
-                "through the problem, "
-                "but I won't skip the "
-                "learning steps just "
-                "to reveal the answer."
+                "through the task, but "
+                "I won't skip the learning "
+                "steps just to reveal "
+                "the answer."
             )
 
 
         if (
             action
-            == TutorAction
-            .CLARIFY_TEST_INSTRUCTION
+            == TutorAction.CLARIFY_TEST_INSTRUCTION
         ):
 
             return (
-                "This is Mock Test "
-                "Mode, so I can't give "
-                "hints or solutions "
-                "during the test."
+                "This is Mock Test Mode, "
+                "so I can't give hints "
+                "or solutions during "
+                "the test."
             )
 
 
         if (
             action
-            == TutorAction
-            .ESCALATE_SAFETY
+            == TutorAction.ESCALATE_SAFETY
         ):
 
             return (
                 "I can't handle this "
                 "as a normal learning "
-                "question. Please "
-                "involve a trusted "
-                "adult who can help."
+                "question. Please involve "
+                "a trusted adult who "
+                "can help."
             )
 
 

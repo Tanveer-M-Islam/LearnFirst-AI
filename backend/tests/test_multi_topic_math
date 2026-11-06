@@ -1,0 +1,300 @@
+import pytest
+
+from app.adaptive.problem_bank import (
+    PROBLEM_BANK,
+    get_adaptive_problem,
+)
+from app.assessment.question_bank import (
+    get_assessment_questions,
+)
+from app.math.validator import (
+    MathValidator,
+)
+from app.schemas.enums import (
+    AssessmentType,
+    DifficultyLevel,
+)
+
+
+MATH_CONCEPTS = [
+
+    "MATH_ARITH_BASIC_01",
+
+    "MATH_ARITH_MULTDIV_01",
+
+    "MATH_ARITH_FRAC_01",
+
+    "MATH_ARITH_INT_01",
+
+    "MATH_ARITH_ORDER_01",
+
+    "MATH_PREALG_EXPR_01",
+
+    "MATH_ALG_LINEAR_01",
+
+    "MATH_GRAPH_LINEAR_01",
+]
+
+
+@pytest.mark.parametrize(
+    "concept_code",
+    MATH_CONCEPTS,
+)
+def test_every_math_topic_has_adaptive_bank(
+    concept_code: str,
+):
+
+    assert (
+        concept_code
+        in PROBLEM_BANK
+    )
+
+
+    for difficulty in (
+        DifficultyLevel.EASY,
+
+        DifficultyLevel.MODERATE,
+
+        DifficultyLevel.CHALLENGING,
+    ):
+
+        problems = (
+            PROBLEM_BANK[
+                concept_code
+            ][
+                difficulty
+            ]
+        )
+
+
+        assert (
+            len(
+                problems
+            )
+            >= 3
+        )
+
+
+@pytest.mark.parametrize(
+    "concept_code",
+    MATH_CONCEPTS,
+)
+@pytest.mark.parametrize(
+    "assessment_type",
+    (
+        AssessmentType.DIAGNOSTIC,
+
+        AssessmentType.MASTERY,
+    ),
+)
+def test_every_math_topic_has_assessment(
+    concept_code: str,
+    assessment_type:
+        AssessmentType,
+):
+
+    questions = (
+        get_assessment_questions(
+            concept_code=(
+                concept_code
+            ),
+
+            assessment_type=(
+                assessment_type
+            ),
+        )
+    )
+
+
+    assert (
+        len(
+            questions
+        )
+        == 5
+    )
+
+
+@pytest.mark.parametrize(
+    "concept_code",
+    MATH_CONCEPTS,
+)
+def test_every_adaptive_problem_is_supported(
+    concept_code: str,
+):
+
+    for difficulty in (
+        DifficultyLevel.EASY,
+
+        DifficultyLevel.MODERATE,
+
+        DifficultyLevel.CHALLENGING,
+    ):
+
+        for offset in range(
+            3
+        ):
+
+            problem = (
+                get_adaptive_problem(
+                    concept_code=(
+                        concept_code
+                    ),
+
+                    difficulty=(
+                        difficulty
+                    ),
+
+                    offset=(
+                        offset
+                    ),
+                )
+            )
+
+
+            assert (
+                problem
+                is not None
+            )
+
+
+            result = (
+                MathValidator
+                .validate(
+                    problem=(
+                        problem.prompt
+                    ),
+
+                    student_message=(
+                        "0"
+                    ),
+                )
+            )
+
+
+            assert (
+                result.supported
+                is True
+            )
+
+
+@pytest.mark.parametrize(
+    "concept_code",
+    MATH_CONCEPTS,
+)
+@pytest.mark.parametrize(
+    "assessment_type",
+    (
+        AssessmentType.DIAGNOSTIC,
+
+        AssessmentType.MASTERY,
+    ),
+)
+def test_every_assessment_problem_is_supported(
+    concept_code: str,
+    assessment_type:
+        AssessmentType,
+):
+
+    questions = (
+        get_assessment_questions(
+            concept_code=(
+                concept_code
+            ),
+
+            assessment_type=(
+                assessment_type
+            ),
+        )
+    )
+
+
+    for question in (
+        questions
+    ):
+
+        result = (
+            MathValidator
+            .validate(
+                problem=(
+                    question.prompt
+                ),
+
+                student_message=(
+                    "0"
+                ),
+            )
+        )
+
+
+        assert (
+            result.supported
+            is True
+        )
+
+
+def test_pre_algebra_substitution_correct():
+
+    result = (
+        MathValidator
+        .validate(
+            problem=(
+                "3x + 2 when x = 4"
+            ),
+
+            student_message=(
+                "14"
+            ),
+        )
+    )
+
+
+    assert (
+        result.supported
+        is True
+    )
+
+
+    assert (
+        result.is_correct
+        is True
+    )
+
+
+    assert (
+        result.problem_type.value
+        == "SUBSTITUTION"
+    )
+
+
+def test_linear_graph_value_correct():
+
+    result = (
+        MathValidator
+        .validate(
+            problem=(
+                "y = 2x + 3 when x = 4"
+            ),
+
+            student_message=(
+                "y = 11"
+            ),
+        )
+    )
+
+
+    assert (
+        result.supported
+        is True
+    )
+
+
+    assert (
+        result.is_correct
+        is True
+    )
+
+
+    assert (
+        result.problem_type.value
+        == "SUBSTITUTION"
+    )

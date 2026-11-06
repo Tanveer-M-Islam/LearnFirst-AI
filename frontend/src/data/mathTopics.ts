@@ -1,19 +1,31 @@
 export interface MathTopicDefinition {
-  conceptCode: string;
 
-  title: string;
+  conceptCode:
+    string;
 
-  shortTitle: string;
+  title:
+    string;
 
-  description: string;
+  shortTitle:
+    string;
 
-  sampleProblems: string[];
+  description:
+    string;
 
-  assessmentQuestionLabel: string;
+  recommendedAge:
+    number;
 
-  answerPlaceholder: string;
+  sampleProblems:
+    string[];
 
-  answerHelp: string;
+  assessmentQuestionLabel:
+    string;
+
+  answerPlaceholder:
+    string;
+
+  answerHelp:
+    string;
 }
 
 
@@ -36,14 +48,56 @@ export const MATH_TOPICS:
 
     description:
       (
-        "Practice addition, subtraction, "
-        + "multiplication and division."
+        "Build addition and "
+        + "subtraction confidence."
       ),
 
+    recommendedAge:
+      7,
+
     sampleProblems: [
-      "24 + 18",
-      "56 - 29",
-      "7 * 6",
+      "27 + 16",
+      "42 - 19",
+      "35 + 28",
+    ],
+
+    assessmentQuestionLabel:
+      "Calculate the result",
+
+    answerPlaceholder:
+      "Example: 43",
+
+    answerHelp:
+      (
+        "Enter the final "
+        + "numerical answer."
+      ),
+  },
+
+
+  {
+    conceptCode:
+      "MATH_ARITH_MULTDIV_01",
+
+    title:
+      "Multiplication and Division",
+
+    shortTitle:
+      "Multiply & Divide",
+
+    description:
+      (
+        "Develop multiplication "
+        + "and division fluency."
+      ),
+
+    recommendedAge:
+      8,
+
+    sampleProblems: [
+      "6 * 7",
+      "48 / 6",
+      "9 * 5",
     ],
 
     assessmentQuestionLabel:
@@ -54,8 +108,47 @@ export const MATH_TOPICS:
 
     answerHelp:
       (
-        "Enter the final numerical "
-        + "answer."
+        "Enter the final "
+        + "numerical answer."
+      ),
+  },
+
+
+  {
+    conceptCode:
+      "MATH_ARITH_FRAC_01",
+
+    title:
+      "Fractions",
+
+    shortTitle:
+      "Fractions",
+
+    description:
+      (
+        "Understand and calculate "
+        + "with fractions."
+      ),
+
+    recommendedAge:
+      9,
+
+    sampleProblems: [
+      "1/2 + 1/4",
+      "3/4 - 1/2",
+      "3/5 * 10",
+    ],
+
+    assessmentQuestionLabel:
+      "Calculate the fraction",
+
+    answerPlaceholder:
+      "Example: 3/4",
+
+    answerHelp:
+      (
+        "A fraction or equivalent "
+        + "decimal is accepted."
       ),
   },
 
@@ -73,8 +166,11 @@ export const MATH_TOPICS:
     description:
       (
         "Work with positive and "
-        + "negative whole numbers."
+        + "negative numbers."
       ),
+
+    recommendedAge:
+      10,
 
     sampleProblems: [
       "-8 + 13",
@@ -91,45 +187,7 @@ export const MATH_TOPICS:
     answerHelp:
       (
         "Include the negative sign "
-        + "when the answer is negative."
-      ),
-  },
-
-
-  {
-    conceptCode:
-      "MATH_ARITH_FRAC_01",
-
-    title:
-      "Fractions",
-
-    shortTitle:
-      "Fractions",
-
-    description:
-      (
-        "Practice adding, subtracting, "
-        + "multiplying and dividing "
-        + "fractions."
-      ),
-
-    sampleProblems: [
-      "1/2 + 1/4",
-      "3/4 - 1/2",
-      "3/5 * 10",
-    ],
-
-    assessmentQuestionLabel:
-      "Calculate the fraction",
-
-    answerPlaceholder:
-      "Example: 3/4",
-
-    answerHelp:
-      (
-        "You can enter a fraction "
-        + "such as 3/4 or an "
-        + "equivalent decimal."
+        + "when required."
       ),
   },
 
@@ -142,14 +200,16 @@ export const MATH_TOPICS:
       "Order of Operations",
 
     shortTitle:
-      "Order of Operations",
+      "Operations",
 
     description:
       (
-        "Practice expressions using "
-        + "parentheses and operation "
-        + "priority."
+        "Use the correct order "
+        + "when evaluating expressions."
       ),
+
+    recommendedAge:
+      11,
 
     sampleProblems: [
       "3 + 4 * 2",
@@ -166,8 +226,46 @@ export const MATH_TOPICS:
     answerHelp:
       (
         "Follow the correct order "
-        + "of operations and enter "
-        + "the final value."
+        + "of operations."
+      ),
+  },
+
+
+  {
+    conceptCode:
+      "MATH_PREALG_EXPR_01",
+
+    title:
+      "Pre-Algebra Expressions",
+
+    shortTitle:
+      "Pre-Algebra",
+
+    description:
+      (
+        "Evaluate expressions by "
+        + "substituting values for x."
+      ),
+
+    recommendedAge:
+      12,
+
+    sampleProblems: [
+      "3x + 2 when x = 4",
+      "5x - 7 when x = 3",
+      "2(x + 3) when x = 5",
+    ],
+
+    assessmentQuestionLabel:
+      "Evaluate the expression",
+
+    answerPlaceholder:
+      "Example: 14",
+
+    answerHelp:
+      (
+        "Replace x with the given "
+        + "value and calculate."
       ),
   },
 
@@ -180,14 +278,16 @@ export const MATH_TOPICS:
       "Linear Equations",
 
     shortTitle:
-      "Linear Equations",
+      "Equations",
 
     description:
       (
-        "Solve equations with one "
-        + "unknown variable step "
-        + "by step."
+        "Solve one-variable "
+        + "linear equations."
       ),
+
+    recommendedAge:
+      13,
 
     sampleProblems: [
       "3x + 6 = 18",
@@ -203,8 +303,48 @@ export const MATH_TOPICS:
 
     answerHelp:
       (
-        "Write your final answer "
-        + "clearly, for example x = 4."
+        "Write the final value "
+        + "of x clearly."
+      ),
+  },
+
+
+  {
+    conceptCode:
+      "MATH_GRAPH_LINEAR_01",
+
+    title:
+      "Linear Graphs",
+
+    shortTitle:
+      "Linear Graphs",
+
+    description:
+      (
+        "Connect x-values and "
+        + "y-values in linear "
+        + "relationships."
+      ),
+
+    recommendedAge:
+      14,
+
+    sampleProblems: [
+      "y = 2x + 3 when x = 4",
+      "y = 3x - 2 when x = 5",
+      "y = -x + 6 when x = 2",
+    ],
+
+    assessmentQuestionLabel:
+      "Find the y-value",
+
+    answerPlaceholder:
+      "Example: 11",
+
+    answerHelp:
+      (
+        "Substitute the given x-value "
+        + "into the linear rule."
       ),
   },
 ];
@@ -217,15 +357,40 @@ export function getMathTopic(
 
   return (
     MATH_TOPICS.find(
-      (topic) =>
+      (
+        topic,
+      ) =>
         topic.conceptCode
         === conceptCode,
     )
 
     ?? MATH_TOPICS.find(
-      (topic) =>
+      (
+        topic,
+      ) =>
         topic.conceptCode
         === DEFAULT_MATH_CONCEPT_CODE,
     )!
+  );
+}
+
+
+export function getRecommendedMathTopicForAge(
+  age:
+    number,
+): MathTopicDefinition {
+
+  return (
+    MATH_TOPICS.find(
+      (
+        topic,
+      ) =>
+        topic.recommendedAge
+        === age,
+    )
+
+    ?? MATH_TOPICS[
+      MATH_TOPICS.length - 1
+    ]
   );
 }
