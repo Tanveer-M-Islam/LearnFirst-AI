@@ -32,14 +32,17 @@
 ========================= */
 
 .math-start-page {
+  width:
+    100%;
+
   max-width:
-    980px;
+    1280px;
 
   margin:
     0 auto;
 
   padding-bottom:
-    40px;
+    48px;
 }
 
 
@@ -206,21 +209,37 @@
 }
 
 
-.learning-mode-grid {
-  display:
-    grid;
+.learning-mode-card {
+  position:
+    relative;
 
-  grid-template-columns:
-    repeat(
-      3,
-      1fr
-    );
+  width:
+    100%;
 
-  gap:
-    14px;
+  min-height:
+    190px;
 
-  margin-bottom:
-    42px;
+  padding:
+    24px;
+
+  text-align:
+    left;
+
+  border:
+    1px solid
+    var(--color-border);
+
+  border-radius:
+    20px;
+
+  background:
+    white;
+
+  color:
+    var(--color-text);
+
+  transition:
+    180ms ease;
 }
 
 
@@ -716,10 +735,10 @@ span {
       0,
       1fr
     )
-    280px;
+    290px;
 
   gap:
-    18px;
+    24px;
 
   align-items:
     start;
@@ -1486,13 +1505,13 @@ button:disabled {
     column;
 
   gap:
-    14px;
+    20px;
 }
 
 
 .tutor-info-card {
   padding:
-    18px;
+    22px;
 }
 
 

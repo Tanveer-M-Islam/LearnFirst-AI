@@ -1,3 +1,4 @@
+
 import logging
 
 from fastapi import (
@@ -14,6 +15,12 @@ from app.schemas.chat import (
     TutorMessageRequest,
     TutorMessageResponse,
 )
+from app.services.chat_history_service import (
+    ChatHistoryService,
+)
+from app.services.chat_history_context import (
+    active_session_context,
+)
 from app.services.telemetry_service import (
     TelemetryService,
 )
@@ -22,42 +29,30 @@ from app.services.tutor_chat_service import (
 )
 
 
-logger = logging.getLogger(
-    __name__
-)
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(
     prefix="/tutor",
-    tags=[
-        "Tutor Chat"
-    ],
+    tags=["Tutor Chat"],
 )
 
 
 @router.post(
     "/sessions/{session_id}/message",
-    response_model=(
-        TutorMessageResponse
-    ),
+    response_model=TutorMessageResponse,
 )
 def send_tutor_message(
     session_id: str,
     data: TutorMessageRequest,
-    db: Session = Depends(
-        get_db
-    ),
+    db: Session = Depends(get_db),
 ):
 
     telemetry_event_id = None
 
-
-    # ----------------------------------
-    # Record when learner responds.
-    #
-    # Telemetry must never prevent
-    # tutoring from functioning.
-    # ----------------------------------
+    # ==================================
+    # Start learning telemetry
+    # ==================================
 
     try:
 
@@ -65,73 +60,58 @@ def send_tutor_message(
             TelemetryService
             .start_student_interaction(
                 db=db,
-
-                session_id=(
-                    session_id
-                ),
-
-                student_message=(
-                    data.message
-                ),
+                session_id=session_id,
+                student_message=data.message,
             )
         )
 
-        telemetry_event_id = (
-            telemetry_event.id
-        )
+        telemetry_event_id = telemetry_event.id
 
     except Exception:
 
         db.rollback()
 
         logger.exception(
-            "Could not start "
-            "learning telemetry."
+            "Could not start learning telemetry."
         )
-
 
     try:
 
-        response = (
-            TutorChatService
-            .process_message(
-                db=db,
+        # ==================================
+        # Set current chat context
+        # ==================================
 
-                session_id=(
-                    session_id
-                ),
-
-                student_message=(
-                    data.message
-                ),
-            )
+        token = active_session_context.set(
+            (db, session_id)
         )
 
+        try:
 
-        # ----------------------------------
+            response = (
+                TutorChatService
+                .process_message(
+                    db=db,
+                    session_id=session_id,
+                    student_message=data.message,
+                )
+            )
+
+        finally:
+
+            active_session_context.reset(token)
+
+        # ==================================
         # Complete telemetry
-        # ----------------------------------
+        # ==================================
 
-        if (
-            telemetry_event_id
-            is not None
-        ):
+        if telemetry_event_id is not None:
 
             try:
 
-                (
-                    TelemetryService
-                    .complete_interaction(
-                        db=db,
-
-                        student_event_id=(
-                            telemetry_event_id
-                        ),
-
-                        response=(
-                            response
-                        ),
-                    )
+                TelemetryService.complete_interaction(
+                    db=db,
+                    student_event_id=telemetry_event_id,
+                    response=response,
                 )
 
             except Exception:
@@ -139,29 +119,32 @@ def send_tutor_message(
                 db.rollback()
 
                 logger.exception(
-                    "Could not complete "
-                    "learning telemetry."
+                    "Could not complete learning telemetry."
                 )
 
+        # ==================================
+        # Save conversation history
+        # ==================================
+
+        ChatHistoryService.save_exchange(
+            db=db,
+            session_id=session_id,
+            student_message=data.message,
+            response=response,
+        )
 
         return response
-
 
     except ValueError as exc:
 
         raise HTTPException(
             status_code=404,
-            detail=str(
-                exc
-            ),
+            detail=str(exc),
         ) from exc
-
 
     except RuntimeError as exc:
 
         raise HTTPException(
             status_code=503,
-            detail=str(
-                exc
-            ),
+            detail=str(exc),
         ) from exc

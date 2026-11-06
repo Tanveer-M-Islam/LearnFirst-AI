@@ -1,3 +1,4 @@
+
 from fastapi import (
     APIRouter,
 )
@@ -25,6 +26,9 @@ from app.api.v1.english_progress import (
 )
 from app.api.v1.health import (
     router as health_router,
+)
+from app.api.v1.history import (
+    router as history_router,
 )
 from app.api.v1.science_adaptive import (
     router as science_adaptive_router,
@@ -80,6 +84,11 @@ api_router.include_router(
 
 
 api_router.include_router(
+    history_router
+)
+
+
+api_router.include_router(
     assessments_router
 )
 
@@ -107,6 +116,11 @@ api_router.include_router(
 api_router.include_router(
     english_adaptive_router
 )
+
+
+# api_router.include_router(
+#     english_adaptive_router
+# ) if False else None
 
 
 api_router.include_router(

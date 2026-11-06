@@ -1,3 +1,4 @@
+
 import {
   ArrowLeft,
   BookOpen,
@@ -29,6 +30,10 @@ import {
   sendTutorMessage,
 } from "../api/tutor";
 
+import {
+  loadSessionChatHistory,
+} from "../utils/chatHistory";
+
 import ChatBubble from "../components/tutor/ChatBubble";
 
 import type {
@@ -42,465 +47,276 @@ import type {
 
 
 function createId(): string {
-
-  if (
-    typeof crypto
-    !== "undefined"
-    && crypto.randomUUID
-  ) {
-
-    return crypto.randomUUID();
-  }
-
-
-  return (
-    `${Date.now()}-${Math.random()}`
-  );
+  return crypto.randomUUID();
 }
 
 
 function englishStatusLabel(
-  validation:
-    EnglishValidation,
+  validation: EnglishValidation,
 ): string {
-
-  switch (
-    validation.status
-  ) {
-
+  switch (validation.status) {
     case "CORRECT":
-
       return "Correct";
-
-
     case "PARTIALLY_CORRECT":
-
       return "Almost there";
-
-
     case "INCORRECT":
-
       return "Needs another try";
-
-
     default:
-
       return "Needs clarification";
   }
 }
 
 
+function initialEnglishMessage(
+  session: LearningSession,
+): string {
+  if (session.current_problem) {
+    return (
+      "Here is your English task: "
+      + session.current_problem
+      + ". Try it yourself first. "
+      + "I will guide you if needed."
+    );
+  }
+
+  return (
+    "Let's work on "
+    + (session.topic ?? "English")
+    + ". Tell me what you already understand."
+  );
+}
+
+
 export default function EnglishTutorPage() {
 
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
 
-
-  const {
-    sessionId,
-  } = useParams<{
+  const { sessionId } = useParams<{
     sessionId: string;
   }>();
 
+  const [session, setSession] =
+    useState<LearningSession | null>(null);
 
-  const [
-    session,
-    setSession,
-  ] = useState<
-    LearningSession | null
-  >(null);
+  const [messages, setMessages] =
+    useState<ChatMessage[]>([]);
 
+  const [input, setInput] = useState("");
 
-  const [
-    messages,
-    setMessages,
-  ] = useState<
-    ChatMessage[]
-  >([]);
+  const [loading, setLoading] = useState(false);
 
+  const [pageLoading, setPageLoading] = useState(true);
 
-  const [
-    input,
-    setInput,
-  ] = useState("");
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const endRef = useRef<HTMLDivElement | null>(null);
 
 
-  const [
-    loading,
-    setLoading,
-  ] = useState(
-    false,
-  );
+  // ==================================
+  // Load session and saved history
+  // ==================================
 
+  useEffect(() => {
+    let mounted = true;
 
-  const [
-    pageLoading,
-    setPageLoading,
-  ] = useState(
-    true,
-  );
+    if (!sessionId) {
+      setError("English session not found.");
+      setPageLoading(false);
+      return;
+    }
 
-
-  const [
-    error,
-    setError,
-  ] = useState<
-    string | null
-  >(null);
-
-
-  const endRef =
-    useRef<
-      HTMLDivElement | null
-    >(null);
-
-
-  useEffect(
-    () => {
-
-      if (
-        !sessionId
-      ) {
-
-        setError(
-          "English session not found.",
-        );
-
-        setPageLoading(
-          false,
-        );
-
-        return;
-      }
-
-
-      const loadSession =
-        async () => {
-
-          try {
-
-            const data =
-              await getLearningSession(
-                sessionId,
-              );
-
-
-            setSession(
-              data,
-            );
-
-
-            setMessages([
-              {
-                id:
-                  createId(),
-
-                role:
-                  "tutor",
-
-                text:
-                  data.current_problem
-
-                    ? (
-                      "Here is your English "
-                      + "task: "
-                      + data.current_problem
-                      + ". Try it yourself first. "
-                      + "I will guide you if needed."
-                    )
-
-                    : (
-                      "Let's work on "
-                      + (
-                        data.topic
-                        ?? "English"
-                      )
-                      + ". Tell me what you "
-                      + "already understand."
-                    ),
-
-                createdAt:
-                  Date.now(),
-              },
-            ]);
-
-
-          } catch (err) {
-
-            setError(
-              err instanceof Error
-                ? err.message
-                : (
-                  "Could not load the "
-                  + "English session."
-                ),
-            );
-
-
-          } finally {
-
-            setPageLoading(
-              false,
-            );
-          }
-        };
-
-
-      void loadSession();
-
-    },
-    [
-      sessionId,
-    ],
-  );
-
-
-  useEffect(
-    () => {
-
-      endRef.current
-        ?.scrollIntoView({
-          behavior:
-            "smooth",
-        });
-
-    },
-    [
-      messages,
-      loading,
-    ],
-  );
-
-
-  const refreshSession =
-    async () => {
-
-      if (
-        !sessionId
-      ) {
-
-        return;
-      }
-
-
+    async function loadSession() {
       try {
+        const data =
+          await getLearningSession(sessionId!);
 
-        const updated =
-          await getLearningSession(
-            sessionId,
+        const savedMessages =
+          await loadSessionChatHistory(
+            sessionId!,
+            data.student_id,
           );
 
+        if (!mounted) return;
 
-        setSession(
-          updated,
-        );
+        setSession(data);
 
-
-      } catch {
-
-        // Optional UI refresh only.
-      }
-    };
-
-
-  const sendMessage =
-    async (
-      override?: string,
-    ) => {
-
-      if (
-        !sessionId
-        || loading
-      ) {
-
-        return;
-      }
-
-
-      const message =
-        (
-          override
-          ?? input
-        ).trim();
-
-
-      if (
-        !message
-      ) {
-
-        return;
-      }
-
-
-      setMessages(
-        (
-          current,
-        ) => [
-
-          ...current,
-
-          {
-            id:
-              createId(),
-
-            role:
-              "student",
-
-            text:
-              message,
-
-            createdAt:
-              Date.now(),
-          },
-        ],
-      );
-
-
-      setInput("");
-
-      setLoading(
-        true,
-      );
-
-      setError(
-        null,
-      );
-
-
-      try {
-
-        const response =
-          await sendTutorMessage(
-            sessionId,
-            message,
-          );
-
-
-        setMessages(
-          (
-            current,
-          ) => [
-
-            ...current,
-
+        if (savedMessages.length > 0) {
+          setMessages(savedMessages);
+        } else {
+          setMessages([
             {
-              id:
-                createId(),
-
-              role:
-                "tutor",
-
-              text:
-                response.reply,
-
-              englishValidation:
-                response
-                  .english_validation,
-
-              decision:
-                response.decision,
-
-              createdAt:
-                Date.now(),
+              id: createId(),
+              role: "tutor",
+              text: initialEnglishMessage(data),
+              createdAt: Date.now(),
             },
-          ],
-        );
-
-
-        await refreshSession();
-
+          ]);
+        }
 
       } catch (err) {
-
-        setError(
-          err instanceof Error
-            ? err.message
-            : (
-              "LearnFirst could not "
-              + "respond."
-            ),
-        );
-
+        if (mounted) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Could not load the English session."
+          );
+        }
 
       } finally {
-
-        setLoading(
-          false,
-        );
+        if (mounted) {
+          setPageLoading(false);
+        }
       }
+    }
+
+    void loadSession();
+
+    return () => {
+      mounted = false;
     };
 
-
-  const handleSubmit = (
-    event:
-      FormEvent<HTMLFormElement>,
-  ) => {
-
-    event.preventDefault();
-
-    void sendMessage();
-  };
+  }, [sessionId]);
 
 
-  if (
-    pageLoading
+  // ==================================
+  // Auto-scroll to latest message
+  // ==================================
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages, loading]);
+
+
+  // ==================================
+  // Refresh session
+  // ==================================
+
+  async function refreshSession() {
+    if (!sessionId) return;
+
+    try {
+      const updated =
+        await getLearningSession(sessionId);
+
+      setSession(updated);
+    } catch {
+      // Optional refresh.
+    }
+  }
+
+
+  // ==================================
+  // Send message
+  // ==================================
+
+  async function sendMessage(
+    override?: string,
   ) {
+    if (!sessionId || loading) return;
 
+    const message = (override ?? input).trim();
+
+    if (!message) return;
+
+    const studentMessage: ChatMessage = {
+      id: createId(),
+      role: "student",
+      text: message,
+      createdAt: Date.now(),
+    };
+
+    setMessages((current) => [
+      ...current,
+      studentMessage,
+    ]);
+
+    setInput("");
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response =
+        await sendTutorMessage(sessionId, message);
+
+      const tutorMessage: ChatMessage = {
+        id: createId(),
+        role: "tutor",
+        text: response.reply,
+        englishValidation:
+          response.english_validation,
+        decision: response.decision,
+        createdAt: Date.now(),
+      };
+
+      setMessages((current) => [
+        ...current,
+        tutorMessage,
+      ]);
+
+      await refreshSession();
+
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "LearnFirst could not respond."
+      );
+
+    } finally {
+      setLoading(false);
+    }
+  }
+
+
+  function handleSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+    void sendMessage();
+  }
+
+
+  // ==================================
+  // Loading and error states
+  // ==================================
+
+  if (pageLoading) {
     return (
-
       <div className="science-page-loading">
-
-        <BrainCircuit
-          size={32}
-        />
-
+        <BrainCircuit size={32} />
         <strong>
           Preparing English...
         </strong>
-
       </div>
     );
   }
 
-
-  if (
-    !session
-    || !sessionId
-  ) {
-
+  if (!session || !sessionId) {
     return (
-
       <div className="science-error surface-card">
-
         <p>
-          {
-            error
-            ?? "English session not found."
-          }
+          {error ?? "English session not found."}
         </p>
-
 
         <button
           type="button"
           className="primary-button"
-
-          onClick={() =>
-            navigate(
-              "/learn/english",
-            )
-          }
+          onClick={() => navigate("/learn/english")}
         >
           Choose another topic
         </button>
-
       </div>
     );
   }
 
 
   return (
-
     <div className="science-tutor-page">
+
+      {/* Header */}
 
       <header className="science-tutor-header">
 
@@ -509,56 +325,30 @@ export default function EnglishTutorPage() {
           <button
             type="button"
             className="page-back-button"
-
-            onClick={() =>
-              navigate(
-                "/learn/english",
-              )
-            }
+            onClick={() => navigate("/learn/english")}
           >
-
-            <ArrowLeft
-              size={18}
-            />
-
+            <ArrowLeft size={18} />
             English
-
           </button>
-
 
           <div className="science-tutor-title">
 
             <div>
-
-              <BookOpen
-                size={26}
-              />
-
+              <BookOpen size={26} />
             </div>
 
-
             <section>
-
-              <span>
-                English Tutor
-              </span>
-
-
-              <h1>
-                {
-                  session.topic
-                  ?? "English"
-                }
-              </h1>
-
+              <span>English Tutor</span>
+              <h1>{session.topic ?? "English"}</h1>
             </section>
 
           </div>
-
         </div>
 
       </header>
 
+
+      {/* Workspace */}
 
       <div className="science-workspace">
 
@@ -566,116 +356,75 @@ export default function EnglishTutorPage() {
 
           <div className="science-chat-intro">
 
-            <Sparkles
-              size={18}
-            />
-
+            <Sparkles size={18} />
 
             <div>
-
               <strong>
                 Think, write, improve
               </strong>
 
-
               <span>
-                LearnFirst checks your
-                response using controlled
-                English evaluation rules.
+                LearnFirst checks your response
+                using controlled English evaluation rules.
               </span>
-
             </div>
 
           </div>
 
 
+          {/* Saved and live messages */}
+
           <div className="science-chat-window">
 
-            {messages.map(
-              (
-                message,
-              ) => (
+            {messages.map((message) => (
+              <div key={message.id}>
 
-                <div
-                  key={
-                    message.id
-                  }
-                >
-
-                  <ChatBubble
-                    message={
-                      message
-                    }
-                  />
+                <ChatBubble message={message} />
 
 
-                  {(
-                    message.role
-                    === "tutor"
+                {/* English validation feedback */}
 
-                    && message
-                      .englishValidation
-                  ) && (
+                {message.role === "tutor"
+                  && message.englishValidation
+                  && (
 
                     <div className="rag-grounding-note">
 
-                      <BrainCircuit
-                        size={15}
-                      />
-
+                      <BrainCircuit size={15} />
 
                       <div>
 
                         <strong>
-                          {
-                            englishStatusLabel(
-                              message
-                                .englishValidation,
-                            )
-                          }
+                          {englishStatusLabel(
+                            message.englishValidation
+                          )}
                         </strong>
-
 
                         <span>
                           {
-                            message
-                              .englishValidation
+                            message.englishValidation
                               .feedback_summary
                           }
                         </span>
 
-
-                        {message
-                          .englishValidation
-                          .rule_feedback
-                          .length
-                          > 0
+                        {message.englishValidation
+                          .rule_feedback.length > 0
                           && (
-
-                          <span>
-                            {
-                              message
-                                .englishValidation
-                                .rule_feedback[0]
-                            }
-                          </span>
-
-                        )}
-
+                            <span>
+                              {
+                                message.englishValidation
+                                  .rule_feedback[0]
+                              }
+                            </span>
+                          )}
 
                         <span>
-
-                          Score:
-                          {" "}
-
+                          Score:{" "}
                           {
-                            message
-                              .englishValidation
+                            message.englishValidation
                               .score_percent
                           }
-
                           %
-
                         </span>
 
                       </div>
@@ -684,186 +433,114 @@ export default function EnglishTutorPage() {
 
                   )}
 
-                </div>
-              ),
-            )}
+              </div>
+            ))}
 
+
+            {/* Thinking indicator */}
 
             {loading && (
-
               <div className="science-thinking">
 
-                <BrainCircuit
-                  size={18}
-                />
-
+                <BrainCircuit size={18} />
 
                 <div>
-
                   <strong>
                     Checking your response...
                   </strong>
 
-
                   <span>
-                    LearnFirst is checking
-                    meaning, grammar, or
-                    sentence rules for this task.
+                    LearnFirst is checking meaning,
+                    grammar, or sentence rules for
+                    this task.
                   </span>
-
                 </div>
 
               </div>
-
             )}
 
-
-            <div
-              ref={
-                endRef
-              }
-            />
+            <div ref={endRef} />
 
           </div>
 
 
-          {error && (
+          {/* Error */}
 
+          {error && (
             <div className="chat-error">
               {error}
             </div>
-
           )}
 
+
+          {/* Quick actions */}
 
           <div className="science-quick-actions">
 
             <button
               type="button"
-
-              disabled={
-                loading
-              }
-
+              disabled={loading}
               onClick={() =>
-                void sendMessage(
-                  "Explain this simply.",
-                )
+                void sendMessage("Explain this simply.")
               }
             >
-
-              <BookOpen
-                size={16}
-              />
-
+              <BookOpen size={16} />
               Explain
-
             </button>
-
 
             <button
               type="button"
-
-              disabled={
-                loading
-              }
-
+              disabled={loading}
               onClick={() =>
-                void sendMessage(
-                  "Can you give me a hint?",
-                )
+                void sendMessage("Can you give me a hint?")
               }
             >
-
-              <Lightbulb
-                size={16}
-              />
-
+              <Lightbulb size={16} />
               Hint
-
             </button>
-
 
             <button
               type="button"
-
-              disabled={
-                loading
-              }
-
+              disabled={loading}
               onClick={() =>
-                void sendMessage(
-                  "Give me a practice question.",
-                )
+                void sendMessage("Give me a practice question.")
               }
             >
-
-              <Sparkles
-                size={16}
-              />
-
+              <Sparkles size={16} />
               Practice
-
             </button>
 
           </div>
 
 
+          {/* Composer */}
+
           <form
             className="science-composer"
-
-            onSubmit={
-              handleSubmit
-            }
+            onSubmit={handleSubmit}
           >
 
             <textarea
-              value={
-                input
-              }
-
+              value={input}
               rows={2}
-
-              disabled={
-                loading
-              }
-
+              disabled={loading}
               maxLength={4000}
-
               placeholder={
-                session
-                  .current_problem
-
+                session.current_problem
                   ? "Write your answer..."
-
                   : "Ask an English question..."
               }
-
               onChange={(event) =>
-                setInput(
-                  event.target.value,
-                )
+                setInput(event.target.value)
               }
             />
 
-
             <button
               type="submit"
-
-              disabled={
-                loading
-                || !input.trim()
-              }
-
-              aria-label={
-                "Send English message"
-              }
+              disabled={loading || !input.trim()}
+              aria-label="Send English message"
             >
-
-              <Send
-                size={19}
-              />
-
+              <Send size={19} />
             </button>
 
           </form>
@@ -871,7 +548,11 @@ export default function EnglishTutorPage() {
         </section>
 
 
+        {/* Side panel */}
+
         <aside className="science-side-panel">
+
+          {/* Current task */}
 
           <div className="surface-card science-side-card">
 
@@ -879,53 +560,48 @@ export default function EnglishTutorPage() {
               Current task
             </span>
 
-
             <h3>
-              {
-                session.current_problem
+              {session.current_problem
                 ?? session.topic
-                ?? "English"
-              }
+                ?? "English"}
             </h3>
-
 
             <p>
               Try independently first.
-              LearnFirst increases support
-              only when your learning
-              evidence shows you need it.
+              LearnFirst increases support only
+              when your learning evidence
+              shows you need it.
             </p>
 
           </div>
 
 
+          {/* Evaluation information */}
+
           <div className="surface-card science-side-card">
 
-            <BrainCircuit
-              size={24}
-            />
-
+            <BrainCircuit size={24} />
 
             <span className="small-label">
               Structured evaluation
             </span>
 
-
             <h3>
               Controlled checking
             </h3>
 
-
             <p>
-              Vocabulary, grammar, sentence,
-              and reading tasks are evaluated
-              with the English question bank
-              and structured rules before
-              tutoring feedback is produced.
+              Vocabulary, grammar, sentence, and
+              reading tasks are evaluated with
+              the English question bank and
+              structured rules before tutoring
+              feedback is produced.
             </p>
 
           </div>
 
+
+          {/* Lesson progress */}
 
           <div className="surface-card science-side-card session-progress-card">
 
@@ -933,54 +609,28 @@ export default function EnglishTutorPage() {
               This lesson
             </span>
 
-
             <div className="lesson-stat">
 
-              <CheckCircle2
-                size={18}
-              />
-
+              <CheckCircle2 size={18} />
 
               <div>
-
                 <strong>
-                  {
-                    session
-                      .attempt_count
-                  }
+                  {session.attempt_count}
                 </strong>
-
-
-                <span>
-                  Attempts
-                </span>
-
+                <span>Attempts</span>
               </div>
 
             </div>
 
-
             <div className="lesson-stat">
 
-              <CircleHelp
-                size={18}
-              />
-
+              <CircleHelp size={18} />
 
               <div>
-
                 <strong>
-                  {
-                    session
-                      .direct_answer_requests
-                  }
+                  {session.direct_answer_requests}
                 </strong>
-
-
-                <span>
-                  Answer requests
-                </span>
-
+                <span>Answer requests</span>
               </div>
 
             </div>

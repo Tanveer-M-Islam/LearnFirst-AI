@@ -1,3 +1,4 @@
+
 import {
   ArrowLeft,
   BrainCircuit,
@@ -30,6 +31,10 @@ import {
   sendTutorMessage,
 } from "../api/tutor";
 
+import {
+  loadSessionChatHistory,
+} from "../utils/chatHistory";
+
 import ChatBubble from "../components/tutor/ChatBubble";
 
 import type {
@@ -43,700 +48,376 @@ import type {
 
 
 function createId(): string {
-
-  if (
-    typeof crypto
-    !== "undefined"
-    && crypto.randomUUID
-  ) {
-
-    return crypto.randomUUID();
-  }
-
-
-  return (
-    `${Date.now()}-${Math.random()}`
-  );
+  return crypto.randomUUID();
 }
 
 
 function scienceStatusLabel(
-  validation:
-    ScienceValidation,
+  validation: ScienceValidation,
 ): string {
-
-  switch (
-    validation.status
-  ) {
-
+  switch (validation.status) {
     case "CORRECT":
-
       return "Strong explanation";
-
-
     case "PARTIALLY_CORRECT":
-
       return "Partly there";
-
-
     case "INCORRECT":
-
       return "Needs another look";
-
-
     default:
-
       return "Explain a little more";
   }
 }
 
 
+function initialScienceMessage(
+  session: LearningSession,
+): string {
+  if (session.current_problem) {
+    return (
+      "Here is your Science question: "
+      + session.current_problem
+      + ". Explain what you understand "
+      + "in your own words."
+    );
+  }
+
+  return (
+    "Let's explore "
+    + (session.topic ?? "Science")
+    + ". Tell me one thing you already know about it."
+  );
+}
+
+
 export default function ScienceTutorPage() {
 
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
 
-
-  const {
-    sessionId,
-  } = useParams<{
+  const { sessionId } = useParams<{
     sessionId: string;
   }>();
 
+  const [session, setSession] =
+    useState<LearningSession | null>(null);
 
-  const [
-    session,
-    setSession,
-  ] = useState<
-    LearningSession | null
-  >(null);
+  const [messages, setMessages] =
+    useState<ChatMessage[]>([]);
 
+  const [input, setInput] = useState("");
 
-  const [
-    messages,
-    setMessages,
-  ] = useState<
-    ChatMessage[]
-  >([]);
+  const [loading, setLoading] = useState(false);
 
+  const [pageLoading, setPageLoading] = useState(true);
 
-  const [
-    input,
-    setInput,
-  ] = useState("");
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const endRef = useRef<HTMLDivElement | null>(null);
 
 
-  const [
-    loading,
-    setLoading,
-  ] = useState(
-    false,
-  );
+  // ==================================
+  // Restore session and conversation
+  // ==================================
 
+  useEffect(() => {
+    let mounted = true;
 
-  const [
-    pageLoading,
-    setPageLoading,
-  ] = useState(
-    true,
-  );
+    if (!sessionId) {
+      setError("Science session not found.");
+      setPageLoading(false);
+      return;
+    }
 
-
-  const [
-    error,
-    setError,
-  ] = useState<
-    string | null
-  >(null);
-
-
-  const endRef =
-    useRef<
-      HTMLDivElement | null
-    >(null);
-
-
-  useEffect(
-    () => {
-
-      if (
-        !sessionId
-      ) {
-
-        setError(
-          "Science session not found.",
-        );
-
-        setPageLoading(
-          false,
-        );
-
-        return;
-      }
-
-
-      const loadSession =
-        async () => {
-
-          try {
-
-            const data =
-              await getLearningSession(
-                sessionId,
-              );
-
-
-            setSession(
-              data,
-            );
-
-
-            setMessages([
-              {
-                id:
-                  createId(),
-
-                role:
-                  "tutor",
-
-                text:
-                  data.current_problem
-
-                    ? (
-                      "Here is your Science "
-                      + "question: "
-                      + data.current_problem
-                      + ". Explain what you "
-                      + "understand in your "
-                      + "own words."
-                    )
-
-                    : (
-                      "Let's explore "
-                      + (
-                        data.topic
-                        ?? "Science"
-                      )
-                      + ". Tell me one thing "
-                      + "you already know about it."
-                    ),
-
-                createdAt:
-                  Date.now(),
-              },
-            ]);
-
-
-          } catch (err) {
-
-            setError(
-              err instanceof Error
-                ? err.message
-                : (
-                  "Could not load the "
-                  + "Science session."
-                ),
-            );
-
-
-          } finally {
-
-            setPageLoading(
-              false,
-            );
-          }
-        };
-
-
-      void loadSession();
-
-    },
-    [
-      sessionId,
-    ],
-  );
-
-
-  useEffect(
-    () => {
-
-      endRef.current
-        ?.scrollIntoView({
-          behavior:
-            "smooth",
-        });
-
-    },
-    [
-      messages,
-      loading,
-    ],
-  );
-
-
-  const refreshSession =
-    async () => {
-
-      if (
-        !sessionId
-      ) {
-
-        return;
-      }
-
-
+    async function loadSession() {
       try {
+        const data =
+          await getLearningSession(sessionId!);
 
-        const updated =
-          await getLearningSession(
-            sessionId,
+        const savedMessages =
+          await loadSessionChatHistory(
+            sessionId!,
+            data.student_id,
           );
 
+        if (!mounted) return;
 
-        setSession(
-          updated,
-        );
+        setSession(data);
 
-
-      } catch {
-
-        // Optional UI refresh only.
-      }
-    };
-
-
-  const sendMessage =
-    async (
-      override?: string,
-    ) => {
-
-      if (
-        !sessionId
-        || loading
-      ) {
-
-        return;
-      }
-
-
-      const message =
-        (
-          override
-          ?? input
-        ).trim();
-
-
-      if (
-        !message
-      ) {
-
-        return;
-      }
-
-
-      setMessages(
-        (
-          current,
-        ) => [
-
-          ...current,
-
-          {
-            id:
-              createId(),
-
-            role:
-              "student",
-
-            text:
-              message,
-
-            createdAt:
-              Date.now(),
-          },
-        ],
-      );
-
-
-      setInput("");
-
-      setLoading(
-        true,
-      );
-
-      setError(
-        null,
-      );
-
-
-      try {
-
-        const response =
-          await sendTutorMessage(
-            sessionId,
-            message,
-          );
-
-
-        setMessages(
-          (
-            current,
-          ) => [
-
-            ...current,
-
+        if (savedMessages.length > 0) {
+          setMessages(savedMessages);
+        } else {
+          setMessages([
             {
-              id:
-                createId(),
-
-              role:
-                "tutor",
-
-              text:
-                response.reply,
-
-              decision:
-                response.decision,
-
-              scienceValidation:
-                response
-                  .science_validation,
-
-              ragUsed:
-                response.rag_used,
-
-              ragSources:
-                response.rag_sources,
-
-              createdAt:
-                Date.now(),
+              id: createId(),
+              role: "tutor",
+              text: initialScienceMessage(data),
+              createdAt: Date.now(),
             },
-          ],
-        );
-
-
-        await refreshSession();
-
+          ]);
+        }
 
       } catch (err) {
-
-        setError(
-          err instanceof Error
-            ? err.message
-            : (
-              "LearnFirst could not "
-              + "respond."
-            ),
-        );
-
+        if (mounted) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Could not load the Science session."
+          );
+        }
 
       } finally {
-
-        setLoading(
-          false,
-        );
+        if (mounted) {
+          setPageLoading(false);
+        }
       }
+    }
+
+    void loadSession();
+
+    return () => {
+      mounted = false;
     };
 
-
-  const handleSubmit = (
-    event:
-      FormEvent<HTMLFormElement>,
-  ) => {
-
-    event.preventDefault();
-
-    void sendMessage();
-  };
+  }, [sessionId]);
 
 
-  if (
-    pageLoading
+  // ==================================
+  // Scroll to newest message
+  // ==================================
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages, loading]);
+
+
+  // ==================================
+  // Refresh learning state
+  // ==================================
+
+  async function refreshSession() {
+    if (!sessionId) return;
+
+    try {
+      const updated =
+        await getLearningSession(sessionId);
+
+      setSession(updated);
+    } catch {
+      // Keep the existing state.
+    }
+  }
+
+
+  // ==================================
+  // Tutor conversation
+  // ==================================
+
+  async function sendMessage(
+    override?: string,
   ) {
+    if (!sessionId || loading) return;
 
+    const message = (override ?? input).trim();
+
+    if (!message) return;
+
+    const studentMessage: ChatMessage = {
+      id: createId(),
+      role: "student",
+      text: message,
+      createdAt: Date.now(),
+    };
+
+    setMessages((current) => [
+      ...current,
+      studentMessage,
+    ]);
+
+    setInput("");
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response =
+        await sendTutorMessage(sessionId, message);
+
+      const tutorMessage: ChatMessage = {
+        id: createId(),
+        role: "tutor",
+        text: response.reply,
+        decision: response.decision,
+        scienceValidation:
+          response.science_validation,
+        ragUsed: response.rag_used,
+        ragSources: response.rag_sources,
+        createdAt: Date.now(),
+      };
+
+      setMessages((current) => [
+        ...current,
+        tutorMessage,
+      ]);
+
+      await refreshSession();
+
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "LearnFirst could not respond."
+      );
+
+    } finally {
+      setLoading(false);
+    }
+  }
+
+
+  function handleSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+    void sendMessage();
+  }
+
+
+  // ==================================
+  // Loading and error states
+  // ==================================
+
+  if (pageLoading) {
     return (
-
       <div className="science-page-loading">
-
-        <BrainCircuit
-          size={33}
-        />
-
+        <BrainCircuit size={33} />
         <strong>
           Preparing your Science lesson...
         </strong>
-
       </div>
     );
   }
 
-
-  if (
-    !session
-    || !sessionId
-  ) {
-
+  if (!session || !sessionId) {
     return (
-
       <div className="science-error surface-card">
-
         <p>
-          {
-            error
-            ?? "Science session not found."
-          }
+          {error ?? "Science session not found."}
         </p>
-
 
         <button
           type="button"
           className="primary-button"
-
-          onClick={() =>
-            navigate(
-              "/learn/science",
-            )
-          }
+          onClick={() => navigate("/learn/science")}
         >
           Choose another topic
         </button>
-
       </div>
     );
   }
 
 
   return (
-
     <div className="science-tutor-page">
+
+      {/* Header */}
 
       <header className="science-tutor-header">
 
         <div>
-
           <button
             type="button"
             className="page-back-button"
-
-            onClick={() =>
-              navigate(
-                "/learn/science",
-              )
-            }
+            onClick={() => navigate("/learn/science")}
           >
-
-            <ArrowLeft
-              size={18}
-            />
-
+            <ArrowLeft size={18} />
             Science
-
           </button>
-
 
           <div className="science-tutor-title">
 
             <div>
-
-              <FlaskConical
-                size={26}
-              />
-
+              <FlaskConical size={26} />
             </div>
 
-
             <section>
-
-              <span>
-                Science Tutor
-              </span>
-
-
-              <h1>
-                {
-                  session.topic
-                  ?? "Science"
-                }
-              </h1>
-
+              <span>Science Tutor</span>
+              <h1>{session.topic ?? "Science"}</h1>
             </section>
 
           </div>
-
         </div>
 
-
         <div className="grounded-badge">
-
-          <ShieldCheck
-            size={17}
-          />
-
+          <ShieldCheck size={17} />
           Curriculum grounded
-
         </div>
 
       </header>
 
+
+      {/* Workspace */}
 
       <div className="science-workspace">
 
         <section className="science-chat-card surface-card">
 
           <div className="science-chat-intro">
-
-            <Sparkles
-              size={18}
-            />
-
+            <Sparkles size={18} />
 
             <div>
-
               <strong>
                 Explore, think, explain
               </strong>
 
-
               <span>
-                Explain ideas in your own
-                words. LearnFirst checks
-                conceptual understanding.
+                Explain ideas in your own words.
+                LearnFirst checks conceptual understanding.
               </span>
-
             </div>
-
           </div>
 
 
+          {/* Saved and live messages */}
+
           <div className="science-chat-window">
 
-            {messages.map(
-              (
-                message,
-              ) => (
+            {messages.map((message) => (
+              <div key={message.id}>
 
-                <div
-                  key={
-                    message.id
-                  }
-                >
-
-                  <ChatBubble
-                    message={
-                      message
-                    }
-                  />
+                <ChatBubble message={message} />
 
 
-                  {(
-                    message.role
-                    === "tutor"
+                {/* Science understanding feedback */}
 
-                    && message
-                      .scienceValidation
-                  ) && (
+                {message.role === "tutor"
+                  && message.scienceValidation
+                  && (
 
                     <div className="rag-grounding-note">
 
-                      <BrainCircuit
-                        size={15}
-                      />
-
+                      <BrainCircuit size={15} />
 
                       <div>
-
                         <strong>
-                          {
-                            scienceStatusLabel(
-                              message
-                                .scienceValidation,
-                            )
-                          }
+                          {scienceStatusLabel(
+                            message.scienceValidation
+                          )}
                         </strong>
-
 
                         <span>
                           {
-                            message
-                              .scienceValidation
+                            message.scienceValidation
                               .feedback_summary
                           }
                         </span>
 
-
-                        {message
-                          .scienceValidation
-                          .matched_ideas
-                          .length
-                          > 0
-                          && (
-
-                          <span>
-
-                            Recognized ideas:
-                            {" "}
-
-                            {
-                              message
-                                .scienceValidation
-                                .matched_ideas
-                                .join(
-                                  ", ",
-                                )
-                            }
-
-                          </span>
-
-                        )}
-
-                      </div>
-
-                    </div>
-
-                  )}
-
-
-                  {(
-                    message.role
-                    === "tutor"
-
-                    && message
-                      .ragUsed
-                  ) && (
-
-                    <div className="rag-grounding-note">
-
-                      <ShieldCheck
-                        size={15}
-                      />
-
-
-                      <div>
-
-                        <strong>
-                          Grounded in curriculum
-                        </strong>
-
-
-                        {message
-                          .ragSources
-                          ?.map(
-                            (
-                              source,
-                            ) => (
-
-                              <span
-                                key={
-                                  source
-                                    .source_id
-                                }
-                              >
-                                {
-                                  source.title
-                                }
-                              </span>
-
-                            ),
+                        {message.scienceValidation
+                          .matched_ideas.length > 0 && (
+                            <span>
+                              Recognized ideas:{" "}
+                              {message.scienceValidation
+                                .matched_ideas.join(", ")}
+                            </span>
                           )}
 
                       </div>
@@ -745,191 +426,140 @@ export default function ScienceTutorPage() {
 
                   )}
 
-                </div>
-              ),
-            )}
 
+                {/* RAG grounding citations */}
+
+                {message.role === "tutor"
+                  && message.ragUsed
+                  && (
+
+                    <div className="rag-grounding-note">
+
+                      <ShieldCheck size={15} />
+
+                      <div>
+                        <strong>
+                          Grounded in curriculum
+                        </strong>
+
+                        {message.ragSources?.map((source) => (
+                          <span key={source.source_id}>
+                            {source.title}
+                          </span>
+                        ))}
+                      </div>
+
+                    </div>
+
+                  )}
+
+              </div>
+            ))}
+
+
+            {/* Thinking indicator */}
 
             {loading && (
-
               <div className="science-thinking">
 
-                <BrainCircuit
-                  size={18}
-                />
-
+                <BrainCircuit size={18} />
 
                 <div>
-
                   <strong>
                     Thinking about your response...
                   </strong>
-
 
                   <span>
                     LearnFirst is checking your
                     understanding and evidence.
                   </span>
-
                 </div>
 
               </div>
-
             )}
 
-
-            <div
-              ref={
-                endRef
-              }
-            />
+            <div ref={endRef} />
 
           </div>
 
 
-          {error && (
+          {/* Error */}
 
+          {error && (
             <div className="chat-error">
               {error}
             </div>
-
           )}
 
+
+          {/* Quick actions */}
 
           <div className="science-quick-actions">
 
             <button
               type="button"
-
-              disabled={
-                loading
-              }
-
+              disabled={loading}
               onClick={() =>
-                void sendMessage(
-                  "Explain this simply.",
-                )
+                void sendMessage("Explain this simply.")
               }
             >
-
-              <FlaskConical
-                size={16}
-              />
-
+              <FlaskConical size={16} />
               Explain
-
             </button>
-
 
             <button
               type="button"
-
-              disabled={
-                loading
-              }
-
+              disabled={loading}
               onClick={() =>
-                void sendMessage(
-                  "Can you give me a hint?",
-                )
+                void sendMessage("Can you give me a hint?")
               }
             >
-
-              <Lightbulb
-                size={16}
-              />
-
+              <Lightbulb size={16} />
               Hint
-
             </button>
-
 
             <button
               type="button"
-
-              disabled={
-                loading
-              }
-
+              disabled={loading}
               onClick={() =>
-                void sendMessage(
-                  "Give me a practice question.",
-                )
+                void sendMessage("Give me a practice question.")
               }
             >
-
-              <Sparkles
-                size={16}
-              />
-
+              <Sparkles size={16} />
               Practice
-
             </button>
 
           </div>
 
 
+          {/* Composer */}
+
           <form
             className="science-composer"
-
-            onSubmit={
-              handleSubmit
-            }
+            onSubmit={handleSubmit}
           >
 
             <textarea
-              value={
-                input
-              }
-
-              disabled={
-                loading
-              }
-
+              value={input}
+              disabled={loading}
               rows={2}
-
               maxLength={4000}
-
               placeholder={
-                session
-                  .current_problem
-
-                  ? (
-                    "Explain your answer "
-                    + "in your own words..."
-                  )
-
-                  : (
-                    "Ask about the topic "
-                    + "or explain what you know..."
-                  )
+                session.current_problem
+                  ? "Explain your answer in your own words..."
+                  : "Ask about the topic or explain what you know..."
               }
-
               onChange={(event) =>
-                setInput(
-                  event.target.value,
-                )
+                setInput(event.target.value)
               }
             />
 
-
             <button
               type="submit"
-
-              disabled={
-                loading
-                || !input.trim()
-              }
-
-              aria-label={
-                "Send Science message"
-              }
+              disabled={loading || !input.trim()}
+              aria-label="Send Science message"
             >
-
-              <Send
-                size={19}
-              />
-
+              <Send size={19} />
             </button>
 
           </form>
@@ -937,79 +567,55 @@ export default function ScienceTutorPage() {
         </section>
 
 
+        {/* Side panel */}
+
         <aside className="science-side-panel">
 
           <div className="surface-card science-side-card">
 
             <span className="small-label">
-
-              {
-                session
-                  .current_problem
-
-                  ? "Current question"
-
-                  : "Current topic"
-              }
-
+              {session.current_problem
+                ? "Current question"
+                : "Current topic"}
             </span>
 
-
             <h3>
-              {
-                session.current_problem
+              {session.current_problem
                 ?? session.topic
-                ?? "Science"
-              }
+                ?? "Science"}
             </h3>
 
-
             <p>
-              {
-                session.current_problem
-
-                  ? (
-                    "Explain what you "
-                    + "understand in your "
-                    + "own words."
-                  )
-
-                  : (
-                    "Learn the concept and "
-                    + "ask for practice when "
-                    + "you are ready."
-                  )
-              }
+              {session.current_problem
+                ? "Explain what you understand in your own words."
+                : "Learn the concept and ask for practice when you are ready."}
             </p>
 
           </div>
 
 
+          {/* Curriculum grounding */}
+
           <div className="surface-card science-side-card grounded-side-card">
 
-            <ShieldCheck
-              size={24}
-            />
-
+            <ShieldCheck size={24} />
 
             <span className="small-label">
               Trusted learning
             </span>
 
-
-            <h3>
-              Grounded feedback
-            </h3>
-
+            <h3>Grounded feedback</h3>
 
             <p>
-              Science factual teaching uses
-              trusted curriculum context rather
-              than unsupported claims.
+              Science factual teaching uses trusted
+              curriculum context rather than
+              unsupported claims.
             </p>
 
           </div>
 
+
+          {/* Lesson progress */}
 
           <div className="surface-card science-side-card session-progress-card">
 
@@ -1017,56 +623,24 @@ export default function ScienceTutorPage() {
               This lesson
             </span>
 
-
             <div className="lesson-stat">
-
-              <CheckCircle2
-                size={18}
-              />
-
+              <CheckCircle2 size={18} />
 
               <div>
-
-                <strong>
-                  {
-                    session
-                      .attempt_count
-                  }
-                </strong>
-
-
-                <span>
-                  Attempts
-                </span>
-
+                <strong>{session.attempt_count}</strong>
+                <span>Attempts</span>
               </div>
-
             </div>
 
-
             <div className="lesson-stat">
-
-              <CircleHelp
-                size={18}
-              />
-
+              <CircleHelp size={18} />
 
               <div>
-
                 <strong>
-                  {
-                    session
-                      .direct_answer_requests
-                  }
+                  {session.direct_answer_requests}
                 </strong>
-
-
-                <span>
-                  Answer requests
-                </span>
-
+                <span>Answer requests</span>
               </div>
-
             </div>
 
           </div>

@@ -480,10 +480,10 @@ span {
       0,
       1fr
     )
-    275px;
+    290px;
 
   gap:
-    17px;
+    24px;
 }
 
 
@@ -869,13 +869,13 @@ button:disabled {
     column;
 
   gap:
-    13px;
+    20px;
 }
 
 
 .science-side-card {
   padding:
-    18px;
+    22px;
 }
 
 

@@ -24,6 +24,9 @@ from app.database.models.tutor_decision import (
     TutorDecision,
 )
 
+from app.database.models.chat_message import TutorChatMessage
+
+
 
 __all__ = [
     "AssessmentAnswer",

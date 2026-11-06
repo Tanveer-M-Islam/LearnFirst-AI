@@ -1,3 +1,4 @@
+
 import {
   StrictMode,
 } from "react";
@@ -21,20 +22,15 @@ import "./styles/progress.css";
 import "./styles/science.css";
 import "./styles/adaptive.css";
 import "./styles/profile.css";
+import "./styles/history.css";
 
 
 createRoot(
-  document.getElementById(
-    "root",
-  )!,
+  document.getElementById("root")!,
 ).render(
   <StrictMode>
-
     <BrowserRouter>
-
       <App />
-
     </BrowserRouter>
-
   </StrictMode>,
 );
