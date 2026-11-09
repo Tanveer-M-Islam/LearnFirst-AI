@@ -9,6 +9,7 @@ import AppShell from "./components/layout/AppShell";
 
 import AssessmentPage from "./pages/AssessmentPage";
 import DashboardPage from "./pages/DashboardPage";
+import EnglishAssessmentPage from "./pages/EnglishAssessmentPage";
 import EnglishProgressPage from "./pages/EnglishProgressPage";
 import EnglishStartPage from "./pages/EnglishStartPage";
 import EnglishTutorPage from "./pages/EnglishTutorPage";
@@ -49,7 +50,7 @@ export default function App() {
   return (
     <Routes>
 
-      {/* Public routes */}
+      {/* Public */}
 
       <Route
         path="/"
@@ -67,7 +68,7 @@ export default function App() {
       />
 
 
-      {/* Protected application routes */}
+      {/* Student application */}
 
       <Route element={<AppShell />}>
 
@@ -135,6 +136,11 @@ export default function App() {
           element={<EnglishTutorPage />}
         />
 
+        <Route
+          path="/assessments/english/:assessmentType"
+          element={<EnglishAssessmentPage />}
+        />
+
 
         {/* Practice */}
 
@@ -144,7 +150,7 @@ export default function App() {
         />
 
 
-        {/* Learning progress */}
+        {/* Progress */}
 
         <Route
           path="/progress"
@@ -167,7 +173,7 @@ export default function App() {
         />
 
 
-        {/* Phase E: Conversation history */}
+        {/* Conversation History */}
 
         <Route
           path="/history"
@@ -176,8 +182,6 @@ export default function App() {
 
       </Route>
 
-
-      {/* Fallback */}
 
       <Route
         path="*"

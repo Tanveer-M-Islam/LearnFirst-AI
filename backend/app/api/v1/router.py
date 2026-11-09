@@ -50,6 +50,11 @@ from app.api.v1.tutor import (
 )
 
 
+from app.api.v1.english_assessments import (
+    router as english_assessments_router,
+)
+
+
 api_router = APIRouter()
 
 
@@ -130,4 +135,9 @@ api_router.include_router(
 
 api_router.include_router(
     telemetry_router
+)
+
+
+api_router.include_router(
+    english_assessments_router
 )
