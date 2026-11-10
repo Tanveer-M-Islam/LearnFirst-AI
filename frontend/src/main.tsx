@@ -1,15 +1,7 @@
 
-import {
-  StrictMode,
-} from "react";
-
-import {
-  createRoot,
-} from "react-dom/client";
-
-import {
-  BrowserRouter,
-} from "react-router";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router";
 
 import App from "./App";
 
@@ -24,16 +16,17 @@ import "./styles/adaptive.css";
 import "./styles/profile.css";
 import "./styles/history.css";
 
-// Shared Math, Science and English layout
+// Includes Math, Science, and English layout styles
 import "./styles/learn-page-alignment.css";
 
-
 createRoot(
-  document.getElementById("root")!,
+  document.getElementById("root")!
 ).render(
   <StrictMode>
     <BrowserRouter>
       <App />
     </BrowserRouter>
-  </StrictMode>,
+  </StrictMode>
 );
+
+import "./styles/subject-start-consistency.css";
