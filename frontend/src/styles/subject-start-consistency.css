@@ -1,0 +1,1044 @@
+
+/* ==========================================
+   LearnFirst AI
+   Shared Science and English Learn Page CSS
+   ========================================== */
+
+.lf-subject-start {
+  --lf-accent: var(--color-green);
+  --lf-accent-soft: var(--color-green-soft);
+  font-size: 1rem;
+}
+
+.lf-subject-start[data-subject="ENGLISH"] {
+  --lf-accent: var(--color-green);
+  --lf-accent-soft: var(--color-green-soft);
+}
+
+/* Hero */
+
+.lf-learn-hero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin: 28px 0 38px;
+}
+
+.lf-hero-icon {
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  background: var(--lf-accent-soft);
+  color: var(--lf-accent);
+}
+
+.lf-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--lf-accent);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.lf-learn-hero h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: -0.04em;
+  line-height: 1.12;
+  margin: 8px 0;
+}
+
+.lf-learn-hero p {
+  max-width: 740px;
+  margin: 0;
+  font-size: 0.97rem;
+  line-height: 1.65;
+  color: var(--color-text-muted);
+}
+
+/* Sections */
+
+.lf-section {
+  margin-bottom: 38px;
+}
+
+.lf-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 22px;
+  margin-bottom: 18px;
+}
+
+.lf-section-heading > div {
+  min-width: 0;
+}
+
+.lf-section-heading h2 {
+  margin: 0;
+  font-size: 1.36rem;
+  line-height: 1.3;
+}
+
+.lf-section-heading p {
+  margin: 5px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+/* Right-aligned Refresh */
+
+.lf-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  gap: 8px;
+  white-space: nowrap;
+  padding: 10px 15px;
+}
+
+.lf-refresh:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Curriculum and plan cards */
+
+.lf-panel {
+  overflow: hidden;
+  border: 1px solid #dcd8fa;
+  background: linear-gradient(
+    145deg,
+    #ffffff,
+    #f8f7ff
+  );
+}
+
+.lf-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 26px;
+}
+
+.lf-panel-heading > div:last-child {
+  min-width: 0;
+  flex: 1;
+}
+
+.lf-panel-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 52px;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  color: #ffffff;
+  background: linear-gradient(
+    145deg,
+    var(--color-primary),
+    var(--color-blue)
+  );
+  box-shadow: 0 9px 22px rgba(98, 87, 231, 0.18);
+}
+
+.lf-label {
+  display: block;
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lf-panel-heading h3 {
+  font-size: 1.28rem;
+  line-height: 1.3;
+  margin: 7px 0;
+}
+
+.lf-panel-heading p {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Three-column learner information */
+
+.lf-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.lf-metrics > div {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  column-gap: 10px;
+  row-gap: 4px;
+  align-content: center;
+  min-width: 0;
+  padding: 19px 22px;
+  border-right: 1px solid var(--color-border);
+}
+
+.lf-metrics > div:last-child {
+  border-right: none;
+}
+
+.lf-metrics svg {
+  grid-row: span 2;
+  color: var(--color-primary);
+}
+
+.lf-metrics span {
+  color: var(--color-text-muted);
+  font-size: 0.84rem;
+}
+
+.lf-metrics strong {
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+/* Plan footers */
+
+.lf-panel-footer {
+  padding: 20px 26px;
+  color: var(--color-text-muted);
+  font-size: 0.93rem;
+  line-height: 1.65;
+}
+
+.lf-plan-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.lf-plan-footer p {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.lf-plan-footer button {
+  flex: 0 0 auto;
+}
+
+/* First Question / Next Learning Question */
+
+.lf-question-card {
+  margin: 18px 24px 4px;
+  padding: 18px 20px;
+  width: auto;
+  border: 1px solid #dedbf7;
+  border-radius: 15px;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.lf-question-card p {
+  margin: 7px 0 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+/* Status, errors, loading */
+
+.lf-status {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.lf-error {
+  padding: 13px 16px;
+  border: 1px solid #f2c5c7;
+  border-radius: 12px;
+  background: #fff3f3;
+  color: #8d262f;
+  line-height: 1.5;
+}
+
+.lf-loading {
+  padding: 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Information and assessment links */
+
+.lf-grounding-note,
+.lf-assessment-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px 22px;
+  margin-bottom: 30px;
+}
+
+.lf-grounding-note svg,
+.lf-assessment-link > svg {
+  flex: 0 0 auto;
+  color: var(--color-primary);
+}
+
+.lf-grounding-note > div,
+.lf-assessment-link > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.lf-grounding-note strong,
+.lf-assessment-link strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.lf-grounding-note p,
+.lf-assessment-link p {
+  margin: 5px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.lf-assessment-link {
+  margin-top: 22px;
+}
+
+.lf-assessment-link button {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Mode selection divider */
+
+.lf-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 32px 0 26px;
+  color: var(--color-text-muted);
+  font-size: 0.86rem;
+}
+
+.lf-divider::before,
+.lf-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+/* Numbered section headings */
+
+.lf-number-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.lf-number-heading > span {
+  display: grid;
+  place-items: center;
+  flex: 0 0 31px;
+  height: 31px;
+  border-radius: 10px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-weight: 800;
+}
+
+.lf-number-heading h2 {
+  font-size: 1.32rem;
+  margin: 0;
+}
+
+.lf-number-heading p {
+  margin: 5px 0 0;
+  font-size: 0.94rem;
+  color: var(--color-text-muted);
+}
+
+/* Learning mode cards */
+
+.lf-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.lf-mode-grid .learning-mode-card {
+  min-height: 182px;
+  height: 100%;
+  text-align: left;
+}
+
+.lf-mode-grid .learning-mode-card p {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.lf-mode-grid .learning-mode-card strong {
+  font-size: 1.03rem;
+}
+
+/* Mode-specific content */
+
+.lf-action-card {
+  padding: 25px;
+}
+
+.lf-action-card h3 {
+  margin: 9px 0;
+  font-size: 1.2rem;
+}
+
+.lf-action-card > p {
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.lf-action-card label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.lf-action-card textarea {
+  display: block;
+  width: 100%;
+  padding: 13px 15px;
+  border: 1px solid var(--color-border);
+  border-radius: 13px;
+  background: white;
+  color: var(--color-text);
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.lf-action-card textarea:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.lf-action-question {
+  margin-top: 12px;
+  padding: 16px 18px;
+  border-radius: 13px;
+  border: 1px solid #dedbf7;
+  background: #faf9ff;
+  font-size: 1.04rem;
+  font-weight: 650;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.lf-helper {
+  font-size: 0.88rem !important;
+  color: var(--color-text-muted);
+}
+
+.lf-start-button {
+  margin-top: 10px;
+}
+
+/* Responsive design */
+
+@media (max-width: 900px) {
+  .lf-mode-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lf-mode-grid .learning-mode-card {
+    min-height: 140px;
+  }
+}
+
+@media (max-width: 760px) {
+  .lf-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .lf-metrics > div {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .lf-metrics > div:last-child {
+    border-bottom: none;
+  }
+
+  .lf-plan-footer,
+  .lf-assessment-link {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .lf-plan-footer button,
+  .lf-assessment-link button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .lf-learn-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    margin: 24px 0 28px;
+  }
+
+  .lf-hero-icon {
+    width: 58px;
+    height: 58px;
+    flex-basis: 58px;
+  }
+
+  .lf-learn-hero h1 {
+    font-size: 2rem;
+  }
+
+  .lf-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .lf-refresh {
+    align-self: flex-end;
+  }
+
+  .lf-panel-heading {
+    padding: 19px;
+  }
+
+  .lf-panel-footer {
+    padding: 16px 19px;
+  }
+
+  .lf-question-card {
+    margin: 14px 18px 2px;
+    padding: 16px;
+  }
+
+  .lf-grounding-note {
+    align-items: flex-start;
+  }
+
+  .lf-action-card {
+    padding: 18px;
+  }
+}
+
+/* Math learning-mode grid */
+
+.math-start-page .learning-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.math-start-page .learning-mode-card {
+  min-width: 0;
+  height: 100%;
+}
+
+@media (max-width: 900px) {
+  .math-start-page .learning-mode-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+
+/* ==========================================
+   MATH LEARN PAGE — MATCH SCIENCE & ENGLISH
+   Preserves existing Math logic and colors
+   ========================================== */
+
+.math-start-page {
+  font-size: 1rem;
+  color: var(--color-text);
+}
+
+/* 1. Page hero */
+
+.math-start-page .math-start-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin: 28px 0 38px;
+}
+
+.math-start-page .math-start-icon {
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  background: var(--color-purple-soft);
+  color: var(--color-purple);
+}
+
+.math-start-page .math-start-header > div:last-child {
+  min-width: 0;
+}
+
+.math-start-page .math-start-header span {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0 8px;
+  color: var(--color-purple);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.math-start-page .math-start-header h1 {
+  margin: 0 0 8px;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+}
+
+.math-start-page .math-start-header p {
+  max-width: 740px;
+  margin: 0;
+  font-size: 0.97rem;
+  line-height: 1.65;
+  color: var(--color-text-muted);
+}
+
+/* 2. Section headings and Refresh buttons */
+
+.math-start-page .adaptive-section {
+  margin-bottom: 38px;
+}
+
+.math-start-page .adaptive-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 22px;
+  margin: 0 0 18px;
+}
+
+.math-start-page .adaptive-section-heading > div {
+  min-width: 0;
+}
+
+.math-start-page .adaptive-section-heading h2 {
+  margin: 7px 0 0;
+  font-size: 1.36rem;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+}
+
+.math-start-page .adaptive-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.math-start-page .adaptive-refresh-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  gap: 8px;
+  white-space: nowrap;
+  padding: 10px 15px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--color-text);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.math-start-page
+.adaptive-refresh-button:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.math-start-page .adaptive-refresh-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* 3. Curriculum and adaptive plan cards */
+
+.math-start-page .adaptive-plan-card {
+  overflow: hidden;
+  border: 1px solid #dcd8fa;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #fff, #f8f7ff);
+}
+
+.math-start-page .adaptive-plan-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 26px;
+}
+
+.math-start-page .adaptive-plan-icon {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+}
+
+.math-start-page .adaptive-plan-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.math-start-page .adaptive-plan-copy > span {
+  display: block;
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.math-start-page .adaptive-plan-copy h3 {
+  margin: 7px 0;
+  font-size: 1.28rem;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+}
+
+.math-start-page .adaptive-plan-copy p {
+  max-width: 740px;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* 4. Three-column information grid */
+
+.math-start-page .adaptive-profile-grid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.math-start-page .adaptive-profile-grid > div {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-content: center;
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 4px;
+  padding: 19px 22px;
+  border-right: 1px solid var(--color-border);
+}
+
+.math-start-page
+.adaptive-profile-grid > div:last-child {
+  border-right: none;
+}
+
+.math-start-page .adaptive-profile-grid svg {
+  grid-row: span 2;
+  color: var(--color-primary);
+}
+
+.math-start-page .adaptive-profile-grid span {
+  color: var(--color-text-muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.math-start-page .adaptive-profile-grid strong {
+  font-size: 1rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+/* 5. Recommendations and question cards */
+
+.math-start-page .adaptive-score-note {
+  margin: 16px 24px 0;
+  border-radius: 13px;
+}
+
+.math-start-page .adaptive-next-problem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 18px 24px 4px;
+  padding: 18px 20px;
+  border: 1px solid #dedbf7;
+  border-radius: 15px;
+  background: #fff;
+}
+
+.math-start-page
+.adaptive-next-problem > div:first-child {
+  min-width: 0;
+}
+
+.math-start-page .adaptive-next-problem span {
+  font-size: 0.78rem;
+}
+
+.math-start-page .adaptive-next-problem strong {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 650;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.math-start-page .adaptive-plan-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 26px;
+}
+
+.math-start-page .adaptive-plan-footer p {
+  min-width: 0;
+  flex: 1;
+  max-width: none;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.93rem;
+  line-height: 1.65;
+}
+
+.math-start-page .adaptive-start-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+/* 6. Diagnostic banner */
+
+.math-start-page .diagnostic-banner {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  border-radius: 18px;
+  padding: 20px 22px;
+  margin-bottom: 30px;
+}
+
+.math-start-page
+.diagnostic-banner > div:nth-child(2) {
+  min-width: 0;
+  flex: 1;
+}
+
+.math-start-page .diagnostic-banner strong {
+  font-size: 1rem;
+}
+
+.math-start-page .diagnostic-banner p {
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+/* 7. Learning-mode selection */
+
+.math-start-page .manual-learning-divider {
+  margin: 32px 0 26px;
+  font-size: 0.86rem;
+}
+
+.math-start-page .math-start-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.math-start-page .math-start-section h2 {
+  margin: 0;
+  font-size: 1.32rem;
+  line-height: 1.3;
+}
+
+.math-start-page .math-start-section p {
+  margin: 5px 0 0;
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.math-start-page .learning-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 26px;
+}
+
+.math-start-page .learning-mode-card {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 182px;
+  text-align: left;
+}
+
+.math-start-page .learning-mode-card strong {
+  font-size: 1.03rem;
+}
+
+.math-start-page .learning-mode-card p {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* 8. Learn / Practice / Homework Help content */
+
+.math-start-page .problem-entry-card {
+  padding: 25px;
+  border-radius: 18px;
+}
+
+.math-start-page
+.problem-entry-card .adaptive-next-problem {
+  margin: 12px 0 16px;
+  background: #faf9ff;
+}
+
+.math-start-page .problem-entry-card > p {
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.math-start-page .field-label {
+  font-size: 0.95rem;
+}
+
+.math-start-page .start-learning-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 9. Tablet and mobile */
+
+@media (max-width: 900px) {
+  .math-start-page .learning-mode-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .math-start-page .learning-mode-card {
+    min-height: 140px;
+  }
+}
+
+@media (max-width: 760px) {
+  .math-start-page .adaptive-profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .math-start-page .adaptive-profile-grid > div {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .math-start-page
+  .adaptive-profile-grid > div:last-child {
+    border-bottom: none;
+  }
+
+  .math-start-page .adaptive-plan-footer,
+  .math-start-page .diagnostic-banner {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .math-start-page .adaptive-start-button,
+  .math-start-page .diagnostic-banner button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .math-start-page .math-start-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    margin: 24px 0 28px;
+  }
+
+  .math-start-page .math-start-icon {
+    width: 58px;
+    height: 58px;
+    flex-basis: 58px;
+  }
+
+  .math-start-page .math-start-header h1 {
+    font-size: 2rem;
+  }
+
+  .math-start-page .adaptive-section-heading {
+    align-items: flex-start;
+    gap: 12px;
+    flex-direction: column;
+  }
+
+  .math-start-page .adaptive-refresh-button {
+    align-self: flex-end;
+  }
+
+  .math-start-page .adaptive-plan-main {
+    padding: 19px;
+  }
+
+  .math-start-page .adaptive-next-problem {
+    margin: 14px 18px 2px;
+    padding: 16px;
+  }
+
+  .math-start-page .adaptive-plan-footer {
+    padding: 16px 19px;
+  }
+
+  .math-start-page .problem-entry-card {
+    padding: 18px;
+  }
+}
