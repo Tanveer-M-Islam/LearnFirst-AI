@@ -24,6 +24,9 @@ import "./styles/adaptive.css";
 import "./styles/profile.css";
 import "./styles/history.css";
 
+// Shared Math, Science and English layout
+import "./styles/learn-page-alignment.css";
+
 
 createRoot(
   document.getElementById("root")!,

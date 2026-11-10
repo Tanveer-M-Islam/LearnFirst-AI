@@ -1,0 +1,335 @@
+
+/* ============================================
+   LearnFirst AI — Learn Page Alignment
+
+   Shared layout:
+   Math / Science / English
+
+   Preserves subject-specific colors and
+   existing learning functionality.
+============================================ */
+
+
+/* ============================================
+   1. Common page width
+============================================ */
+
+.math-start-page,
+.science-start-page {
+  width: 100%;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-bottom: 48px;
+}
+
+
+/* ============================================
+   2. Math hero aligned with Science/English
+============================================ */
+
+.math-start-page .math-start-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+
+  margin: 28px 0 38px;
+}
+
+.math-start-page .math-start-icon {
+  width: 72px;
+  height: 72px;
+
+  flex: 0 0 72px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 22px;
+}
+
+.math-start-page .math-start-header span {
+  display: block;
+  margin: 0;
+
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.math-start-page .math-start-header h1 {
+  margin: 7px 0 6px;
+
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.15;
+  letter-spacing: -0.045em;
+}
+
+.math-start-page .math-start-header p {
+  max-width: 620px;
+  margin: 0;
+
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+
+/* ============================================
+   3. Section heading and card spacing
+============================================ */
+
+.math-start-page .adaptive-section {
+  margin-bottom: 36px;
+}
+
+.math-start-page .adaptive-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+
+  margin-bottom: 18px;
+}
+
+.math-start-page .adaptive-section-heading h2 {
+  margin-top: 6px;
+  margin-bottom: 0;
+
+  font-size: 1.3rem;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+}
+
+/* Separate the curriculum card from the
+   personalized plan in Science/English. */
+
+.science-start-page
+  > .adaptive-plan-card
+  + .science-section-heading {
+  margin-top: 38px;
+  margin-bottom: 20px;
+}
+
+
+/* ============================================
+   4. Shared plan card structure
+============================================ */
+
+.math-start-page .adaptive-plan-card,
+.science-start-page .adaptive-plan-card {
+  width: 100%;
+  overflow: hidden;
+}
+
+.math-start-page .adaptive-plan-main,
+.science-start-page .adaptive-plan-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+
+  padding: 26px;
+}
+
+.math-start-page .adaptive-plan-copy,
+.science-start-page .adaptive-plan-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.math-start-page .adaptive-plan-copy h3,
+.science-start-page .adaptive-plan-copy h3 {
+  margin-top: 5px;
+  margin-bottom: 7px;
+
+  font-size: 1.3rem;
+  line-height: 1.3;
+}
+
+.math-start-page .adaptive-plan-copy p,
+.science-start-page .adaptive-plan-copy p {
+  max-width: 700px;
+  line-height: 1.6;
+}
+
+
+/* ============================================
+   5. Important fix — profile grid
+
+   Previously, the children were styled
+   as grid items, but the parent was
+   not actually a CSS grid.
+============================================ */
+
+.math-start-page .adaptive-profile-grid,
+.science-start-page .adaptive-profile-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  align-items: stretch;
+  width: 100%;
+}
+
+.math-start-page .adaptive-profile-grid > div,
+.science-start-page .adaptive-profile-grid > div {
+  display: grid;
+
+  grid-template-columns:
+    auto minmax(0, 1fr);
+
+  align-content: center;
+  align-items: center;
+
+  column-gap: 10px;
+  row-gap: 4px;
+
+  min-width: 0;
+  padding: 18px 22px;
+}
+
+.math-start-page .adaptive-profile-grid > div:last-child,
+.science-start-page .adaptive-profile-grid > div:last-child {
+  border-right: none;
+}
+
+.math-start-page .adaptive-profile-grid svg,
+.science-start-page .adaptive-profile-grid svg {
+  grid-row: span 2;
+  flex-shrink: 0;
+}
+
+.math-start-page .adaptive-profile-grid span,
+.science-start-page .adaptive-profile-grid span {
+  min-width: 0;
+
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.math-start-page .adaptive-profile-grid strong,
+.science-start-page .adaptive-profile-grid strong {
+  min-width: 0;
+
+  font-size: 0.9rem;
+  line-height: 1.45;
+
+  overflow-wrap: anywhere;
+}
+
+
+/* ============================================
+   6. Cards, recommendations and footers
+============================================ */
+
+.math-start-page .adaptive-score-note,
+.science-start-page .adaptive-score-note {
+  gap: 12px;
+}
+
+.math-start-page .adaptive-next-problem,
+.science-start-page .adaptive-next-problem {
+  margin-top: 18px;
+}
+
+.math-start-page .adaptive-plan-footer,
+.science-start-page .adaptive-plan-footer {
+  gap: 18px;
+}
+
+.math-start-page .adaptive-plan-footer p,
+.science-start-page .adaptive-plan-footer p {
+  line-height: 1.6;
+}
+
+
+/* ============================================
+   7. Tablet and mobile
+============================================ */
+
+@media (max-width: 760px) {
+
+  .math-start-page .adaptive-profile-grid,
+  .science-start-page .adaptive-profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .math-start-page .adaptive-profile-grid > div,
+  .science-start-page .adaptive-profile-grid > div {
+    padding: 16px 20px;
+
+    border-right: none;
+    border-bottom:
+      1px solid var(--color-border);
+  }
+
+  .math-start-page .adaptive-profile-grid > div:last-child,
+  .science-start-page .adaptive-profile-grid > div:last-child {
+    border-bottom: none;
+  }
+
+  .math-start-page .adaptive-section-heading {
+    gap: 12px;
+  }
+
+  .science-start-page
+    > .adaptive-plan-card
+    + .science-section-heading {
+    margin-top: 32px;
+  }
+
+}
+
+
+@media (max-width: 560px) {
+
+  .math-start-page .math-start-header {
+    flex-direction: column;
+    align-items: flex-start;
+
+    gap: 15px;
+    margin: 24px 0 30px;
+  }
+
+  .math-start-page .math-start-icon {
+    width: 58px;
+    height: 58px;
+
+    flex-basis: 58px;
+  }
+
+  .math-start-page .math-start-header h1 {
+    font-size: 2rem;
+  }
+
+  .math-start-page .adaptive-section {
+    margin-bottom: 30px;
+  }
+
+  .math-start-page .adaptive-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .math-start-page .adaptive-plan-main,
+  .science-start-page .adaptive-plan-main {
+    padding: 20px;
+  }
+
+  .math-start-page .adaptive-profile-grid > div,
+  .science-start-page .adaptive-profile-grid > div {
+    padding: 15px 18px;
+  }
+
+  .math-start-page .adaptive-plan-footer,
+  .science-start-page .adaptive-plan-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .math-start-page .adaptive-start-button {
+    width: 100%;
+  }
+
+}

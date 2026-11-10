@@ -1,3 +1,4 @@
+
 import {
   ArrowLeft,
   ArrowRight,
@@ -8,26 +9,15 @@ import {
   Target,
 } from "lucide-react";
 
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 
-import {
-  useNavigate,
-} from "react-router";
+import AssessmentProgressCard from "../components/progress/AssessmentProgressCard";
 
-import {
-  getConceptProgress,
-} from "../api/assessments";
+import { getConceptProgress } from "../api/assessments";
+import { getStudentCurriculumPath } from "../api/curriculum";
 
-import {
-  getStudentCurriculumPath,
-} from "../api/curriculum";
-
-import {
-  getMathTopic,
-} from "../data/mathTopics";
+import { getMathTopic } from "../data/mathTopics";
 
 import type {
   ConceptProgress,
@@ -37,637 +27,396 @@ import type {
   StudentCurriculumPath,
 } from "../types/curriculum";
 
-import {
-  getStoredStudent,
-} from "../utils/studentStorage";
+import { getStoredStudent } from "../utils/studentStorage";
 
 
-function readableLabel(
-  value: string,
-): string {
-
+function readableLabel(value: string): string {
   return value
-    .replaceAll(
-      "_",
-      " ",
-    )
+    .replaceAll("_", " ")
     .toLowerCase()
-    .replace(
-      /\b\w/g,
-      (
-        character,
-      ) =>
-        character.toUpperCase(),
-    );
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 
 export default function ProgressPage() {
+  const navigate = useNavigate();
 
-  const navigate =
-    useNavigate();
+  const student = getStoredStudent();
+  const studentId = student?.id;
 
+  const [curriculum, setCurriculum] =
+    useState<StudentCurriculumPath | null>(null);
 
-  const student =
-    getStoredStudent();
+  const [progress, setProgress] =
+    useState<ConceptProgress | null>(null);
 
+  const [loading, setLoading] = useState(true);
 
-  const [
-    curriculum,
-    setCurriculum,
-  ] = useState<
-    StudentCurriculumPath | null
-  >(null);
-
-
-  const [
-    progress,
-    setProgress,
-  ] = useState<
-    ConceptProgress | null
-  >(null);
+  const [error, setError] =
+    useState<string | null>(null);
 
 
-  const [
-    loading,
-    setLoading,
-  ] = useState(
-    true,
-  );
+  // ======================================
+  // Load Math curriculum and progress
+  // ======================================
 
+  useEffect(() => {
+    if (!studentId) {
+      setLoading(false);
+      setError("Please sign in to view your progress.");
+      return;
+    }
 
-  const [
-    error,
-    setError,
-  ] = useState<
-    string | null
-  >(null);
+    let active = true;
 
+    async function loadProgress() {
+      setLoading(true);
+      setError(null);
+      setCurriculum(null);
+      setProgress(null);
 
-  useEffect(
-    () => {
-
-      if (
-        !student?.id
-      ) {
-
-        setLoading(
-          false,
+      try {
+        const path = await getStudentCurriculumPath(
+          studentId!,
+          "MATH",
         );
 
-        return;
-      }
+        if (!active) return;
 
+        setCurriculum(path);
 
-      let cancelled =
-        false;
+        const conceptCode =
+          path.recommended_concept?.concept_code
+          ?? path.target_concept?.concept_code;
 
-
-      const load =
-        async () => {
-
-          setLoading(
-            true,
+        if (conceptCode) {
+          const result = await getConceptProgress(
+            studentId!,
+            conceptCode,
           );
 
-          setError(
-            null,
-          );
-
-
-          try {
-
-            const path =
-              await getStudentCurriculumPath(
-                student.id,
-                "MATH",
-              );
-
-
-            if (
-              cancelled
-            ) {
-
-              return;
-            }
-
-
-            setCurriculum(
-              path,
-            );
-
-
-            const conceptCode =
-              path
-                .recommended_concept
-                ?.concept_code
-
-              ?? path
-                .target_concept
-                ?.concept_code;
-
-
-            if (
-              conceptCode
-            ) {
-
-              const data =
-                await getConceptProgress(
-                  student.id,
-                  conceptCode,
-                );
-
-
-              if (
-                !cancelled
-              ) {
-
-                setProgress(
-                  data,
-                );
-              }
-            }
-
-
-          } catch (err) {
-
-            if (
-              !cancelled
-            ) {
-
-              setError(
-                err instanceof Error
-                  ? err.message
-                  : (
-                    "Could not load "
-                    + "Math progress."
-                  ),
-              );
-            }
-
-
-          } finally {
-
-            if (
-              !cancelled
-            ) {
-
-              setLoading(
-                false,
-              );
-            }
+          if (active) {
+            setProgress(result);
           }
-        };
+        }
+      } catch (err) {
+        if (active) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Could not load Math progress."
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadProgress();
+
+    return () => {
+      active = false;
+    };
+  }, [studentId]);
 
 
-      void load();
-
-
-      return () => {
-
-        cancelled =
-          true;
-      };
-
-    },
-    [
-      student?.id,
-    ],
-  );
-
+  // ======================================
+  // Curriculum information
+  // ======================================
 
   const recommendedConcept =
-    curriculum
-      ?.recommended_concept;
-
+    curriculum?.recommended_concept;
 
   const targetConcept =
-    curriculum
-      ?.target_concept;
-
+    curriculum?.target_concept;
 
   const reviewConcept =
-    curriculum
-      ?.prerequisite_review_concept;
+    curriculum?.prerequisite_review_concept;
+
+  const topic = recommendedConcept
+    ? getMathTopic(recommendedConcept.concept_code)
+    : null;
+
+  const conceptCode =
+    recommendedConcept?.concept_code
+    ?? targetConcept?.concept_code
+    ?? "";
 
 
-  const topic =
-    recommendedConcept
-      ? getMathTopic(
-          recommendedConcept
-            .concept_code,
-        )
-      : null;
+  function openAssessment(
+    type: "diagnostic" | "mastery",
+  ) {
+    if (!conceptCode) return;
+
+    navigate(
+      `/assessments/math/${type}`
+      + `?concept=${encodeURIComponent(conceptCode)}`
+    );
+  }
 
 
   return (
-
     <div className="dashboard-page">
 
       <button
         type="button"
         className="page-back-button"
-
-        onClick={() =>
-          navigate(
-            "/progress",
-          )
-        }
+        onClick={() => navigate("/progress")}
       >
-        <ArrowLeft
-          size={18}
-        />
-
+        <ArrowLeft size={18} />
         Progress
       </button>
 
 
+      {/* Page introduction */}
+
       <section className="dashboard-hero">
-
         <div>
-
           <div className="dashboard-kicker">
-
-            <Calculator
-              size={16}
-            />
-
+            <Calculator size={16} />
             Math progress
-
           </div>
 
-
-          <h1>
-            Your Math learning
-          </h1>
-
+          <h1>Your Math learning</h1>
 
           <p>
-            LearnFirst shows the
-            curriculum that is relevant
-            to your current age and
-            learning evidence.
+            Follow your age-level curriculum,
+            review earlier concepts when needed,
+            and track your learning progress.
           </p>
-
         </div>
-
       </section>
 
 
+      {/* Loading */}
+
       {loading && (
-
         <div className="surface-card progress-loading-card">
-
-          <BrainCircuit
-            size={24}
-          />
-
+          <BrainCircuit size={24} />
           Loading Math progress...
-
         </div>
-
       )}
 
+
+      {/* Error */}
 
       {error && (
-
-        <div className="science-error surface-card">
-
-          <strong>
-            Could not load progress
-          </strong>
-
-          <p>
-            {error}
-          </p>
-
+        <div
+          className="science-error surface-card"
+          role="alert"
+        >
+          <strong>Could not load progress</strong>
+          <p>{error}</p>
         </div>
-
       )}
 
 
-      {(
-        !loading
-        && !error
-        && recommendedConcept
-      ) && (
+      {!loading && !error && !recommendedConcept && (
+        <div className="surface-card progress-detail-card">
+          <h2>No available Math concept</h2>
+          <p>
+            An implemented Math concept could not be
+            selected for your current learning path.
+          </p>
+        </div>
+      )}
 
+
+      {/* Main content */}
+
+      {!loading && !error && recommendedConcept && (
         <>
 
-          <section className="progress-focus-grid">
+          {/* Age-specific curriculum */}
 
+          <section className="progress-focus-grid">
             <article className="surface-card progress-focus-card">
 
               <div className="progress-focus-heading">
-
                 <div className="subject-icon">
-
-                  <Calculator
-                    size={26}
-                  />
-
+                  <Calculator size={26} />
                 </div>
 
-
                 <div>
-
                   <span className="small-label">
                     Current curriculum
                   </span>
 
-
                   <h2>
-                    {
-                      topic?.title
-                      ?? recommendedConcept.title
-                    }
+                    {topic?.title
+                      ?? recommendedConcept.title}
                   </h2>
-
                 </div>
-
               </div>
 
-
               <p>
-                {
-                  topic?.description
-                  ?? recommendedConcept.description
-                }
+                {topic?.description
+                  ?? recommendedConcept.description}
               </p>
-
 
               <div className="progress-status-row">
 
                 <div>
-
-                  <span>
-                    Curriculum status
-                  </span>
-
+                  <span>Curriculum status</span>
                   <strong>
-                    {
-                      readableLabel(
-                        recommendedConcept.status,
-                      )
-                    }
+                    {readableLabel(
+                      recommendedConcept.status
+                    )}
                   </strong>
-
                 </div>
 
-
                 <div>
-
-                  <span>
-                    Age
-                  </span>
-
-                  <strong>
-                    {
-                      student?.age
-                      ?? "—"
-                    }
-                  </strong>
-
+                  <span>Age</span>
+                  <strong>{student?.age ?? "—"}</strong>
                 </div>
 
-
                 <div>
-
-                  <span>
-                    Mastery
-                  </span>
-
+                  <span>Mastery</span>
                   <strong>
-                    {
-                      progress
-                        ?.current_mastery_state
-                        ? readableLabel(
-                            progress
-                              .current_mastery_state,
-                          )
-                        : "Not Started"
-                    }
+                    {readableLabel(
+                      progress?.current_mastery_state
+                        ?? recommendedConcept.mastery_state
+                    )}
                   </strong>
-
                 </div>
 
               </div>
-
             </article>
-
           </section>
 
 
-          {(
-            reviewConcept
-            && reviewConcept
-              .concept_code
-              !== recommendedConcept
-                .concept_code
-          ) && (
+          {/* Prerequisite review */}
 
-            <section className="surface-card prerequisite-review-card">
+          {reviewConcept
+            && reviewConcept.concept_code
+              !== recommendedConcept.concept_code
+            && (
+              <section className="surface-card prerequisite-review-card">
 
-              <div>
+                <Target size={22} />
 
-                <Target
-                  size={22}
-                />
+                <div>
+                  <span className="small-label">
+                    Prerequisite review
+                  </span>
 
-              </div>
+                  <h3>{reviewConcept.title}</h3>
 
+                  <p>
+                    Your learning evidence suggests
+                    reviewing this earlier concept
+                    before continuing.
+                  </p>
+                </div>
 
-              <div>
-
-                <span className="small-label">
-                  Prerequisite review
-                </span>
-
-
-                <h3>
-                  {
-                    reviewConcept.title
-                  }
-                </h3>
+              </section>
+            )}
 
 
-                <p>
-                  LearnFirst detected
-                  learning evidence that
-                  this earlier concept
-                  should be reviewed before
-                  continuing your current
-                  syllabus.
-                </p>
+          {/* New Diagnostic/Mastery card */}
 
-              </div>
+          <AssessmentProgressCard
+            subject="Math"
+            diagnostic={progress?.diagnostic}
+            mastery={progress?.mastery}
+            onDiagnostic={() =>
+              openAssessment("diagnostic")
+            }
+            onMastery={() =>
+              openAssessment("mastery")
+            }
+          />
 
-            </section>
 
-          )}
-
+          {/* Learning evidence */}
 
           {progress && (
-
             <section className="surface-card progress-detail-card">
 
               <div className="progress-card-heading">
-
                 <div>
-
                   <span className="small-label">
                     Learning evidence
                   </span>
 
-
-                  <h2>
-                    Current concept progress
-                  </h2>
-
+                  <h2>Current concept progress</h2>
                 </div>
 
-
-                <Sparkles
-                  size={27}
-                />
-
+                <Sparkles size={27} />
               </div>
-
 
               <div className="progress-stats">
 
                 <div>
-
                   <strong>
-                    {
-                      progress
-                        .learning_metrics
-                        .total_attempts
-                    }
+                    {progress.learning_metrics.total_attempts}
                   </strong>
-
-                  <span>
-                    Attempts
-                  </span>
-
+                  <span>Attempts</span>
                 </div>
 
-
                 <div>
-
                   <strong>
-                    {
-                      progress
-                        .learning_metrics
-                        .independent_attempts
-                    }
+                    {progress.learning_metrics.independent_attempts}
                   </strong>
-
-                  <span>
-                    Independent tries
-                  </span>
-
+                  <span>Independent tries</span>
                 </div>
 
-
                 <div>
-
                   <strong>
-                    {
-                      readableLabel(
-                        progress
-                          .current_mastery_state,
-                      )
-                    }
+                    {readableLabel(
+                      progress.current_mastery_state
+                    )}
                   </strong>
-
-                  <span>
-                    Mastery
-                  </span>
-
+                  <span>Mastery</span>
                 </div>
 
               </div>
 
-
-              {(
-                progress
-                  .current_mastery_state
-                === "STRONG"
-              ) && (
-
-                <div className="habit-tip">
-
-                  <CheckCircle2
-                    size={16}
-                  />
-
-                  Strong mastery demonstrated.
-
-                </div>
-
-              )}
-
+              {progress.current_mastery_state === "STRONG"
+                && (
+                  <div className="habit-tip">
+                    <CheckCircle2 size={16} />
+                    Strong mastery demonstrated.
+                  </div>
+                )}
             </section>
-
           )}
 
 
-          {(
-            targetConcept
-            && recommendedConcept
-            && targetConcept
-              .concept_code
-              !== recommendedConcept
-                .concept_code
-          ) && (
+          {/* Return to age-level target */}
 
-            <section className="surface-card target-return-card">
+          {targetConcept
+            && targetConcept.concept_code
+              !== recommendedConcept.concept_code
+            && (
+              <section className="surface-card target-return-card">
+                <span className="small-label">
+                  Age-level target
+                </span>
 
-              <span className="small-label">
-                Age-level target
-              </span>
+                <h3>{targetConcept.title}</h3>
 
-
-              <h3>
-                {
-                  targetConcept.title
-                }
-              </h3>
-
-
-              <p>
-                After the prerequisite
-                review is strong enough,
-                LearnFirst will return
-                you to this age-level
-                curriculum automatically.
-              </p>
-
-            </section>
-
-          )}
+                <p>
+                  After prerequisite review,
+                  LearnFirst can return you to
+                  your age-level curriculum.
+                </p>
+              </section>
+            )}
 
 
           <button
             type="button"
             className="primary-button"
-
-            onClick={() =>
-              navigate(
-                "/learn/math",
-              )
-            }
+            onClick={() => navigate("/learn/math")}
           >
             Continue Math
-
-            <ArrowRight
-              size={18}
-            />
+            <ArrowRight size={18} />
           </button>
 
         </>
-
       )}
 
     </div>
